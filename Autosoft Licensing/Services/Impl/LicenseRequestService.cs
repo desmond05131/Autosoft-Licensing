@@ -4,6 +4,7 @@ using System.IO;
 using Newtonsoft.Json;
 using Autosoft_Licensing.Models;
 using Autosoft_Licensing.Services;
+using Autosoft_Licensing.Utils;
 
 namespace Autosoft_Licensing.Services
 {
@@ -31,7 +32,7 @@ namespace Autosoft_Licensing.Services
         {
             var vr = ValidateRequest(r);
             if (vr != ValidationResult.Success)
-                throw new ValidationException(vr.ErrorMessage ?? "Invalid license request file.");
+                throw new ValidationException(vr.ErrorMessage ?? UiMessages.InvalidLicenseRequest);
             File.WriteAllText(path, ToArlJson(r));
         }
     }

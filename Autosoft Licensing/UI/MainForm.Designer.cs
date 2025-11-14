@@ -1,4 +1,3 @@
-using DevExpress.XtraBars.Navigation;
 using DevExpress.XtraEditors;
 using System.ComponentModel;
 
@@ -7,7 +6,7 @@ namespace Autosoft_Licensing
     partial class MainForm
     {
         private IContainer components = null;
-        private AccordionControl accordion;
+        private ListBoxControl navList;
         private PanelControl contentPanel;
 
         protected override void Dispose(bool disposing)
@@ -20,39 +19,32 @@ namespace Autosoft_Licensing
         private void InitializeComponent()
         {
             this.components = new Container();
-            this.accordion = new AccordionControl();
+            this.navList = new ListBoxControl();
             this.contentPanel = new PanelControl();
 
-            ((ISupportInitialize)(this.accordion)).BeginInit();
+            ((ISupportInitialize)(this.navList)).BeginInit();
             ((ISupportInitialize)(this.contentPanel)).BeginInit();
             this.SuspendLayout();
 
-            // accordion
-            this.accordion.Dock = System.Windows.Forms.DockStyle.Left;
-            this.accordion.ViewType = AccordionControlViewType.HamburgerMenu;
-            this.accordion.Name = "accordion";
-            this.accordion.Width = 260;
-
-            var navGroup = new AccordionControlElement()
+            // navList
+            this.navList.Dock = System.Windows.Forms.DockStyle.Left;
+            this.navList.Name = "navList";
+            this.navList.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
+            this.navList.ItemHeight = 28;
+            this.navList.Font = new System.Drawing.Font("Segoe UI", 10F);
+            this.navList.Size = new System.Drawing.Size(260, 450);
+            this.navList.Items.AddRange(new object[]
             {
-                Text = "Navigation",
-                Name = "aceNavigation",
-                Expanded = true
-            };
-
-            navGroup.Elements.AddRange(new[]
-            {
-                MakeItem("Dashboard"),
-                MakeItem("Generate Request"),
-                MakeItem("Request History"),
-                MakeItem("Import / Activate"),
-                MakeItem("License List"),
-                MakeItem("License Details"),
-                MakeItem("User Management"),
-                MakeItem("Settings / Security"),
+                "Dashboard",
+                "Generate Request",
+                "Request History",
+                "Import / Activate",
+                "License List",
+                "License Details",
+                "User Management",
+                "Settings / Security"
             });
-
-            this.accordion.Elements.Add(navGroup);
+            this.navList.SelectedIndexChanged += new System.EventHandler(this.navList_SelectedIndexChanged);
 
             // contentPanel
             this.contentPanel.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -62,11 +54,12 @@ namespace Autosoft_Licensing
             this.Text = "AutoSoft Licensing";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.MinimumSize = new System.Drawing.Size(1000, 700);
+            // add LEFT first, then FILL last
+            this.Controls.Add(this.navList);
             this.Controls.Add(this.contentPanel);
-            this.Controls.Add(this.accordion);
             this.Name = "MainForm";
 
-            ((ISupportInitialize)(this.accordion)).EndInit();
+            ((ISupportInitialize)(this.navList)).EndInit();
             ((ISupportInitialize)(this.contentPanel)).EndInit();
             this.ResumeLayout(false);
         }

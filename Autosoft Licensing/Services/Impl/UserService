@@ -1,0 +1,55 @@
+.cs
+using System;
+using System.Data.SqlClient;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
+using Autosoft_Licensing.Data;
+
+namespace Autosoft_Licensing.Services
+{
+    public interface IUserService
+    {
+        bool ValidateCredentials(string username, string password, out string role, out int userId);
+    }
+
+    public class UserService : IUserService
+    {
+        private readonly SqlConnectionFactory _connectionFactory;
+        public UserService(SqlConnectionFactory connectionFactory) => _connectionFactory = connectionFactory;
+
+        public bool ValidateCredentials(string username, string password, out string role, out int userId)
+        {
+            role = string.Empty;
+            userId = 0;
+
+            using var conn = _connectionFactory.Create();
+            var sql = "SELECT Id, PasswordHash, Role FROM dbo.Users WHERE Username=@u";
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@u", username);
+
+            using var rdr = cmd.ExecuteReader(System.Data.CommandBehavior.SingleRow);
+            if (!rdr.Read()) return false;
+
+            var id = rdr.GetInt32(0);
+            var storedHash = rdr.GetString(1);
+            var dbRole = rdr.GetString(2);
+
+            var incoming = ComputeSha256Hex(password);
+            if (!string.Equals(incoming, storedHash, StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            role = dbRole;
+            userId = id;
+            return true;
+        }
+
+        private static string ComputeSha256Hex(string text)
+        {
+            using var sha = SHA256.Create();
+            var bytes = Encoding.UTF8.GetBytes(text);
+            var hash = sha.ComputeHash(bytes);
+            return string.Concat(hash.Select(b => b.ToString("x2")));
+        }
+    }
+}

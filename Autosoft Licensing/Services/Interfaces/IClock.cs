@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Autosoft_Licensing.Services.Interfaces
+namespace Autosoft_Licensing.Services
 {
     public interface IClock
     {

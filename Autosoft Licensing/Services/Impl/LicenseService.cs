@@ -21,7 +21,7 @@ namespace Autosoft_Licensing.Services
             }
             catch
             {
-                throw new ValidationException("Invalid or tampered license file.");
+                throw new ValidationException(UiMessages.InvalidOrTamperedLicense);
             }
 
             LicenseData data;
@@ -31,21 +31,21 @@ namespace Autosoft_Licensing.Services
             }
             catch
             {
-                throw new ValidationException("Invalid or tampered license file.");
+                throw new ValidationException(UiMessages.InvalidOrTamperedLicense);
             }
 
             // Verify checksum
             var withoutChecksum = JsonHelper.RemoveProperty(json, "ChecksumSHA256");
             var canon = JsonHelper.Canonicalize(withoutChecksum);
             if (!_crypto.VerifyChecksum(canon, data.ChecksumSHA256))
-                throw new ValidationException("Invalid or tampered license file.");
+                throw new ValidationException(UiMessages.InvalidOrTamperedLicense);
 
             var vr = ValidateLicenseData(data);
             if (vr != ValidationResult.Success)
-                throw new ValidationException(vr.ErrorMessage ?? "Invalid license file.");
+                throw new ValidationException(vr.ErrorMessage ?? UiMessages.InvalidLicenseFile);
 
             if (data.ValidToUtc < DateTime.UtcNow)
-                throw new ValidationException(data.LicenseType == "Demo" ? "Demo license expired." : "License expired.");
+                throw new ValidationException(data.LicenseType == "Demo" ? UiMessages.DemoLicenseExpired : UiMessages.LicenseExpired);
 
             return data;
         }
@@ -57,7 +57,7 @@ namespace Autosoft_Licensing.Services
             if (!Validator.TryValidateObject(d, ctx, results, true))
                 return results[0];
             if (d.LicenseType != "Demo" && d.LicenseType != "Paid")
-                return new ValidationResult("Invalid license file.");
+                return new ValidationResult(UiMessages.InvalidLicenseFile);
             return ValidationResult.Success;
         }
     }
