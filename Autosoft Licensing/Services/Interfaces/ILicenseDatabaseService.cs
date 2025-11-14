@@ -6,14 +6,30 @@ namespace Autosoft_Licensing.Services
 {
     public interface ILicenseDatabaseService
     {
-        // Requests
-        int InsertLicenseRequest(LicenseRequest request, IEnumerable<int> moduleIds, int createdByUserId, string requestFileBase64);
+        // Users
+        User GetUserByUsername(string username);
+        User GetUserById(int id);
+
+        // License Requests
+        int InsertLicenseRequest(LicenseRequestRecord record);
+        LicenseRequestRecord GetLicenseRequestById(int id);
+        IEnumerable<LicenseRequestRecord> GetLicenseRequests(string productId = null);
 
         // Licenses
+        int InsertLicense(LicenseMetadata meta);
+        LicenseMetadata GetLicenseById(int id);
+        LicenseMetadata GetActiveLicense(string productId, string companyName);
+        IEnumerable<LicenseMetadata> GetLicenses(string productId = null);
+
+        // Modules association
+        void SetRequestModules(int requestId, IEnumerable<string> moduleCodes);
+        void SetLicenseModules(int licenseId, IEnumerable<string> moduleCodes);
+
+        // Duplicate license key check
         bool LicenseKeyExists(string licenseKey);
-        int InsertLicense(LicenseData data, IEnumerable<int> moduleIds, int? importedByUserId, string rawAslBase64);
-        void UpdateLicenseStatus(int licenseId, string status);
-        // Minimal check used at startup or dashboard
-        bool TryGetLatestLicenseSummary(string productId, string companyName, out string licenseType, out DateTime validFromUtc, out DateTime validToUtc, out string status);
+
+        // Latest summary for validation at startup
+        bool TryGetLatestLicenseSummary(string productId, string companyName,
+            out string licenseType, out DateTime validFromUtc, out DateTime validToUtc, out string status);
     }
 }

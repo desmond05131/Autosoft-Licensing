@@ -1,54 +1,27 @@
-using Autosoft_Licensing.Data;
 using Autosoft_Licensing.Utils;
+using Autosoft_Licensing.Data;
 
 namespace Autosoft_Licensing.Services
 {
-    public sealed class ServiceRegistry
+    public static class ServiceRegistry
     {
-        public SqlConnectionFactory ConnectionFactory { get; }
-        public IClock Clock { get; }
-        public IEncryptionService Encryption { get; }
-        public IValidationService Validation { get; }
-        public IFileService Files { get; }
-        public ILicenseDatabaseService LicenseDb { get; }
-        public ILicenseRequestService LicenseRequests { get; }
-        public ILicenseService Licenses { get; }
-        public ILicenseValidationFacade LicenseValidation { get; }
-
-        private ServiceRegistry(
-            SqlConnectionFactory cf,
-            IClock clock,
-            IEncryptionService enc,
-            IValidationService val,
-            IFileService files,
-            ILicenseDatabaseService ldb,
-            ILicenseRequestService lreq,
-            ILicenseService lsvc,
-            ILicenseValidationFacade lval)
+        static ServiceRegistry()
         {
-            ConnectionFactory = cf;
-            Clock = clock;
-            Encryption = enc;
-            Validation = val;
-            Files = files;
-            LicenseDb = ldb;
-            LicenseRequests = lreq;
-            Licenses = lsvc;
-            LicenseValidation = lval;
+            // Wire the DB service once
+            var factory = new SqlConnectionFactory("LicensingDb");
+            Database = new LicenseDatabaseService(factory);
         }
 
-        public static ServiceRegistry CreateDefault()
-        {
-            var cf = new SqlConnectionFactory("LicensingDb");
-            var clock = new SystemClock();
-            var enc = new EncryptionService();
-            var val = new ValidationService();
-            var files = new FileService();
-            var ldb = new LicenseDatabaseService(cf, clock);
-            var lreq = new LicenseRequestService();
-            var lsvc = new LicenseService(enc);
-            var lval = new LicenseValidationFacade(ldb, clock);
-            return new ServiceRegistry(cf, clock, enc, val, files, ldb, lreq, lsvc, lval);
-        }
+        public static IClock Clock { get; } = new SystemClock();
+        public static IValidationService Validation { get; } = new ValidationService();
+        public static IEncryptionService Encryption { get; } = new EncryptionService();
+
+        public static ILicenseDatabaseService Database { get; private set; }
+
+        public static ILicenseRequestService LicenseRequest =>
+            new LicenseRequestService(Validation);
+
+        public static ILicenseService License =>
+            new LicenseService(Encryption, Validation, Database, Clock);
     }
 }

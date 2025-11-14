@@ -1,23 +1,30 @@
+using System;
 using System.Configuration;
 using System.Data.SqlClient;
 
 namespace Autosoft_Licensing.Data
 {
-    public sealed class SqlConnectionFactory
+    public interface ISqlConnectionFactory
+    {
+        SqlConnection Create();
+    }
+
+    public sealed class SqlConnectionFactory : ISqlConnectionFactory
     {
         private readonly string _cs;
 
         public SqlConnectionFactory(string connectionStringName = "LicensingDb")
         {
-            _cs = ConfigurationManager.ConnectionStrings[connectionStringName]?.ConnectionString
-                  ?? throw new ConfigurationErrorsException($"Missing connection string: {connectionStringName}");
+            _cs = ConfigurationManager.ConnectionStrings[connectionStringName]?.ConnectionString;
+            if (string.IsNullOrWhiteSpace(_cs))
+                throw new InvalidOperationException($"Missing connection string '{connectionStringName}'.");
         }
 
         public SqlConnection Create()
         {
-            var conn = new SqlConnection(_cs);
-            conn.Open();
-            return conn;
+            var con = new SqlConnection(_cs);
+            con.Open();
+            return con;
         }
     }
-}   
+}

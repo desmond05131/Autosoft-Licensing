@@ -10,6 +10,8 @@
     <RootNamespace>Autosoft_Licensing</RootNamespace>
     <AssemblyName>Autosoft Licensing</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <!-- Enable C# 8 features like 'using declarations' -->
+    <LangVersion>8.0</LangVersion>
     <FileAlignment>512</FileAlignment>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
@@ -145,6 +147,7 @@
     <Compile Include="Services\Interfaces\IEncryptionService.cs" />
     <Compile Include="Services\Interfaces\ILicenseRequestService.cs" />
     <Compile Include="Services\Interfaces\ILicenseService.cs" />
+    <Compile Include="Services\Interfaces\IValidationService.cs" />
     <Compile Include="UI\Pages\GenerateLicenseRequestPage.cs" />
     <Compile Include="UI\Pages\LicenseRecordsDetailsPage.cs" />
     <Compile Include="UI\Pages\LicenseRecordsPage.cs" />

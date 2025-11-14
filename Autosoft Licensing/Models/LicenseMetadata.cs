@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using Autosoft_Licensing.Models.Enums;
 
 namespace Autosoft_Licensing.Models
 {
@@ -10,13 +12,14 @@ namespace Autosoft_Licensing.Models
         public string ProductID { get; set; }
         public string DealerCode { get; set; }
         public string LicenseKey { get; set; }
-        public string LicenseType { get; set; } // Demo / Paid
+        public LicenseType LicenseType { get; set; }
         public DateTime ValidFromUtc { get; set; }
         public DateTime ValidToUtc { get; set; }
         public string CurrencyCode { get; set; }
-        public string Status { get; set; } // Valid / Expired / Invalid
+        public LicenseStatus Status { get; set; }
         public DateTime ImportedOnUtc { get; set; }
         public int? ImportedByUserId { get; set; }
-        public string RawAslBase64 { get; set; } // optional
+        public string RawAslBase64 { get; set; }
+        public List<string> ModuleCodes { get; set; } = new List<string>();
     }
 }

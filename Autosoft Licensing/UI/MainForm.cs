@@ -11,6 +11,12 @@ namespace Autosoft_Licensing
             InitializeComponent();
         }
 
+        private void navList_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            // TODO: swap content based on selected item.
+            // This stub resolves the missing handler compile error.
+        }
+
         // Placeholder if you later want to handle accordion clicks:
         // private void OnAccordionElementClick(object sender, ElementClickEventArgs e)
         // {

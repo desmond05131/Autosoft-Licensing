@@ -4,6 +4,6 @@ namespace Autosoft_Licensing.Services
 {
     public interface IClock
     {
-        DateTime UtcNow { get; }
+        System.DateTime UtcNow { get; }
     }
 }

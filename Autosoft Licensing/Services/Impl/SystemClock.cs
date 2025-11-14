@@ -3,8 +3,8 @@ using Autosoft_Licensing.Services;
 
 namespace Autosoft_Licensing.Services
 {
-    public sealed class SystemClock : IClock
+    public class SystemClock : IClock
     {
-        public DateTime UtcNow => DateTime.UtcNow;
+        public System.DateTime UtcNow => System.DateTime.UtcNow;
     }
 }
