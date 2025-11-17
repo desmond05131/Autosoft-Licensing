@@ -120,8 +120,13 @@
     <Reference Include="UUID.Serialization.Newtonsoft, Version=1.1.1.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\UUID.Serialization.Newtonsoft.1.1.1\lib\net48\UUID.Serialization.Newtonsoft.dll</HintPath>
     </Reference>
+    <Reference Include="System.Configuration" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Data\LicensingDbContext.cs" />
+    <Compile Include="Services\Impl\UserService.cs" />
+    <Compile Include="Services\Interfaces\IUserService.cs" />
+    <Compile Include="Tools\SmokeTestHarness.cs" />
     <Compile Include="UI\MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -148,15 +153,20 @@
     <Compile Include="Services\Interfaces\ILicenseRequestService.cs" />
     <Compile Include="Services\Interfaces\ILicenseService.cs" />
     <Compile Include="Services\Interfaces\IValidationService.cs" />
+    <Compile Include="UI\Pages\DashboardPage.cs" />
     <Compile Include="UI\Pages\GenerateLicenseRequestPage.cs" />
+    <Compile Include="UI\Pages\ImportActivateLicensePage.cs" />
     <Compile Include="UI\Pages\LicenseRecordsDetailsPage.cs" />
     <Compile Include="UI\Pages\LicenseRecordsPage.cs" />
     <Compile Include="UI\Pages\LoginPage.cs" />
     <Compile Include="UI\Pages\ManageProductPage.cs" />
     <Compile Include="UI\Pages\ManageUserPage.cs" />
+    <Compile Include="UI\Pages\PageHostControl.cs" />
     <Compile Include="UI\Pages\ProductDetailsPage.cs" />
     <Compile Include="UI\Pages\UserDetailsPage.cs" />
     <Compile Include="Utils\JsonHelper.cs" />
+    <Compile Include="Utils\CryptoConstants.cs" />
+    <Compile Include="Utils\UiMessages.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
@@ -179,7 +189,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Database\" />
     <Folder Include="UI\Controls\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
@@ -194,5 +203,25 @@
     <EmbeddedResource Include="UI\MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>
+  </ItemGroup>
+  <!-- Add missing source files so their namespaces exist at build time -->
+  <ItemGroup>
+    <Compile Include="Data\SqlConnectionFactory.cs" />
+    <Compile Include="Services\ServiceRegistry.cs" />
+    <Compile Include="Services\Impl\ValidationService.cs" />
+    <Compile Include="Services\Impl\LicenseService.cs" />
+    <Compile Include="Services\Impl\LicenseDatabaseService.cs" />
+    <Compile Include="Services\Interfaces\ILicenseValidationFacade.cs" />
+    <Compile Include="Services\Impl\LicenseValidationFacade.cs" />
+    <Compile Include="Services\Interfaces\IFileService.cs" />
+    <Compile Include="Services\Impl\FileService.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- ensure the interface file is compiled -->
+    <Compile Include="Services\Interfaces\ILicenseDatabaseService.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Database\Schema.sql" />
+    <Content Include="Database\Seed.sql" />
   </ItemGroup>
 </Project>

@@ -1,6 +1,5 @@
 using System;
 using System.ComponentModel.DataAnnotations;
-using System.Collections.Generic;
 using Newtonsoft.Json;
 using Autosoft_Licensing.Models;
 using Autosoft_Licensing.Models.Enums;
@@ -69,20 +68,17 @@ namespace Autosoft_Licensing.Services
 
         public string GenerateAsl(LicenseData data, byte[] key, byte[] iv)
         {
-            // Ensure checksum field is recomputed; ignore any existing value
             data.ChecksumSHA256 = null;
             var vr = _validator.ValidateLicenseData(data);
             if (vr != ValidationResult.Success)
                 throw new ValidationException(vr.ErrorMessage);
 
-            // Build canonical JSON with checksum
             var jsonWithChecksum = _crypto.BuildJsonWithChecksum(data);
             return _crypto.EncryptJsonToAsl(jsonWithChecksum, key, iv);
         }
 
         public LicenseMetadata Activate(LicenseData data, int? importedByUserId)
         {
-            // Final status determination
             var status = _validator.IsExpired(data, _clock.UtcNow)
                 ? LicenseStatus.Expired
                 : LicenseStatus.Valid;
@@ -100,11 +96,10 @@ namespace Autosoft_Licensing.Services
                 Status = status,
                 ImportedOnUtc = _clock.UtcNow,
                 ImportedByUserId = importedByUserId,
-                RawAslBase64 = null, // Can set if feature toggle to store
+                RawAslBase64 = null,
                 ModuleCodes = data.ModuleCodes
             };
 
-            // Duplicate key warning (non-blocking) could be surfaced later; for now just insert.
             var id = _db.InsertLicense(meta);
             _db.SetLicenseModules(id, meta.ModuleCodes);
             meta.Id = id;

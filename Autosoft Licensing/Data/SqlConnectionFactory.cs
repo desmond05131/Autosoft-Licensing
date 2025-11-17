@@ -4,27 +4,15 @@ using System.Data.SqlClient;
 
 namespace Autosoft_Licensing.Data
 {
-    public interface ISqlConnectionFactory
+    public class SqlConnectionFactory
     {
-        SqlConnection Create();
-    }
-
-    public sealed class SqlConnectionFactory : ISqlConnectionFactory
-    {
-        private readonly string _cs;
+        private readonly string _connectionString;
 
         public SqlConnectionFactory(string connectionStringName = "LicensingDb")
         {
-            _cs = ConfigurationManager.ConnectionStrings[connectionStringName]?.ConnectionString;
-            if (string.IsNullOrWhiteSpace(_cs))
-                throw new InvalidOperationException($"Missing connection string '{connectionStringName}'.");
-        }
+            _connectionString = ConfigurationManager.ConnectionStrings[connectionStringName]?.ConnectionString
+                ?? throw new System.InvalidOperationException($"Missing connection string '{connectionStringName}'.");        }
 
-        public SqlConnection Create()
-        {
-            var con = new SqlConnection(_cs);
-            con.Open();
-            return con;
-        }
+        public SqlConnection Create() => new SqlConnection(_connectionString);
     }
 }

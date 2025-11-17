@@ -10,25 +10,46 @@ namespace Autosoft_Licensing.Services
         User GetUserByUsername(string username);
         User GetUserById(int id);
 
+        // Admin CRUD for users
+        IEnumerable<User> GetUsers();
+        int InsertUser(User user);
+        void UpdateUser(User user);
+        void DeleteUser(int id);
+
         // License Requests
         int InsertLicenseRequest(LicenseRequestRecord record);
         LicenseRequestRecord GetLicenseRequestById(int id);
         IEnumerable<LicenseRequestRecord> GetLicenseRequests(string productId = null);
+        void SetRequestModules(int requestId, IEnumerable<string> moduleCodes);
 
         // Licenses
         int InsertLicense(LicenseMetadata meta);
         LicenseMetadata GetLicenseById(int id);
         LicenseMetadata GetActiveLicense(string productId, string companyName);
         IEnumerable<LicenseMetadata> GetLicenses(string productId = null);
-
-        // Modules association
-        void SetRequestModules(int requestId, IEnumerable<string> moduleCodes);
         void SetLicenseModules(int licenseId, IEnumerable<string> moduleCodes);
 
-        // Duplicate license key check
-        bool LicenseKeyExists(string licenseKey);
+        // Products (admin CRUD)
+        IEnumerable<Product> GetProducts();
+        Product GetProductById(int id);
+        Product GetProductByProductId(string productId);
+        int InsertProduct(Product product);
+        void UpdateProduct(Product product);
+        void DeleteProduct(int id);
 
-        // Latest summary for validation at startup
+        // Dealers (admin CRUD)
+        IEnumerable<Dealer> GetDealers();
+        Dealer GetDealerById(int id);
+        Dealer GetDealerByCode(string dealerCode);
+        int InsertDealer(Dealer dealer);
+        void UpdateDealer(Dealer dealer);
+        void DeleteDealer(int id);
+
+        // Misc
+        bool LicenseKeyExists(string licenseKey);
+        void UpdateLicenseStatus(int licenseId, string status);
+
+        // Summary for validation
         bool TryGetLatestLicenseSummary(string productId, string companyName,
             out string licenseType, out DateTime validFromUtc, out DateTime validToUtc, out string status);
     }

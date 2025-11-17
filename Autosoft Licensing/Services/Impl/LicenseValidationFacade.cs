@@ -1,6 +1,5 @@
 using System;
 using Autosoft_Licensing.Utils;
-using Autosoft_Licensing.Models.Enums;
 
 namespace Autosoft_Licensing.Services
 {
@@ -20,18 +19,17 @@ namespace Autosoft_Licensing.Services
             message = string.Empty;
             hidePluginTab = false;
 
-            var meta = _db.GetActiveLicense(productId, companyName);
-            if (meta == null)
+            if (!_db.TryGetLatestLicenseSummary(productId, companyName, out var type, out var from, out var to, out var status))
             {
                 message = UiMessages.InvalidLicenseFile;
-                hidePluginTab = true; // no license -> hide
+                hidePluginTab = true;
                 return false;
             }
 
             var now = _clock.UtcNow;
-            if (meta.ValidToUtc < now || meta.Status == LicenseStatus.Expired || meta.Status == LicenseStatus.Invalid)
+            if (to < now || string.Equals(status, "Expired", StringComparison.OrdinalIgnoreCase))
             {
-                if (meta.LicenseType == LicenseType.Demo)
+                if (string.Equals(type, "Demo", StringComparison.OrdinalIgnoreCase))
                 {
                     message = UiMessages.DemoExpired;
                     hidePluginTab = true;

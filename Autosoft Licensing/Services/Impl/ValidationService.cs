@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using Autosoft_Licensing.Models;
 using Autosoft_Licensing.Models.Enums;
 
@@ -17,8 +18,14 @@ namespace Autosoft_Licensing.Services
 
             if (r.LicenseType == LicenseType.Demo && r.RequestedPeriodMonths != 1)
                 return new ValidationResult("Demo license must request 1 month.");
-            if (r.LicenseType == LicenseType.Paid && r.RequestedPeriodMonths <= 0)
-                return new ValidationResult("Paid license duration invalid.");
+
+            if (r.LicenseType == LicenseType.Paid)
+            {
+                var allowed = new[] { 3, 6, 12, 24 };
+                if (!allowed.Contains(r.RequestedPeriodMonths))
+                    return new ValidationResult("Subscription license must be 3, 6, 12 or 24 months.");
+            }
+
             return ValidationResult.Success;
         }
 
