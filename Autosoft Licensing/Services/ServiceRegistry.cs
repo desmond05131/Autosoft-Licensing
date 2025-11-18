@@ -18,6 +18,15 @@ namespace Autosoft_Licensing.Services
             set => _database = value;
         }
 
+        /// <summary>
+        /// Convenience helper to initialize the database service from a connection string name.
+        /// Call this from Program.Main, tests, or the Immediate Window instead of duplicating the construction.
+        /// </summary>
+        public static void InitializeDatabase(string connectionStringName = "LicensingDb")
+        {
+            Database = new LicenseDatabaseService(new SqlConnectionFactory(connectionStringName));
+        }
+
         // Lightweight factories for other services
         public static ILicenseRequestService LicenseRequest =>
             new LicenseRequestService(Validation);

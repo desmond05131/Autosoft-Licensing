@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Windows.Forms;
+using System.Configuration;
 using Autosoft_Licensing.Data;
 using Autosoft_Licensing.Services;
 using Autosoft_Licensing.Utils;
@@ -16,12 +17,10 @@ namespace Autosoft_Licensing
         static void Main(string[] args)
         {
             // Composition root
-            var connFactory = new SqlConnectionFactory("LicensingDb");
-            ServiceRegistry.Database = new LicenseDatabaseService(connFactory);
+            // Initialize database using the convenience helper which constructs the SqlConnectionFactory
+            ServiceRegistry.InitializeDatabase("LicensingDb");
+            // <--- set breakpoint here (or on the first line inside the DB quick-check try)
 
-            // --- Startup sanity checks ---
-
-            // DB quick-check: verify we can query the Users table (admin)
             try
             {
                 ServiceRegistry.Database.GetUserByUsername("admin");

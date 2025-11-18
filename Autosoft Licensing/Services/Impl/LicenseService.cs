@@ -68,11 +68,30 @@ namespace Autosoft_Licensing.Services
 
         public string GenerateAsl(LicenseData data, byte[] key, byte[] iv)
         {
-            data.ChecksumSHA256 = null;
-            var vr = _validator.ValidateLicenseData(data);
+            // Validation should run against the required business fields,
+            // but the ChecksumSHA256 property is computed by this method and therefore must be allowed missing.
+            // Create a lightweight copy of the incoming data with a placeholder checksum so DataAnnotations
+            // validation (which requires ChecksumSHA256) succeeds without mutating the original object.
+            var copy = new LicenseData
+            {
+                CompanyName = data.CompanyName,
+                ProductID = data.ProductID,
+                DealerCode = data.DealerCode,
+                CurrencyCode = data.CurrencyCode,
+                LicenseType = data.LicenseType,
+                ValidFromUtc = data.ValidFromUtc,
+                ValidToUtc = data.ValidToUtc,
+                LicenseKey = data.LicenseKey,
+                ModuleCodes = data.ModuleCodes == null ? new System.Collections.Generic.List<string>() : new System.Collections.Generic.List<string>(data.ModuleCodes),
+                ChecksumSHA256 = "placeholder-checksum"
+            };
+
+            var vr = _validator.ValidateLicenseData(copy);
             if (vr != ValidationResult.Success)
                 throw new ValidationException(vr.ErrorMessage);
 
+            // Ensure original object has no checksum before building the canonical JSON and computing real checksum.
+            data.ChecksumSHA256 = null;
             var jsonWithChecksum = _crypto.BuildJsonWithChecksum(data);
             return _crypto.EncryptJsonToAsl(jsonWithChecksum, key, iv);
         }
