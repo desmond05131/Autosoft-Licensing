@@ -41,6 +41,7 @@
     <Reference Include="Dapper, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Dapper.2.1.66\lib\net461\Dapper.dll</HintPath>
     </Reference>
+    <Reference Include="DevExpress.Xpf.Accordion.v22.2, Version=22.2.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
     <!-- DataAnnotations assembly needed for ValidationResult, Required, MinLength, etc. -->
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="DevExpress.BonusSkins.v22.2" />
@@ -131,6 +132,7 @@
     <Compile Include="Services\Interfaces\IUserService.cs" />
     <Compile Include="Tools\AslTestHelper.cs" />
     <Compile Include="Tools\SmokeTestHarness.cs" />
+    <Compile Include="UI\HostFactory.cs" />
     <Compile Include="UI\MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -225,6 +227,7 @@
     <Compile Include="Services\Interfaces\ILicenseDatabaseService.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="AutosoftLicensing.txt" />
     <Content Include="Database\Schema.sql" />
     <Content Include="Database\Seed.sql" />
   </ItemGroup>
