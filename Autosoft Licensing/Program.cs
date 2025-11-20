@@ -12,6 +12,7 @@ namespace Autosoft_Licensing
         /// <summary>
         /// The main entry point for the application.
         /// Accepts an optional "--smoke" argument to run the non-UI smoke test and exit.
+        /// Added "--smoke-ui" to run the UI shell smoke test (programmatic, non-interactive).
         /// </summary>
         [STAThread]
         static void Main(string[] args)
@@ -65,7 +66,21 @@ namespace Autosoft_Licensing
                 return;
             }
 
-            // If invoked with --smoke run the smoke test harness (non-UI) and exit with result shown to user.
+            // If invoked with --smoke-ui run the UI smoke test (programmatic, non-interactive) and exit with result shown to user.
+            if (args != null && Array.Exists(args, a => string.Equals(a, "--smoke-ui", StringComparison.OrdinalIgnoreCase)))
+            {
+                Application.EnableVisualStyles();
+                Application.SetCompatibleTextRenderingDefault(false);
+
+                var mf = new MainForm();
+                var result = mf.RunUiSmokeTest();
+                var caption = "UI Smoke test result";
+                MessageBoxIcon icon = result.Success ? MessageBoxIcon.Information : MessageBoxIcon.Error;
+                MessageBox.Show(result.Message, caption, MessageBoxButtons.OK, icon);
+                return;
+            }
+
+            // If invoked with --smoke run the non-UI smoke test harness and exit with result shown to user.
             if (args != null && Array.Exists(args, a => string.Equals(a, "--smoke", StringComparison.OrdinalIgnoreCase)))
             {
                 var result = Tools.SmokeTestHarness.RunAll();

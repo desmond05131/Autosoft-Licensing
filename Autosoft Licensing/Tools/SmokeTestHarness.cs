@@ -131,7 +131,7 @@ namespace Autosoft_Licensing.Tools
                 LicenseMetadata persistedMeta;
                 try
                 {
-                    persistedMeta = ServiceRegistry.License.Activate(imported, admin?.Id);
+                    persistedMeta = ServiceRegistry.License.Activate(imported, null, admin?.Id);
                     if (persistedMeta == null)
                         return Failure("Activate returned null (unexpected).");
                     TryAppend(sb, $"Activate succeeded; new License Id = {persistedMeta.Id}");

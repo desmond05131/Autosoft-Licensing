@@ -13,6 +13,8 @@ namespace Autosoft_Licensing.UI
     /// </summary>
     public static class HostFactory
     {
+        // Called from an AutoCount plugin host to obtain the window instance.
+        // Host will ShowDialog() or embed as needed.
         public static XtraForm CreateMainForm()
         {
             // MainForm must be a DevExpress.XtraEditors.XtraForm in your project.

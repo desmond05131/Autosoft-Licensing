@@ -96,7 +96,7 @@ namespace Autosoft_Licensing.Services
             return _crypto.EncryptJsonToAsl(jsonWithChecksum, key, iv);
         }
 
-        public LicenseMetadata Activate(LicenseData data, int? importedByUserId)
+        public LicenseMetadata Activate(LicenseData data, string rawAslBase64 = null, int? importedByUserId = null)
         {
             var status = _validator.IsExpired(data, _clock.UtcNow)
                 ? LicenseStatus.Expired
@@ -115,12 +115,12 @@ namespace Autosoft_Licensing.Services
                 Status = status,
                 ImportedOnUtc = _clock.UtcNow,
                 ImportedByUserId = importedByUserId,
-                RawAslBase64 = null,
+                // Persist raw ASL only if configured
+                RawAslBase64 = CryptoConstants.StoreRawFiles ? rawAslBase64 : null,
                 ModuleCodes = data.ModuleCodes
             };
 
             var id = _db.InsertLicense(meta);
-            _db.SetLicenseModules(id, meta.ModuleCodes);
             meta.Id = id;
             return meta;
         }

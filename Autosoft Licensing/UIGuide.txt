@@ -1,0 +1,383 @@
+﻿Autosoft Licensing — UI Wireframes: responsibilities, flow, functions, purpose & out-of-scope data
+
+This document use example method names like ILicenseRequestService.BuildAndSaveArl(...) and ILicenseService.ImportAsl(path), only for refering purpose. Do follow the methods and file names the codebase provides.
+
+Global app-level notes (applies to all pages)
+
+Main container: XtraForm (MainForm) with left navigation (Accordion/NavBar) and a PanelControl/NavigationFrame that loads page UserControls.
+
+Role-based UI: Admin vs Support. Only Admin can access Manage Product / Manage User and generate licenses.
+
+All dates: use UTC in backend; UI shows local formatted dates but send/receive UTC.
+
+Error messages must match business rules exactly:
+
+"Invalid license request file."
+
+"Invalid license file."
+
+"Invalid or tampered license file."
+
+"License expired."
+
+"Demo license expired."
+
+"License imported successfully."
+
+Use the backend services you implemented. Example calls:
+
+ILicenseRequestService.BuildAndSaveArl(...)
+
+ILicenseService.ImportAsl(path)
+
+ILicenseDatabaseService.GetLicenses(filter)
+
+IUserService.GetAll(), IUserService.Create(...) etc.
+
+UI must show transient messages only (no persistent audit/log).
+
+Put Copilot prompts as comments in each UserControl file header describing expected behavior (see bottom for examples).
+
+Page map (wireframes → detailed responsibilities)
+1) Login Page (Dealer EXE)
+
+Purpose: Authenticate dealer admin/support before allowing access to generator features.
+
+UI elements
+
+Username textbox, Password textbox
+
+Login button
+
+Error label (shows invalid credentials)
+
+Flow & functions
+
+On Login click → call IUserService.ValidateCredentials(username, password).
+
+If success → navigate to Dashboard/Main (load nav + pages).
+
+If fail → show inline message "Invalid username or password." (not part of core business messages).
+
+Validation
+
+Empty fields → disable Login button or show inline validation.
+
+Scope / Out-of-scope
+
+Auth store is part of Dealer EXE DB (in-scope). AutoCount SSO NOT used here.
+
+Acceptance
+
+Valid credentials navigate to main UI; invalid show message.
+
+2) Dashboard / Generate License (Main Generate Page) — Dealer EXE
+
+Purpose: Primary generator UI: load .ARL, set/adjust license fields, generate license key, download .ASL.
+
+UI elements
+
+Button: Upload Request File (.ARL) → opens file dialog, calls ArlReaderService.ParseArl
+
+Read-only fields (auto-filled from .ARL): CompanyName, ProductID, DealerCode, Currency
+
+Editable fields: IssueDate (auto = today), ExpireDate (auto based on license type + requested months), Remarks
+
+Radio/Select: License Type (Demo / Subscription / Permanent) — if Demo auto-set 1 month
+
+Checkbox list / multi-select: Modules to enable
+
+Textbox: LicenseKey (read-only or generated)
+
+Buttons: Generate License Key, Download License (.ASL) (disabled until key generated)
+
+Preview panel: formatted license JSON (before encryption)
+
+Validation messages region
+
+Flow & functions
+
+User uploads .ARL → UI calls ArlReaderService.ParseArl(path) → display fields.
+
+User adjusts expiry/modules as per business rules (Demo forced 1 month; Subscription options: 3/6/12/24; Permanent allowed).
+
+Click Generate License Key → call AslGeneratorService.BuildAslPayload(...) → returns license payload + checksum + raw JSON (stored in memory).
+
+Click Download License → call AslGeneratorService.EncryptAndWriteAsl(...) → file save dialog → saves .ASL and shows "License imported successfully."? (For generator, show success like "License generated successfully." Use "License imported successfully." only on client DLL import.)
+
+Optionally record generated license metadata into Dealer DB via LicenseDatabaseService.Insert(...).
+
+Validation & messages
+
+If .ARL missing required fields (dealer-side check) → show "Invalid license request file." and refuse to proceed.
+
+If AES/encryption fails → show safe message (e.g., "Failed to generate license. Contact admin.").
+
+Ensure UI disables invalid combos (e.g., selecting Demo with >1 month).
+
+Scope / Out-of-scope
+
+Dealer EXE generates .ASL — in-scope.
+
+Payment/approval flows out-of-scope (manual).
+
+No need to contact remote servers.
+
+Acceptance
+
+.ARL upload parses and populates fields.
+
+LicenseKey generated exhibits expected format.
+
+.ASL file saved and decryptable by client DLL (roundtrip covered by backend test).
+
+3) License Records (Grid & Filters) — Dealer EXE
+
+Purpose: View/search generated licenses and request history; show status and countdown.
+
+UI elements
+
+Filters: CompanyName (dropdown), ProductCode, LicenseType, IssueDate/ExpiryDate filter (by date or range), checkbox Show expired license, dropdown Countdown(days) (for warning threshold)
+
+Refresh button
+
+Data grid with columns: CompanyName, Product, ProductName, LicenseType, IssueDate, ExpiryDate, Status, Countdown
+
+Row color cues: Active (neutral), Expired (red), Soon to expire (yellow)
+
+Buttons above grid: Create, View, Edit, Delete (on selected rows)
+
+Flow & functions
+
+Clicking Refresh calls LicenseDatabaseService.GetLicenses(filter) and binds grid.
+
+View opens License Details page (read-only).
+
+Edit opens Generate Page with prefilled data for editing (Admin only) — editing permitted only for non-expired? Business allows admin to adjust expiry manually.
+
+Delete removes record after confirmation (Admin only) — do not remove .ASL file from customer (just local record).
+
+Validation
+
+Filter inputs validated (date ranges correct).
+
+Scope / Out-of-scope
+
+No audit trail stored (per requirement). Deletion operations are immediate.
+
+Acceptance
+
+Grid reflects database.
+
+Filters work and color coding applies.
+
+4) License Details / Manual Edit — Dealer EXE
+
+Purpose: Show full decrypted license details; allow Admin to adjust expiry or modules manually.
+
+UI elements
+
+Read-only display of license fields
+
+Edit mode toggles editable ExpiryDate and Modules
+
+Save/Back buttons
+
+Flow & functions
+
+Loads details via LicenseDatabaseService.GetLicenseById(id).
+
+On Save → call LicenseDatabaseService.UpdateLicense(...).
+
+Changes stored in Dealer DB (not re-encrypted to .ASL unless user re-generates).
+
+Validation
+
+Expiry must be >= IssueDate.
+
+Admin confirmation required for critical changes.
+
+Scope / Out-of-scope
+
+Editing does not notify/alter customer .ASL file unless Dealer re-generates and sends new .ASL.
+
+Acceptance
+
+Admin can change expiry and modules; saved to DB.
+
+5) Manage Product (Products & Modules) — Dealer EXE (Admin)
+
+Purpose: CRUD products that map to ProductID and manage module list/labels used in license payload.
+
+UI elements
+
+Grid list of products (ProductID, ProductName, CreatedBy, DateCreated, LastModified)
+
+Buttons: Create, View, Edit, Delete
+
+Product edit form: ProductID, ProductName, createdBy, createdDate, modules grid (Name, Description), Release Notes, Save/Cancel
+
+Flow & functions
+
+Uses ProductService to perform CRUD and persist to DB (Products, Modules tables).
+
+Product info used by Generate License page dropdown to populate modules and product metadata.
+
+Scope / Out-of-scope
+
+Product creation is dealer responsibility; plugin developers only reference ProductID in their plugin code.
+
+Acceptance
+
+Changes to product and modules reflect in Product list and are selectable in Generate License page.
+
+6) Manage User / Access Rights — Dealer EXE (Admin)
+
+Purpose: Manage Dealer EXE users and their access rights (Generate License, License record, Manage Product, Manage User).
+
+UI elements
+
+Grid: Username, IsActive
+
+Buttons: Create, View, Edit, Delete (Admin cannot delete Admin account)
+
+User form: Username, Password, Access rights checkboxes (Generate License, License Record, Manage Product, Manage User), Save
+
+Flow & functions
+
+Calls IUserService CRUD methods.
+
+Enforce rule: cannot delete default Admin account; show notice in UI.
+
+Validation
+
+Username uniqueness.
+
+At least one admin remains.
+
+Scope / Out-of-scope
+
+This auth is only for Dealer EXE. Not integrated with AutoCount user tables.
+
+Acceptance
+
+Role access restrictions enforced across UI; only enabled buttons for permitted actions.
+
+7) Client License Entry / Register Page — LicenseClient.dll (embedded into plugin; UI mirrors “before generate license”)
+
+Purpose: End-user UI inside plugin to create .ARL (Save Request File) and import .ASL (Register By File) — this is part of the DLL, embedded in plugin.
+
+UI elements
+
+Tabs or sections: License Entry and License Information
+
+Fields: ProductKey (read-only from plugin), ProductName (from plugin), CompanyName (supplied by plugin), Currency, ProductID, ProgramVersion (show), Is Permanent checkbox (if applicable), LicenseKey input (optional), IssueDate, ExpireDate (display), message area (e.g., "Invalid License Key" in screenshot)
+
+Buttons: Save Request File, Register By File (open file dialog), Copy Information To Clipboard, Apply, Close, Verify (validate license)
+
+Visual indicators: status text or big date readout like in screenshot
+
+Flow & functions
+
+Save Request File => call ILicenseRequestService.BuildAndSaveArl(productId, companyName, machineFingerprint, requestedDuration, dealerCode) and show saved path or prompt.
+
+Fields like ProductKey, ProductName, CompanyName are supplied by plugin (out-of-scope for DLL).
+
+Register By File => file dialog -> call ILicenseService.ImportAsl(path) → returns ImportResult.
+
+If ImportResult.IsSuccess → persist via LicenseStorageService.Save(...) and show "License imported successfully."
+
+If failure → show ImportResult.ErrorMessage (use the business strings above).
+
+Verify triggers ILicenseService.VerifyCurrentLicense() checking checksum and expiry.
+
+Validation
+
+If .ASL fails decryption or checksum → show "Invalid or tampered license file."
+
+If .ASL expired → show "License expired." or "Demo license expired." and hide plugin main features (plugin does the hide by reading DLL's IsValidLicense()).
+
+Scope / Out-of-scope
+
+CompanyName and ProductID values are provided by the plugin integration code (not to be fetched by DLL internally).
+
+DLL should provide helper method to accept these values from the plugin host: LicenseControl.Initialize(productId, productName, companyName, machineFingerprintProvider).
+
+Acceptance
+
+Save Request File saves .ARL with required fields.
+
+Register By File properly validates .ASL with exact error messages and persists license.
+
+8) Client License Info / Read-only Display — LicenseClient.dll
+
+Purpose: Show currently installed/persisted license information and allow user to remove or request re-registration.
+
+UI elements
+
+Read-only labels for CompanyName, ProductID, LicenseType, ValidFrom, ValidTo, AllowedModules, Status
+
+Buttons: Remove License (clears local stored license), Re-register (opens Register dialog), Export License (optional)
+
+If license expired demo → prominent banner "Demo license expired." and Help link/instructions.
+
+Flow & functions
+
+On load → call LicenseStorageService.Read() and populate UI.
+
+Remove License calls LicenseStorageService.Clear() then show info to user.
+
+Scope / Out-of-scope
+
+Plugin must call DLL to determine whether to hide plugin features if license missing/expired.
+
+Acceptance
+
+Shows correct persisted license info; Remove clears and affects plugin behavior.
+
+7 — Data that is explicitly OUT OF SCOPE for the UI (provided externally)
+
+List these to avoid Copilot generating code to fetch them:
+
+CompanyName — plugin passes this to the DLL (via Initialize(...)). DO NOT query AutoCount DB yourself.
+
+ProductID, ProductName, ProgramVersion — hardcoded in plugin project; passed to DLL by plugin developer.
+
+AutoCount login events — plugin will call IsValidLicense() on login; the DLL does not hook AutoCount internals.
+
+Machine/account session tokens — if needed for fingerprinting, plugin provides machine fingerprint or a callback IMachineFingerprintProvider.
+
+Payment processing / renewal approvals — handled manually outside of system.
+
+Central/remote license server — none exists; do not integrate with web APIs.
+
+AutoCount DB schema internals — plugin devs handle integration; DLL only consumes values passed in.
+
+9 — UI acceptance & integration tests (suggested)
+
+Add these to test scripts for frontend QA:
+
+Upload a valid .ARL → fields populate; generate .ASL; the DLL later can import it successfully.
+
+Import a valid .ASL in DLL → status IsValidLicense() == true; plugin features enabled.
+
+Import a tampered .ASL (flip a byte) → show "Invalid or tampered license file."
+
+Create Demo license in EXE for 1 month, import in DLL → after expiry date passes (or simulate DateTime.UtcNow) → show "Demo license expired." and IsValidLicense() returns false.
+
+Manage Product: add new module → shows up in Generate License modules list.
+
+Manage User: admin cannot delete default Admin account.
+
+10 — File / UserControl naming & suggested mapping for Copilot
+
+(so Copilot generates consistent class names)
+
+/UI/MainForm.cs
+/UI/Pages/GenerateLicensePage.cs
+/UI/Pages/LicenseRecordsPage.cs
+/UI/Pages/LicenseDetailsPage.cs
+/UI/Pages/ManageProductPage.cs
+/UI/Pages/ManageUserPage.cs
+/UI/Pages/ClientLicenseEntryControl.cs   // DLL project
+/UI/Pages/ClientLicenseInfoControl.cs    // DLL project

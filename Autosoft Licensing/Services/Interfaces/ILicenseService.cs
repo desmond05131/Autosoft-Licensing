@@ -12,7 +12,8 @@ namespace Autosoft_Licensing.Services
         string GenerateAsl(LicenseData data, byte[] key, byte[] iv);
 
         // Activate (persist license & modules) returns metadata
-        LicenseMetadata Activate(LicenseData data, int? importedByUserId);
+        // If rawAslBase64 is provided and CryptoConstants.StoreRawFiles==true it will be persisted.
+        LicenseMetadata Activate(LicenseData data, string rawAslBase64 = null, int? importedByUserId = null);
 
         // Utility validation result
         ValidationResult ValidateLicenseData(LicenseData data);
