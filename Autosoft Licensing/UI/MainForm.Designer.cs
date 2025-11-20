@@ -31,10 +31,7 @@ namespace Autosoft_Licensing
 
         }
 
-        // Add this method to fix CS1061
-        private void MainForm_Load(object sender, EventArgs e)
-        {
-            // You can add initialization code here if needed
-        }
+        // NOTE: Do NOT add another MainForm_Load here — the runtime handler is implemented
+        // in MainForm.Navigation.cs so the designer can remain stable.
     }
 }

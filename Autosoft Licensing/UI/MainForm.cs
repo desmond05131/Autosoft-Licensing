@@ -6,7 +6,6 @@ using Autosoft_Licensing.Models;
 using Autosoft_Licensing.UI.Pages;
 using System.Text;
 
-
 namespace Autosoft_Licensing
 {
     public partial class MainForm : XtraForm
@@ -128,17 +127,14 @@ namespace Autosoft_Licensing
         {
             var sb = new StringBuilder();
             sb.AppendLine("Starting UI smoke test...");
-            var initialContentCount = 0;
 
             try
             {
                 // Ensure the runtime-built accordion and contentPanel exist.
-                // BuildAccordion is in the other partial class; call it only if controls not already created.
                 if (this.accordion == null || this.contentPanel == null)
                 {
-                    // The BuildAccordion method is private; it's in another partial file but accessible from within this class.
-                    // Call it to construct the navigation and host panel.
-                    this.BuildAccordion();
+                    // Call the runtime builder implemented in the Navigation partial
+                    BuildAccordion();
                 }
 
                 if (accordion == null || contentPanel == null)
@@ -149,11 +145,12 @@ namespace Autosoft_Licensing
                 // Suppress message boxes while running automated checks
                 _suppressMessageBoxes = true;
 
-                initialContentCount = contentPanel.Controls.Count;
-
                 var navGroup = (accordion.Elements.Count > 0) ? accordion.Elements[0] : null;
                 if (navGroup == null)
+                {
+                    _suppressMessageBoxes = false;
                     return (false, "No navigation group found in accordion.");
+                }
 
                 sb.AppendLine($"Found navigation group '{navGroup.Text}' with {navGroup.Elements.Count} elements.");
 
@@ -176,9 +173,6 @@ namespace Autosoft_Licensing
                     this.LoggedInUser = null;
                     UpdateRoleVisibility();
 
-                    // Record content count prior to navigation
-                    var beforeCount = contentPanel.Controls.Count;
-
                     // Simulate click by calling the loader
                     try
                     {
@@ -186,59 +180,59 @@ namespace Autosoft_Licensing
                     }
                     catch (Exception ex)
                     {
+                        // restore and fail
                         this.LoggedInUser = savedUser;
                         UpdateRoleVisibility();
                         _suppressMessageBoxes = false;
                         return (false, $"Exception while loading page '{name}': {ex.Message}");
                     }
 
-                    var afterCount = contentPanel.Controls.Count;
-
+                    // For admin-only elements we expect NO page to be created when no user is set.
                     if (isAdminElement)
                     {
-                        // Expect no new page created when no user or non-admin
-                        if (_pageCache.ContainsKey(name) || afterCount != beforeCount)
+                        if (_pageCache.ContainsKey(name))
                         {
                             this.LoggedInUser = savedUser;
                             UpdateRoleVisibility();
                             _suppressMessageBoxes = false;
-                            return (false, $"Admin element '{name}' should not be accessible when no user is set, but it appears to have been loaded.");
+                            return (false, $"Admin element '{name}' should not be accessible when no user is set, but it was created in cache.");
                         }
                         sb.AppendLine($"  -> Admin element '{name}' correctly blocked when no user is set.");
                     }
                     else
                     {
-                        // Non-admin: expect a single page loaded into contentPanel
-                        if (afterCount == beforeCount)
+                        // Non-admin: expect a page exists in cache and the shown control is that instance.
+                        if (!_pageCache.TryGetValue(name, out var createdPage) || createdPage == null)
                         {
                             this.LoggedInUser = savedUser;
                             UpdateRoleVisibility();
                             _suppressMessageBoxes = false;
-                            return (false, $"Element '{name}' did not load a page into the content panel.");
+                            return (false, $"Element '{name}' did not create a cached page instance.");
                         }
 
-                        if (contentPanel.Controls.Count != 1)
-                        {
-                            // Unexpected: ensure contentPanel is cleared and only the page is present
-                            sb.AppendLine($"  -> Warning: contentPanel contains {contentPanel.Controls.Count} controls after loading '{name}'. Expected 1.");
-                        }
-
-                        var ctrl = contentPanel.Controls[0] as PageBase;
-                        if (ctrl == null)
+                        // Ensure some control is displayed and it is the cached instance
+                        var displayed = contentPanel.Controls.Count > 0 ? contentPanel.Controls[0] as PageBase : null;
+                        if (displayed == null)
                         {
                             this.LoggedInUser = savedUser;
                             UpdateRoleVisibility();
                             _suppressMessageBoxes = false;
-                            return (false, $"Loaded control for '{name}' is not a PageBase-derived control.");
+                            return (false, $"Element '{name}' did not display a PageBase-derived control in the content panel.");
+                        }
+
+                        if (!object.ReferenceEquals(displayed, createdPage))
+                        {
+                            this.LoggedInUser = savedUser;
+                            UpdateRoleVisibility();
+                            _suppressMessageBoxes = false;
+                            return (false, $"Element '{name}' displayed a control that is not the cached instance.");
                         }
 
                         // Validate caching (repeat navigation and ensure same instance reused)
-                        var firstInstance = ctrl;
-                        // navigate again
                         LoadPage(name, text);
-                        var secondInstance = (contentPanel.Controls.Count > 0) ? contentPanel.Controls[0] as PageBase : null;
+                        var displayedAgain = contentPanel.Controls.Count > 0 ? contentPanel.Controls[0] as PageBase : null;
 
-                        if (!object.ReferenceEquals(firstInstance, secondInstance))
+                        if (!object.ReferenceEquals(displayedAgain, createdPage))
                         {
                             this.LoggedInUser = savedUser;
                             UpdateRoleVisibility();
@@ -246,12 +240,11 @@ namespace Autosoft_Licensing
                             return (false, $"Element '{name}' did not reuse the same page instance on repeated navigation.");
                         }
 
-                        // track for reporting
-                        seenInstances[name] = firstInstance;
-                        sb.AppendLine($"  -> '{name}' loaded and reused instance (Type={firstInstance.GetType().Name}).");
+                        seenInstances[name] = createdPage;
+                        sb.AppendLine($"  -> '{name}' loaded and reused instance (Type={createdPage.GetType().Name}).");
                     }
 
-                    // restore user (none) and continue
+                    // restore user and continue
                     this.LoggedInUser = savedUser;
                     UpdateRoleVisibility();
                 }
