@@ -1,145 +1,109 @@
-﻿using DevExpress.XtraBars.Navigation;
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Windows.Forms;
+using System.Drawing;
 using DevExpress.XtraEditors;
-using Autosoft_Licensing.UI.Pages;
 
-namespace Autosoft_Licensing
+namespace Autosoft_Licensing.UI.Pages
 {
-    // Keep runtime-only UI construction away from InitializeComponent so the designer can load.
-    partial class MainForm
+    // Runtime-only logic for LoginPage. Kept small so designer can load safely.
+    partial class LoginPage
     {
-        private void MainForm_Load(object sender, EventArgs e)
+        private void LoginPage_Load(object sender, EventArgs e)
         {
-            // Skip when the form is hosted by the designer
+            // Skip runtime-only initialization when hosted by the WinForms designer
             if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
                 return;
 
-            BuildAccordion();
-        }
-
-        private void BuildAccordion()
-        {
-            // Create and configure accordion (left)
-            this.accordion = new AccordionControl();
-            this.accordion.Dock = DockStyle.Left;
-            this.accordion.ViewType = AccordionControlViewType.HamburgerMenu;
-            this.accordion.Name = "accordion";
-            this.accordion.Width = 260;
-
-            AccordionControlElement navGroup = new AccordionControlElement
-            {
-                Text = "Navigation",
-                Name = "aceNavigation",
-                Expanded = true
-            };
-
-            AccordionControlElement aceDashboard = new AccordionControlElement { Text = "Dashboard", Style = ElementStyle.Item, Name = "aceDashboard" };
-            AccordionControlElement aceGenerateRequest = new AccordionControlElement { Text = "Generate Request", Style = ElementStyle.Item, Name = "aceGenerateRequest" };
-            AccordionControlElement aceRequestHistory = new AccordionControlElement { Text = "Request History", Style = ElementStyle.Item, Name = "aceRequestHistory" };
-            AccordionControlElement aceImportActivate = new AccordionControlElement { Text = "Import / Activate", Style = ElementStyle.Item, Name = "aceImportActivate" };
-            AccordionControlElement aceLicenseList = new AccordionControlElement { Text = "License List", Style = ElementStyle.Item, Name = "aceLicenseList" };
-            AccordionControlElement aceLicenseDetails = new AccordionControlElement { Text = "License Details", Style = ElementStyle.Item, Name = "aceLicenseDetails" };
-            AccordionControlElement aceUserManagement = new AccordionControlElement { Text = "User Management", Style = ElementStyle.Item, Name = "aceUserManagement" };
-            AccordionControlElement aceSettingsSecurity = new AccordionControlElement { Text = "Settings / Security", Style = ElementStyle.Item, Name = "aceSettingsSecurity" };
-
-            navGroup.Elements.AddRange(new AccordionControlElement[]
-            {
-                aceDashboard,
-                aceGenerateRequest,
-                aceRequestHistory,
-                aceImportActivate,
-                aceLicenseList,
-                aceLicenseDetails,
-                aceUserManagement,
-                aceSettingsSecurity
-            });
-
-            this.accordion.Elements.Add(navGroup);
-
-            // Create the right-side host panel for pages
-            this.contentPanel = new PanelControl();
-            this.contentPanel.Dock = DockStyle.Fill;
-            this.contentPanel.Name = "contentPanel";
-
-            // Add host panel and accordion to the form and ensure docking order (accordion at left, panel fills)
-            this.SuspendLayout();
-            this.Controls.Add(this.contentPanel);
-            this.Controls.Add(this.accordion);
-
-            // Ensure the accordion remains at z-order 0 so it docks left and panel fills remaining space
-            this.Controls.SetChildIndex(this.accordion, 0);
-            this.ResumeLayout(performLayout: false);
-
-            // Wire navigation clicks directly to loader
-            this.accordion.ElementClick += Accordion_ElementClick;
-
-            // Update role-based visibility (best-effort; SetLoggedInUser may be called later)
-            UpdateRoleVisibility();
-        }
-
-        private void Accordion_ElementClick(object sender, ElementClickEventArgs e)
-        {
-            if (e?.Element == null) return;
-
             try
             {
-                // direct call to the private loader in the same partial class
-                LoadPage(e.Element.Name, e.Element.Text);
+                // Ensure DevExpress global skin won't force override for these test runs.
+                DevExpress.LookAndFeel.UserLookAndFeel.Default.UseDefaultLookAndFeel = false;
+                DevExpress.LookAndFeel.UserLookAndFeel.Default.SkinName = string.Empty;
+
+                // Enforce colors and attach paint handlers that draw the exact colors
+                // (DevExpress skins sometimes paint over BackColor; custom paint guarantees color).
+                if (this.topStrip != null)
+                {
+                    this.topStrip.LookAndFeel.UseDefaultLookAndFeel = false;
+                    this.topStrip.Paint -= TopStrip_Paint;
+                    this.topStrip.Paint += TopStrip_Paint;
+                    this.topStrip.Refresh();
+                }
+
+                if (this.topBanner != null)
+                {
+                    this.topBanner.LookAndFeel.UseDefaultLookAndFeel = false;
+                    this.topBanner.Paint -= TopBanner_Paint;
+                    this.topBanner.Paint += TopBanner_Paint;
+                    this.topBanner.Refresh();
+                }
+
+                if (this.panelCenter != null)
+                {
+                    this.panelCenter.LookAndFeel.UseDefaultLookAndFeel = false;
+                    this.panelCenter.Paint -= PanelCenter_Paint;
+                    this.panelCenter.Paint += PanelCenter_Paint;
+                    this.panelCenter.Refresh();
+                }
+
+                if (this.btnLogin != null)
+                {
+                    this.btnLogin.LookAndFeel.UseDefaultLookAndFeel = false;
+                    this.btnLogin.Appearance.BackColor = Color.FromArgb(158, 173, 186);
+                    this.btnLogin.Appearance.Options.UseBackColor = true;
+                    this.btnLogin.Refresh();
+                }
+
+                // Re-center panel for the actual host size (keeps wireframe centering)
+                if (this.panelCenter != null)
+                {
+                    var parentWidth = this.ClientSize.Width;
+                    var parentHeight = this.ClientSize.Height;
+                    this.panelCenter.Left = (parentWidth - this.panelCenter.Width) / 2;
+                    this.panelCenter.Top = Math.Max(40, (parentHeight - this.panelCenter.Height) / 2);
+                }
             }
-            catch (Exception ex)
+            catch
             {
-                XtraMessageBox.Show("Failed to navigate: " + ex.Message, "Navigation error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                // Best-effort; do not throw from UI init.
             }
         }
 
-        /// <summary>
-        /// Helper to show a UserControl page inside the main content panel.
-        /// Clears the current content, docks the new page and calls InitializeForRole if available.
-        /// </summary>
-        /// <param name="page">UserControl to display</param>
-        public void ShowPage(UserControl page)
+        // Paint handlers draw exact colors regardless of DevExpress skinning.
+        private void TopStrip_Paint(object sender, PaintEventArgs e)
         {
-            if (page == null) return;
-            if (this.contentPanel == null) return;
-
-            this.contentPanel.Controls.Clear();
-            page.Dock = DockStyle.Fill;
-            this.contentPanel.Controls.Add(page);
-
-            // If page implements PageBase, call InitializeForRole when possible.
-            if (page is UI.Pages.PageBase pb)
+            // thin bluish-gray strip - wireframe color #CADCE6 (202,220,230)
+            using (var b = new SolidBrush(Color.FromArgb(202, 220, 230)))
             {
-                try
-                {
-                    pb.InitializeForRole(this.LoggedInUser);
-                }
-                catch
-                {
-                    // best-effort; do not crash the host
-                }
+                e.Graphics.FillRectangle(b, ((Control)sender).ClientRectangle);
             }
         }
 
-        /// <summary>
-        /// Navigate to the application's default landing page after login.
-        /// TODO: Replace direct constructor with DI/resolved instance when wiring services.
-        /// </summary>
-        public void NavigateToDefaultPage()
+        private void TopBanner_Paint(object sender, PaintEventArgs e)
         {
-            try
+            // pale yellow banner - wireframe color #FFF3D9 (255,243,217)
+            using (var b = new SolidBrush(Color.FromArgb(255, 243, 217)))
             {
-                // TODO: Replace with DI-created page (inject services required by GenerateLicensePage).
-                // Using GenerateLicensePage as default landing. If unavailable or requires parameters, replace with appropriate page.
-                var defaultPage = new GenerateLicensePage();
-                ShowPage(defaultPage);
+                e.Graphics.FillRectangle(b, ((Control)sender).ClientRectangle);
             }
-            catch (Exception ex)
+        }
+
+        private void PanelCenter_Paint(object sender, PaintEventArgs e)
+        {
+            // pure white inner panel
+            using (var b = new SolidBrush(Color.White))
             {
-                // If default page creation fails, show a placeholder so UI remains usable.
-                ShowPage(new UI.Pages.GenericPage("Home"));
-                // Log or surface the issue as needed (left as TODO).
+                e.Graphics.FillRectangle(b, ((Control)sender).ClientRectangle);
+            }
+
+            // draw subtle border similar to BorderStyles.Simple, using a light gray stroke
+            var rect = ((Control)sender).ClientRectangle;
+            rect.Width -= 1;
+            rect.Height -= 1;
+            using (var p = new Pen(Color.FromArgb(200, 200, 200)))
+            {
+                e.Graphics.DrawRectangle(p, rect);
             }
         }
     }

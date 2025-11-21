@@ -34,14 +34,25 @@ namespace Autosoft_Licensing.UI.Pages
     {
         public LoginPage()
         {
+            // Disable DevExpress default look-and-feel BEFORE control creation so skins cannot repaint over
+            // the Appearance/BackColor values set in the designer or by our paint handlers.
+            DevExpress.LookAndFeel.UserLookAndFeel.Default.UseDefaultLookAndFeel = false;
+            DevExpress.LookAndFeel.UserLookAndFeel.Default.SkinName = string.Empty;
+
             InitializeComponent();
 
             // Initial state
             lblError.Visible = false;
 
-            // Wire events (designer already sets btnLogin.Click to btnLogin_Click,
-            // but keep this here to be explicit in the skeleton)
-            btnLogin.Click += btnLogin_Click;
+            // Default username shown in wireframe
+            if (txtUsername != null)
+            {
+                txtUsername.Text = "ADMIN";
+            }
+
+            // Wire events explicitly (designer wires Load and others)
+            if (btnLogin != null)
+                btnLogin.Click += btnLogin_Click;
         }
 
         private void btnLogin_Click(object sender, EventArgs e)
@@ -51,7 +62,7 @@ namespace Autosoft_Licensing.UI.Pages
             var username = (txtUsername.Text ?? string.Empty).Trim();
             var password = (txtPassword.Text ?? string.Empty);
 
-            // Local validation
+            // Local validation: show friendly inline messages for missing fields.
             if (string.IsNullOrEmpty(username))
             {
                 lblError.Text = "Please enter username.";
@@ -68,55 +79,78 @@ namespace Autosoft_Licensing.UI.Pages
 
             try
             {
-                // TODO: Prefer constructor injection for IUserService instead of using ServiceRegistry directly.
+                // TODO: Replace ServiceRegistry usage with constructor-injected IUserService.
                 var userService = ServiceRegistry.User;
 
-                // Call into the IUserService to validate credentials.
-                // IUserService.ValidateCredentials should perform hashing checks and return bool.
-                var ok = userService.ValidateCredentials(username, password);
+                // Call into IUserService. This method is expected to perform proper hashing, salting, etc.
+                var authOk = userService.ValidateCredentials(username, password);
 
-                if (!ok)
+                if (!authOk)
                 {
+                    // Exact string required by UI guide for invalid credentials (local inline).
                     lblError.Text = "Invalid username or password.";
                     lblError.Visible = true;
                     return;
                 }
 
-                // On success, load user record from DB and set app-level context
-                // TODO: Replace with DI/context management (e.g., CurrentUserContext.Set(user))
+                // Load full user record and propagate to host (main form / context).
                 var user = ServiceRegistry.Database.GetUserByUsername(username);
+                if (user == null)
+                {
+                    // Unexpected: user validated but record not found. Surface generic failure.
+                    lblError.Text = "Login failed, contact admin.";
+                    lblError.Visible = true;
+                    return;
+                }
 
-                // If this control is hosted inside MainForm, propagate the logged-in user and navigate.
+                // Propagate authenticated user to the host MainForm and navigate to default page.
                 var parentForm = this.FindForm() as MainForm;
                 if (parentForm != null)
                 {
                     try
                     {
                         parentForm.SetLoggedInUser(user);
-                        // TODO: Replace with DI-based navigation call when available
+
+                        // Use the MainForm.NavigateToDefaultPage implemented in MainForm.cs
                         parentForm.NavigateToDefaultPage();
                     }
                     catch
                     {
-                        // swallow navigation exceptions and show friendly message
+                        // Surface a safe, generic message to the end user.
                         lblError.Text = "Login failed, contact admin.";
                         lblError.Visible = true;
                     }
                 }
                 else
                 {
-                    // Host not found; surface info and leave TODO for host integration.
+                    // Host not found (e.g., when hosted differently). Show friendly info and leave TODO.
                     lblError.Text = "Login succeeded but application host not found.";
                     lblError.Visible = true;
                 }
             }
             catch (Exception)
             {
-                // Do not reveal internal details to the user.
+                // Do not reveal internal details; show a safe, support-directed message.
                 lblError.Text = "Login failed, contact admin.";
                 lblError.Visible = true;
 
-                // TODO: Consider logging exception details to an application log (not shown in UI).
+                // TODO: log exception details using application logging (not shown in UI).
+            }
+        }
+
+        public override void InitializeForRole(User user)
+        {
+            // Login page doesn't gate by role: ensure controls are usable and clear transient state.
+            try
+            {
+                lblError.Visible = false;
+                if (txtUsername != null) txtUsername.Enabled = true;
+                if (txtPassword != null) txtPassword.Enabled = true;
+                if (btnLogin != null) btnLogin.Enabled = true;
+            }
+            catch
+            {
+                // best-effort; do not throw from initialization
             }
         }
     }

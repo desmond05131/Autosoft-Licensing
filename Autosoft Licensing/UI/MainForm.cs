@@ -35,6 +35,38 @@ namespace Autosoft_Licensing
         }
 
         /// <summary>
+        /// Navigate to a sensible default page for the current user (called after login).
+        /// Default strategy: pick the first navigation element the current user is allowed to access.
+        /// </summary>
+        public void NavigateToDefaultPage()
+        {
+            // Ensure runtime UI exists
+            if (this.accordion == null || this.contentPanel == null)
+            {
+                this.BuildAccordion();
+            }
+
+            var navGroup = (accordion != null && accordion.Elements.Count > 0) ? accordion.Elements[0] : null;
+            if (navGroup == null) return;
+
+            foreach (var el in navGroup.Elements)
+            {
+                if (el == null) continue;
+
+                // Skip admin-only items if current user is not admin
+                bool isAdminElement = string.Equals(el.Name, "aceUserManagement", StringComparison.OrdinalIgnoreCase)
+                                   || string.Equals(el.Name, "aceSettingsSecurity", StringComparison.OrdinalIgnoreCase);
+
+                if (isAdminElement && (LoggedInUser == null || !string.Equals(LoggedInUser.Role, "Admin", StringComparison.OrdinalIgnoreCase)))
+                    continue;
+
+                // Load first allowed page
+                LoadPage(el.Name, el.Text);
+                return;
+            }
+        }
+
+        /// <summary>
         /// Programmatic helper used by external hosts/tests to navigate to a named element.
         /// Uses the same loader as normal UI clicks. Safe no-op when element not found.
         /// </summary>
@@ -46,7 +78,7 @@ namespace Autosoft_Licensing
             // Ensure runtime UI exists
             if (this.accordion == null || this.contentPanel == null)
             {
-                BuildAccordion();
+                this.BuildAccordion();
             }
 
             // Find element by name under the first nav group

@@ -1,34 +1,49 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Windows.Forms;
 using DevExpress.XtraEditors;
-using Autosoft_Licensing.Services;
 using Autosoft_Licensing.Models;
 
 namespace Autosoft_Licensing.UI.Pages
 {
     /// <summary>
-    /// Base class for all page UserControls. Provides:
-    /// - transient message helpers (ShowInfo, ShowError)
-    /// - access to ServiceRegistry via Services property
-    /// - UTC / Local conversion helpers
-    /// - abstract InitializeForRole(User user) to enable/disable controls after load
+    /// Design-time safe base class for page UserControls.
+    /// Ensures the WinForms designer can load derived controls without requiring runtime-only services.
+    /// Keep this class minimal and avoid any static initialization or calls to ServiceRegistry in the constructor.
     /// </summary>
-    public abstract class PageBase : UserControl
+    [DesignerCategory("UserControl")]
+    public class PageBase : XtraUserControl
     {
-        protected PageBase()
+        public PageBase()
         {
+            // Protect design-time: any code that might access runtime-only services should be avoided here.
+            try
+            {
+                // When the designer instantiates this control, UsageMode will be Designtime.
+                // Keep constructor minimal and side-effect free.
+                if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
+                {
+                    this.Dock = DockStyle.Fill;
+                    return;
+                }
+            }
+            catch
+            {
+                // swallow any design-time exception to keep the designer stable
+                return;
+            }
+
+            // Normal runtime behaviour
             this.Dock = DockStyle.Fill;
         }
 
-        // Actually use the static ServiceRegistry class directly where needed:
-        // e.g. ServiceRegistry.License, ServiceRegistry.Database, etc.
-
         /// <summary>
         /// Show a transient informational message to the user.
+        /// Use PageBase.ShowInfo instead of calling XtraMessageBox directly from pages where possible.
         /// </summary>
         protected void ShowInfo(string message, string caption = "Info")
         {
-            XtraMessageBox.Show(message, caption, System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Information);
+            XtraMessageBox.Show(message, caption, MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         /// <summary>
@@ -36,7 +51,7 @@ namespace Autosoft_Licensing.UI.Pages
         /// </summary>
         protected void ShowError(string message, string caption = "Error")
         {
-            XtraMessageBox.Show(message, caption, System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+            XtraMessageBox.Show(message, caption, MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
         /// <summary>
@@ -59,7 +74,11 @@ namespace Autosoft_Licensing.UI.Pages
 
         /// <summary>
         /// Called by the host after the page is loaded/shown so the page can enable/disable controls by role.
+        /// Default implementation is a no-op; override in derived pages as needed.
         /// </summary>
-        public abstract void InitializeForRole(User user);
+        public virtual void InitializeForRole(User user)
+        {
+            // no-op by default
+        }
     }
 }

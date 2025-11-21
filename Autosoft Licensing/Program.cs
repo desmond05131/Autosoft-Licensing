@@ -5,6 +5,9 @@ using System.Configuration;
 using Autosoft_Licensing.Data;
 using Autosoft_Licensing.Services;
 using Autosoft_Licensing.Utils;
+using DevExpress.XtraEditors;
+using DevExpress.LookAndFeel;
+using Autosoft_Licensing.UI.Pages;
 
 namespace Autosoft_Licensing
 {
@@ -18,6 +21,7 @@ namespace Autosoft_Licensing
         /// - "--smoke-ui-visual" : show the MainForm so you can manually inspect and click pages
         /// - "--smoke-ui-demo" : show MainForm and automatically step through pages (visual demo)
         ///   add "--smoke-ui-demo-admin" to run demo with admin user set (shows admin items)
+        /// - "--show-login" : show only the LoginPage in a small host so you can verify runtime colors
         /// </summary>
         [STAThread]
         static void Main(string[] args)
@@ -71,6 +75,17 @@ namespace Autosoft_Licensing
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+
+            // If running the visual test, ensure global DevExpress look-and-feel is disabled so
+            // per-control BackColor values render exactly as set.
+            if (args != null && args.Any(a => string.Equals(a, "--show-login", StringComparison.OrdinalIgnoreCase)))
+            {
+                UserLookAndFeel.Default.UseDefaultLookAndFeel = false;
+                UserLookAndFeel.Default.SkinName = string.Empty;
+
+                Application.Run(CreateLoginTestForm());
+                return;
+            }
 
             // Visual smoke: open the real MainForm so user can manually click navigation
             if (args != null && args.Any(a => string.Equals(a, "--smoke-ui-visual", StringComparison.OrdinalIgnoreCase)))
@@ -164,6 +179,33 @@ namespace Autosoft_Licensing
 
             // Normal interactive run
             Application.Run(new MainForm());
+        }
+
+        /// <summary>
+        /// Build a small DevExpress XtraForm that hosts the LoginPage control for visual testing.
+        /// This method is only used by the "--show-login" test flag.
+        /// </summary>
+        private static XtraForm CreateLoginTestForm()
+        {
+            var form = new XtraForm
+            {
+                Text = "Login Visual Test",
+                StartPosition = FormStartPosition.CenterScreen,
+                Width = 1000,
+                Height = 760
+            };
+
+            // Create the login page and add to form
+            var login = new LoginPage();
+            login.Dock = DockStyle.Fill;
+
+            // Ensure the form has white background similar to wireframe
+            form.LookAndFeel.UseDefaultLookAndFeel = false;
+            form.BackColor = System.Drawing.Color.White;
+
+            form.Controls.Add(login);
+
+            return form;
         }
     }
 }
