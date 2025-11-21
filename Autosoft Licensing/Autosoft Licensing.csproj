@@ -196,6 +196,9 @@
     <Compile Include="UI\Pages\LoginPage.Designer.cs">
       <DependentUpon>LoginPage.cs</DependentUpon>
     </Compile>
+      <Compile Include="UI\Pages\LoginPage.Navigation.cs">
+        <DependentUpon>LoginPage.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\Pages\LoginPage.Navigation.cs">
       <SubType>Form</SubType>
     </Compile>
