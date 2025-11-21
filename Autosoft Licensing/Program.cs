@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Windows.Forms;
 using System.Configuration;
 using Autosoft_Licensing.Data;
@@ -11,16 +12,18 @@ namespace Autosoft_Licensing
     {
         /// <summary>
         /// The main entry point for the application.
-        /// Accepts an optional "--smoke" argument to run the non-UI smoke test and exit.
-        /// Added "--smoke-ui" to run the UI shell smoke test (programmatic, non-interactive).
+        /// Accepts:
+        /// - "--smoke" : non-UI smoke harness
+        /// - "--smoke-ui" : programmatic non-visual UI smoke (existing)
+        /// - "--smoke-ui-visual" : show the MainForm so you can manually inspect and click pages
+        /// - "--smoke-ui-demo" : show MainForm and automatically step through pages (visual demo)
+        ///   add "--smoke-ui-demo-admin" to run demo with admin user set (shows admin items)
         /// </summary>
         [STAThread]
         static void Main(string[] args)
         {
             // Composition root
-            // Initialize database using the convenience helper which constructs the SqlConnectionFactory
             ServiceRegistry.InitializeDatabase("LicensingDb");
-            // <--- set breakpoint here (or on the first line inside the DB quick-check try)
 
             try
             {
@@ -38,11 +41,11 @@ namespace Autosoft_Licensing
                 return;
             }
 
-            // Crypto quick-check: force reading and validation of configured key/IV
+            // Crypto quick-check
             try
             {
-                var key = CryptoConstants.AesKey; // will throw if missing/invalid
-                var iv = CryptoConstants.AesIV;   // will throw if missing/invalid
+                var key = CryptoConstants.AesKey;
+                var iv = CryptoConstants.AesIV;
 
                 if (key == null || key.Length == 0 || iv == null || iv.Length == 0)
                 {
@@ -66,12 +69,80 @@ namespace Autosoft_Licensing
                 return;
             }
 
-            // If invoked with --smoke-ui run the UI smoke test (programmatic, non-interactive) and exit with result shown to user.
-            if (args != null && Array.Exists(args, a => string.Equals(a, "--smoke-ui", StringComparison.OrdinalIgnoreCase)))
-            {
-                Application.EnableVisualStyles();
-                Application.SetCompatibleTextRenderingDefault(false);
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
 
+            // Visual smoke: open the real MainForm so user can manually click navigation
+            if (args != null && args.Any(a => string.Equals(a, "--smoke-ui-visual", StringComparison.OrdinalIgnoreCase)))
+            {
+                var mf = new MainForm();
+
+                // If the caller requested admin visibility for demo, set logged-in admin before showing.
+                if (args.Any(a => string.Equals(a, "--smoke-ui-visual-admin", StringComparison.OrdinalIgnoreCase)
+                               || string.Equals(a, "--smoke-ui-demo-admin", StringComparison.OrdinalIgnoreCase)))
+                {
+                    try
+                    {
+                        var admin = ServiceRegistry.Database.GetUserByUsername("admin");
+                        if (admin != null) mf.SetLoggedInUser(admin);
+                    }
+                    catch
+                    {
+                        // ignore: visual smoke should still show even if admin read failed
+                    }
+                }
+
+                // Show form and allow manual inspection/clicks. User closes when done.
+                Application.Run(mf);
+                return;
+            }
+
+            // Demo smoke: automatically step through each navigation element so you can watch pages render
+            if (args != null && args.Any(a => string.Equals(a, "--smoke-ui-demo", StringComparison.OrdinalIgnoreCase)))
+            {
+                var mf = new MainForm();
+
+                // Optionally set admin user to reveal admin items during demo
+                if (args.Any(a => string.Equals(a, "--smoke-ui-demo-admin", StringComparison.OrdinalIgnoreCase)))
+                {
+                    try
+                    {
+                        var admin = ServiceRegistry.Database.GetUserByUsername("admin");
+                        if (admin != null) mf.SetLoggedInUser(admin);
+                    }
+                    catch { }
+                }
+
+                // Use a timer to step through elements on the UI thread
+                mf.Shown += (s, e) =>
+                {
+                    var elements = mf.GetNavigationElements().ToArray();
+                    int idx = 0;
+                    var timer = new Timer { Interval = 800 }; // ms
+                    timer.Tick += (ts, te) =>
+                    {
+                        if (idx >= elements.Length)
+                        {
+                            timer.Stop();
+                            // Keep window open after demo so user can inspect; close automatically if you prefer:
+                            // mf.Close();
+                            return;
+                        }
+
+                        var name = elements[idx].Name;
+                        mf.NavigateToElement(name);
+                        idx++;
+                    };
+                    timer.Start();
+                };
+
+                Application.Run(mf);
+                return;
+            }
+
+            // Existing programmatic non-visual UI smoke
+            if (args != null && args.Any(a => string.Equals(a, "--smoke-ui", StringComparison.OrdinalIgnoreCase)))
+            {
                 var mf = new MainForm();
                 var result = mf.RunUiSmokeTest();
                 var caption = "UI Smoke test result";
@@ -80,8 +151,8 @@ namespace Autosoft_Licensing
                 return;
             }
 
-            // If invoked with --smoke run the non-UI smoke test harness and exit with result shown to user.
-            if (args != null && Array.Exists(args, a => string.Equals(a, "--smoke", StringComparison.OrdinalIgnoreCase)))
+            // Non-UI smoke harness
+            if (args != null && args.Any(a => string.Equals(a, "--smoke", StringComparison.OrdinalIgnoreCase)))
             {
                 var result = Tools.SmokeTestHarness.RunAll();
                 var caption = "Smoke test result";
@@ -91,8 +162,7 @@ namespace Autosoft_Licensing
                 return;
             }
 
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
+            // Normal interactive run
             Application.Run(new MainForm());
         }
     }

@@ -35,6 +35,62 @@ namespace Autosoft_Licensing
         }
 
         /// <summary>
+        /// Programmatic helper used by external hosts/tests to navigate to a named element.
+        /// Uses the same loader as normal UI clicks. Safe no-op when element not found.
+        /// </summary>
+        public void NavigateToElement(string elementName)
+        {
+            if (string.IsNullOrEmpty(elementName))
+                return;
+
+            // Ensure runtime UI exists
+            if (this.accordion == null || this.contentPanel == null)
+            {
+                BuildAccordion();
+            }
+
+            // Find element by name under the first nav group
+            var navGroup = (accordion.Elements.Count > 0) ? accordion.Elements[0] : null;
+            if (navGroup == null) return;
+
+            foreach (var el in navGroup.Elements)
+            {
+                if (el == null) continue;
+                if (string.Equals(el.Name, elementName, StringComparison.OrdinalIgnoreCase))
+                {
+                    // Call private loader
+                    LoadPage(el.Name, el.Text);
+                    return;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Programmatic helper to enumerate the navigation elements (Name, Text).
+        /// Used by smoke/demo flows to iterate navigation.
+        /// </summary>
+        public IReadOnlyList<(string Name, string Text)> GetNavigationElements()
+        {
+            var list = new List<(string, string)>();
+
+            if (this.accordion == null || this.contentPanel == null)
+            {
+                BuildAccordion();
+            }
+
+            var navGroup = (accordion.Elements.Count > 0) ? accordion.Elements[0] : null;
+            if (navGroup == null) return list;
+
+            foreach (var el in navGroup.Elements)
+            {
+                if (el == null) continue;
+                list.Add((el.Name ?? string.Empty, el.Text ?? string.Empty));
+            }
+
+            return list;
+        }
+
+        /// <summary>
         /// Load a page by navigation element name (elementName) and display text (for placeholder pages).
         /// Pages are cached so each page is a singleton instance.
         /// </summary>

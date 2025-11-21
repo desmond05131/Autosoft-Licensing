@@ -184,21 +184,28 @@
     <Compile Include="Services\Interfaces\ILicenseRequestService.cs" />
     <Compile Include="Services\Interfaces\ILicenseService.cs" />
     <Compile Include="Services\Interfaces\IValidationService.cs" />
-    <Compile Include="UI\Pages\DashboardPage.cs" />
-    <Compile Include="UI\Pages\GenerateLicenseRequestPage.cs" />
+    <Compile Include="UI\Pages\GenerateLicensePage.cs" />
     <Compile Include="UI\Pages\GenericPage.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="UI\Pages\ImportActivateLicensePage.cs" />
     <Compile Include="UI\Pages\LicenseRecordsDetailsPage.cs" />
     <Compile Include="UI\Pages\LicenseRecordsPage.cs" />
-    <Compile Include="UI\Pages\LoginPage.cs" />
+    <Compile Include="UI\Pages\LoginPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UI\Pages\LoginPage.Designer.cs">
+      <DependentUpon>LoginPage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\Pages\LoginPage.Navigation.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="UI\Pages\ManageProductPage.cs" />
     <Compile Include="UI\Pages\ManageUserPage.cs" />
     <Compile Include="UI\Pages\PageBase.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="UI\Pages\PageHostControl.cs" />
+    <Compile Include="UI\Pages\PreviewLicense.cs" />
     <Compile Include="UI\Pages\ProductDetailsPage.cs" />
     <Compile Include="UI\Pages\UserDetailsPage.cs" />
     <Compile Include="Utils\JsonHelper.cs" />
