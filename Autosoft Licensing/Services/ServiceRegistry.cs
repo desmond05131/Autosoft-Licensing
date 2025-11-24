@@ -44,5 +44,15 @@ namespace Autosoft_Licensing.Services
         // Facade used by the plugin to validate license at AutoCount login
         public static ILicenseValidationFacade LicenseValidation =>
             new LicenseValidationFacade(Database, Clock);
+
+        // --- New lazy-backed services (TASK #5) ---
+        private static IProductService _product;
+        public static IProductService Product => _product ??= new ProductService(Database);
+
+        private static ILicenseKeyGenerator _keyGen;
+        public static ILicenseKeyGenerator KeyGenerator => _keyGen ??= new LicenseKeyGenerator(Database);
+
+        private static IAslGeneratorService _aslGen;
+        public static IAslGeneratorService AslGenerator => _aslGen ??= new AslGeneratorService(License, File, KeyGenerator, Validation);
     }
 }

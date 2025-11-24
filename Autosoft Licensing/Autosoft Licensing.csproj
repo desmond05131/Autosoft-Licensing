@@ -56,11 +56,22 @@
     <Reference Include="Dapper, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Dapper.2.1.66\lib\net461\Dapper.dll</HintPath>
     </Reference>
+    <Reference Include="DevExpress.Dashboard.v22.2.Web, Version=22.2.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
+    <Reference Include="DevExpress.Web.v22.2, Version=22.2.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
     <Reference Include="DevExpress.Xpf.Accordion.v22.2, Version=22.2.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
     <Reference Include="DevExpress.Xpf.NavBar.v22.2, Version=22.2.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
     <Reference Include="DevExpress.XtraBars.v22.2, Version=22.2.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
+    <Reference Include="DevExpress.XtraGrid.v22.2, Version=22.2.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
     <Reference Include="DevExpress.XtraNavBar.v22.2, Version=22.2.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
     <Reference Include="DevExpress.XtraWizard.v22.2, Version=22.2.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.Analytics.UnitTest, Version=10.2.0.0, Culture=neutral, PublicKeyToken=f300afd708cefcd3, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.VisualStudio.TestTools.UITest.Extension, Version=17.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="MSTest.TestFramework, Version=4.0.2.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\MSTest.TestFramework.4.0.2\lib\net462\MSTest.TestFramework.dll</HintPath>
+    </Reference>
+    <Reference Include="MSTest.TestFramework.Extensions, Version=4.0.2.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\MSTest.TestFramework.4.0.2\lib\net462\MSTest.TestFramework.Extensions.dll</HintPath>
+    </Reference>
     <Reference Include="PresentationFramework" />
     <!-- DataAnnotations assembly needed for ValidationResult, Required, MinLength, etc. -->
     <Reference Include="System.ComponentModel.DataAnnotations" />
@@ -149,9 +160,18 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Data\LicensingDbContext.cs" />
+    <Compile Include="Models\ModuleDto.cs" />
+    <Compile Include="Services\Impl\AslGeneratorService.cs" />
+    <Compile Include="Services\Impl\LicenseKeyGenerator.cs" />
+    <Compile Include="Services\Impl\ProductService.cs" />
     <Compile Include="Services\Impl\UserService.cs" />
+    <Compile Include="Services\Interfaces\IAslGeneratorService.cs" />
+    <Compile Include="Services\Interfaces\ILicenseKeyGenerator.cs" />
+    <Compile Include="Services\Interfaces\IProductService.cs" />
     <Compile Include="Services\Interfaces\IUserService.cs" />
     <Compile Include="Tools\AslTestHelper.cs" />
+    <Compile Include="Tools\LicenseKeyGeneratorTests.cs" />
+    <Compile Include="Tools\LicenseRequestServiceTest.cs" />
     <Compile Include="Tools\SmokeTestHarness.cs" />
     <Compile Include="UI\HostFactory.cs" />
     <Compile Include="UI\MainForm.cs">
@@ -184,7 +204,12 @@
     <Compile Include="Services\Interfaces\ILicenseRequestService.cs" />
     <Compile Include="Services\Interfaces\ILicenseService.cs" />
     <Compile Include="Services\Interfaces\IValidationService.cs" />
-    <Compile Include="UI\Pages\GenerateLicensePage.cs" />
+    <Compile Include="UI\Pages\GenerateLicensePage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UI\Pages\GenerateLicensePage.Designer.cs">
+      <DependentUpon>GenerateLicensePage.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\Pages\GenericPage.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -199,9 +224,6 @@
     <Compile Include="UI\Pages\LoginPage.Navigation.cs">
       <DependentUpon>LoginPage.cs</DependentUpon>
       <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="UI\Pages\LoginPage.Navigation.cs">
-      <SubType>Form</SubType>
     </Compile>
     <Compile Include="UI\Pages\ManageProductPage.cs" />
     <Compile Include="UI\Pages\ManageUserPage.cs" />
@@ -225,6 +247,9 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <EmbeddedResource Include="UI\Pages\GenerateLicensePage.resx">
+      <DependentUpon>GenerateLicensePage.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="UI\Pages\LoginPage.resx">
       <DependentUpon>LoginPage.cs</DependentUpon>
     </EmbeddedResource>
@@ -250,6 +275,7 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\System.ValueTuple.4.6.1\build\net471\System.ValueTuple.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\System.ValueTuple.4.6.1\build\net471\System.ValueTuple.targets'))" />
+    <Error Condition="!Exists('..\packages\MSTest.TestFramework.4.0.2\build\net462\MSTest.TestFramework.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\MSTest.TestFramework.4.0.2\build\net462\MSTest.TestFramework.targets'))" />
   </Target>
   <ItemGroup>
     <EmbeddedResource Include="UI\MainForm.resx">
@@ -290,4 +316,9 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup>
+    <Analyzer Include="..\packages\MSTest.Analyzers.4.0.2\analyzers\dotnet\cs\MSTest.Analyzers.CodeFixes.dll" />
+    <Analyzer Include="..\packages\MSTest.Analyzers.4.0.2\analyzers\dotnet\cs\MSTest.Analyzers.dll" />
+  </ItemGroup>
+  <Import Project="..\packages\MSTest.TestFramework.4.0.2\build\net462\MSTest.TestFramework.targets" Condition="Exists('..\packages\MSTest.TestFramework.4.0.2\build\net462\MSTest.TestFramework.targets')" />
 </Project>

@@ -52,5 +52,11 @@ namespace Autosoft_Licensing.Services
         // Summary for validation
         bool TryGetLatestLicenseSummary(string productId, string companyName,
             out string licenseType, out DateTime validFromUtc, out DateTime validToUtc, out string status);
+
+        // New Methods
+        IEnumerable<ModuleDto> GetModulesForProduct(string productId);
+
+        // Duplicate check: exact-match on CompanyName + ProductID + ValidFromUtc + ValidToUtc
+        bool ExistsDuplicateLicense(string companyName, string productId, DateTime validFromUtc, DateTime validToUtc);
     }
 }

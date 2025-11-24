@@ -488,7 +488,7 @@ ORDER BY ImportedOnUtc DESC, Id DESC;", conn))
             using (var cmd = new SqlCommand(@"
 SELECT Id, CompanyName, ProductID, DealerCode, LicenseKey, LicenseType, ValidFromUtc, ValidToUtc, CurrencyCode, Status, ImportedOnUtc, ImportedByUserId, RawAslBase64
 FROM dbo.Licenses
-WHERE (@pid IS NULL OR ProductID = @pid)
+WHERE (@pid IS NULL OR PRODUCTID = @pid)
 ORDER BY ImportedOnUtc DESC, Id DESC;", conn))
             {
                 cmd.Parameters.AddWithValue("@pid", (object)productId ?? DBNull.Value);
@@ -590,14 +590,87 @@ VALUES (@lid, @mid);", conn, tx);
             }
         }
 
+        // New methods required by ILicenseDatabaseService
+        public IEnumerable<ModuleDto> GetModulesForProduct(string productId)
+        {
+            var list = new List<ModuleDto>();
+            try
+            {
+                using var conn = _factory.Create();
+                using var cmd = new SqlCommand(@"
+SELECT m.ModuleCode, m.Name
+FROM dbo.Modules m
+JOIN dbo.Products p ON p.Id = m.ProductId
+WHERE p.ProductID = @pid
+ORDER BY m.ModuleCode;", conn);
+                cmd.Parameters.AddWithValue("@pid", (object)productId ?? DBNull.Value);
+                conn.Open();
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                {
+                    list.Add(new ModuleDto
+                    {
+                        ModuleCode = r.GetString(0),
+                        ModuleName = r.IsDBNull(1) ? null : r.GetString(1)
+                    });
+                }
+            }
+            catch
+            {
+                // Fail safely: do not leak DB errors to UI. TODO: log exception.
+                return new List<ModuleDto>();
+            }
+            return list;
+        }
+
+        /// <summary>
+        /// ExistsDuplicateLicense: exact-match check per spec.
+        /// Returns true if a license record already exists with the same CompanyName, ProductID, ValidFromUtc and ValidToUtc.
+        /// Uses parameterized SQL and fails safely (returns false) on any DB error.
+        /// </summary>
+        public bool ExistsDuplicateLicense(string companyName, string productId, DateTime validFromUtc, DateTime validToUtc)
+        {
+            try
+            {
+                using var conn = _factory.Create();
+                using var cmd = new SqlCommand(@"
+SELECT TOP(1) 1
+FROM dbo.Licenses
+WHERE ProductID = @pid
+  AND CompanyName = @cn
+  AND ValidFromUtc = @vf
+  AND ValidToUtc = @vt;", conn);
+                cmd.Parameters.AddWithValue("@pid", productId ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@cn", companyName ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@vf", validFromUtc);
+                cmd.Parameters.AddWithValue("@vt", validToUtc);
+                conn.Open();
+                var val = cmd.ExecuteScalar();
+                return val != null;
+            }
+            catch
+            {
+                // Fail safely: do not leak DB exceptions to UI. TODO: log exception.
+                return false;
+            }
+        }
+
         public bool LicenseKeyExists(string licenseKey)
         {
-            using var conn = _factory.Create();
-            using var cmd = new SqlCommand("SELECT TOP(1) 1 FROM dbo.Licenses WHERE LicenseKey = @k;", conn);
-            cmd.Parameters.AddWithValue("@k", licenseKey);
-            conn.Open();
-            var val = cmd.ExecuteScalar();
-            return val != null;
+            try
+            {
+                using var conn = _factory.Create();
+                using var cmd = new SqlCommand("SELECT TOP(1) 1 FROM dbo.Licenses WHERE LicenseKey = @k;", conn);
+                cmd.Parameters.AddWithValue("@k", (object)licenseKey ?? DBNull.Value);
+                conn.Open();
+                var val = cmd.ExecuteScalar();
+                return val != null;
+            }
+            catch
+            {
+                // Fail safely: on DB error assume key does not exist to avoid blocking generation; TODO: log exception.
+                return false;
+            }
         }
 
         public void UpdateLicenseStatus(int licenseId, string status)

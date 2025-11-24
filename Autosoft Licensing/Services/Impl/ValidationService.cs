@@ -19,7 +19,7 @@ namespace Autosoft_Licensing.Services
             if (r.LicenseType == LicenseType.Demo && r.RequestedPeriodMonths != 1)
                 return new ValidationResult("Demo license must request 1 month.");
 
-            if (r.LicenseType == LicenseType.Paid)
+            if (r.LicenseType == LicenseType.Subscription)
             {
                 var allowed = new[] { 3, 6, 12, 24 };
                 if (!allowed.Contains(r.RequestedPeriodMonths))
