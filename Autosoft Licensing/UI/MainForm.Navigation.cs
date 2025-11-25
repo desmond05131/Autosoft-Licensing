@@ -3,6 +3,7 @@ using System;
 using System.ComponentModel;
 using System.Windows.Forms;
 using DevExpress.XtraEditors;
+using Autosoft_Licensing.UI.Pages;
 
 namespace Autosoft_Licensing
 {
@@ -91,6 +92,50 @@ namespace Autosoft_Licensing
             {
                 XtraMessageBox.Show("Failed to navigate: " + ex.Message, "Navigation error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        /// <summary>
+        /// Replace the content panel with the provided page instance.
+        /// Exposed so pages or external callers may show ad-hoc pages.
+        /// This helper is intentionally lightweight and catches exceptions to avoid crashing the host.
+        /// TODO: Consider centralizing page creation and DI wiring in a page factory.
+        /// </summary>
+        public void ShowPage(UserControl page)
+        {
+            if (page == null) return;
+
+            if (this.contentPanel == null)
+            {
+                // Ensure runtime accordion/content built
+                BuildAccordion();
+            }
+
+            try
+            {
+                contentPanel.Controls.Clear();
+                page.Dock = DockStyle.Fill;
+                contentPanel.Controls.Add(page);
+            }
+            catch
+            {
+                // best-effort: swallow exceptions to not crash host
+            }
+        }
+
+        /// <summary>
+        /// Convenience helper to navigate to the Generate License page using the internal loader.
+        /// This method constructs a page instance; the real host should inject services into the page's Initialize(...) method.
+        /// TODO: Wire actual services from ServiceRegistry or IoC container here (do not hard-code in production).
+        /// </summary>
+        public void NavigateToGenerateLicensePage()
+        {
+            // Create page instance
+            var page = new GenerateLicensePage();
+
+            // TODO: inject real services before showing the page, for example:
+            // page.Initialize(ServiceRegistry.LicenseRequest, ServiceRegistry.AslGenerator, ServiceRegistry.Product, ServiceRegistry.Database, ServiceRegistry.User);
+            // For now show skeleton page (Initialize must be called by host to make page functional).
+            ShowPage(page);
         }
     }
 }

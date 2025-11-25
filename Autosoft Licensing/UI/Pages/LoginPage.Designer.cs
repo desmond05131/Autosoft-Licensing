@@ -73,7 +73,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.topStrip.Location = new System.Drawing.Point(0, 0);
             this.topStrip.LookAndFeel.UseDefaultLookAndFeel = false;
             this.topStrip.Name = "topStrip";
-            this.topStrip.Size = new System.Drawing.Size(1083, 12);
+            this.topStrip.Size = new System.Drawing.Size(873, 12);
             this.topStrip.TabIndex = 2;
             // 
             // topBanner
@@ -87,7 +87,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.topBanner.LookAndFeel.UseDefaultLookAndFeel = false;
             this.topBanner.Name = "topBanner";
             this.topBanner.Padding = new System.Windows.Forms.Padding(14, 10, 8, 10);
-            this.topBanner.Size = new System.Drawing.Size(1083, 52);
+            this.topBanner.Size = new System.Drawing.Size(873, 52);
             this.topBanner.TabIndex = 1;
             this.topBanner.Paint += new System.Windows.Forms.PaintEventHandler(this.TopBanner_Paint);
             // 
@@ -117,7 +117,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.panelCenter.Controls.Add(this.txtPassword);
             this.panelCenter.Controls.Add(this.btnLogin);
             this.panelCenter.Controls.Add(this.lblError);
-            this.panelCenter.Location = new System.Drawing.Point(261, 107);
+            this.panelCenter.Location = new System.Drawing.Point(156, 51);
             this.panelCenter.LookAndFeel.UseDefaultLookAndFeel = false;
             this.panelCenter.Name = "panelCenter";
             this.panelCenter.Padding = new System.Windows.Forms.Padding(32);
@@ -212,7 +212,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.Controls.Add(this.topBanner);
             this.Controls.Add(this.topStrip);
             this.Name = "LoginPage";
-            this.Size = new System.Drawing.Size(1083, 634);
+            this.Size = new System.Drawing.Size(873, 522);
             this.Load += new System.EventHandler(this.LoginPage_Load);
             ((System.ComponentModel.ISupportInitialize)(this.topStrip)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.topBanner)).EndInit();

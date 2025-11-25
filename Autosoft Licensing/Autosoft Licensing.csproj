@@ -62,6 +62,7 @@
     <Reference Include="DevExpress.Xpf.NavBar.v22.2, Version=22.2.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
     <Reference Include="DevExpress.XtraBars.v22.2, Version=22.2.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
     <Reference Include="DevExpress.XtraGrid.v22.2, Version=22.2.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
+    <Reference Include="DevExpress.XtraLayout.v22.2, Version=22.2.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
     <Reference Include="DevExpress.XtraNavBar.v22.2, Version=22.2.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
     <Reference Include="DevExpress.XtraWizard.v22.2, Version=22.2.7.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL" />
     <Reference Include="Microsoft.Analytics.UnitTest, Version=10.2.0.0, Culture=neutral, PublicKeyToken=f300afd708cefcd3, processorArchitecture=MSIL" />
@@ -160,11 +161,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Data\LicensingDbContext.cs" />
+    <Compile Include="Models\ArlAslDto.cs" />
     <Compile Include="Models\ModuleDto.cs" />
+    <Compile Include="Services\Impl\ArlReaderService.cs" />
     <Compile Include="Services\Impl\AslGeneratorService.cs" />
     <Compile Include="Services\Impl\LicenseKeyGenerator.cs" />
     <Compile Include="Services\Impl\ProductService.cs" />
     <Compile Include="Services\Impl\UserService.cs" />
+    <Compile Include="Services\Interfaces\IArlReaderService.cs" />
     <Compile Include="Services\Interfaces\IAslGeneratorService.cs" />
     <Compile Include="Services\Interfaces\ILicenseKeyGenerator.cs" />
     <Compile Include="Services\Interfaces\IProductService.cs" />
@@ -210,6 +214,9 @@
     <Compile Include="UI\Pages\GenerateLicensePage.Designer.cs">
       <DependentUpon>GenerateLicensePage.cs</DependentUpon>
     </Compile>
+    <Compile Include="UI\Pages\GenerateLicensePage.Navigation.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Include="UI\Pages\GenericPage.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -232,6 +239,12 @@
     </Compile>
     <Compile Include="UI\Pages\PageHostControl.cs" />
     <Compile Include="UI\Pages\PreviewLicense.cs" />
+    <Compile Include="UI\Pages\PreviewLicenseForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\Pages\PreviewLicenseForm.Designer.cs">
+      <DependentUpon>PreviewLicenseForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\Pages\ProductDetailsPage.cs" />
     <Compile Include="UI\Pages\UserDetailsPage.cs" />
     <Compile Include="Utils\JsonHelper.cs" />
@@ -252,6 +265,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="UI\Pages\LoginPage.resx">
       <DependentUpon>LoginPage.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\Pages\PreviewLicenseForm.resx">
+      <DependentUpon>PreviewLicenseForm.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="App.config" />
     <None Include="packages.config" />
@@ -299,6 +315,10 @@
     <Compile Include="Services\Interfaces\ILicenseDatabaseService.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Assets\generate.png" />
+    <Content Include="Assets\product.png" />
+    <Content Include="Assets\records.png" />
+    <Content Include="Assets\user.png" />
     <Content Include="AutosoftLicensing.txt" />
     <Content Include="Database\Schema.sql" />
     <Content Include="Database\Seed.sql" />
@@ -315,6 +335,12 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <!-- Add or update this ItemGroup in the project file so PNG assets are treated as Content, not Compile -->
+  <ItemGroup>
+    <Content Include="Assets\**\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Analyzer Include="..\packages\MSTest.Analyzers.4.0.2\analyzers\dotnet\cs\MSTest.Analyzers.CodeFixes.dll" />

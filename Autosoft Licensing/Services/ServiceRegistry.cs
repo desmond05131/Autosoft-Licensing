@@ -1,7 +1,7 @@
 using Autosoft_Licensing.Utils;
 using Autosoft_Licensing.Data;
 using System;
-using Autosoft_Licensing.Services.Impl; // added for LicenseRequestService
+using Autosoft_Licensing.Services.Impl; // added for LicenseRequestService and adapters
 
 namespace Autosoft_Licensing.Services
 {
@@ -54,5 +54,9 @@ namespace Autosoft_Licensing.Services
 
         private static IAslGeneratorService _aslGen;
         public static IAslGeneratorService AslGenerator => _aslGen ??= new AslGeneratorService(License, File, KeyGenerator, Validation);
+
+        // ARL reader adapter (UI-friendly). Delegates to LicenseRequestService.
+        private static IArlReaderService _arlReader;
+        public static IArlReaderService ArlReader => _arlReader ??= new ArlReaderService(LicenseRequest);
     }
 }
