@@ -318,9 +318,13 @@
   <ItemGroup>
     <Content Include="Assets\exit.png" />
     <Content Include="Assets\generate.png" />
+    <Content Include="Assets\generate_clicked.png" />
     <Content Include="Assets\product.png" />
+    <Content Include="Assets\product_clicked.png" />
+    <Content Include="Assets\records-clicked.png" />
     <Content Include="Assets\records.png" />
     <Content Include="Assets\user.png" />
+    <Content Include="Assets\user_clicked.png" />
     <Content Include="AutosoftLicensing.txt" />
     <Content Include="Database\Schema.sql" />
     <Content Include="Database\Seed.sql" />

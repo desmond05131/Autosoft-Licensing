@@ -79,4 +79,18 @@
   <data name="Exit" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Assets\exit.png;System.Drawing.Bitmap, System.Drawing</value>
   </data>
+
+  <!-- Newly added clicked state assets -->
+  <data name="GenerateClicked" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Assets\generate_clicked.png;System.Drawing.Bitmap, System.Drawing</value>
+  </data>
+  <data name="RecordsClicked" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Assets\records-clicked.png;System.Drawing.Bitmap, System.Drawing</value>
+  </data>
+  <data name="ProductClicked" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Assets\product_clicked.png;System.Drawing.Bitmap, System.Drawing</value>
+  </data>
+  <data name="UserClicked" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Assets\user_clicked.png;System.Drawing.Bitmap, System.Drawing</value>
+  </data>
 </root>
