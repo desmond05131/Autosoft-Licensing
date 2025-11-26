@@ -1,81 +1,11 @@
-﻿
-
-//No rush — think carefully and match the wireframe visually and behaviorally.
-//Reference screenshot (visual target): C: \Users\User\Pictures\Screenshots\Screenshot 2025-11-24 170655.png
-//Goal: Adjust the GenerateLicensePage UI so it matches the wireframe exactly (layout, spacing, sizes, fonts, padding, and alignment). Use DevExpress controls where possible. You are fixing only the Designer/layout and minor view plumbing — do not change any backend logic.
-//Rules (must follow):
-//1.Use DevExpress LayoutControl(DevExpress.XtraLayout.LayoutControl) as the root layout container.
-//•	Replace any ad-hoc absolute positions with rows/columns in LayoutControl.
-//•	Use LayoutControlGroups and empty SpaceItems to precisely control spacing.
-//2.	Page sections and exact arrangement (left-to-right):
-//•	Top navigation row (full width): • Use DevExpress BarManager or simple horizontal PanelControl with four SimpleButtons:
-//•	btnNav_GenerateLicense(active, orange underline)
-//•	btnNav_LicenseRecords
-//•	btnNav_ManageProduct
-//•	btnNav_ManageUser • Style: font Segoe UI 10, padding 12; active tab: color #F07B22 underline 3px. • Icons: if no assets provided, use DevExpress built-in SVG icons (SvgImage property). If you must reference files, use placeholder path "Assets/generate.png" etc.
-//•	Below nav, left-to-right three panels with exact widths: • Info GroupControl(width ~40%): -Title "Info" - Fields vertically: Company Name(TextEdit full-width), Product ID(TextEdit smaller width under), Product Name(TextEdit full-width). -Labels aligned right of field captions as in wireframe. - Inner padding: 12px. • Types GroupControl(width ~20%): -Title "Types" - RadioGroup with 3 options stacked (Demo / Subscription / Permanent). - SpinEdit labeled "Months:" aligned below RadioGroup; hide / disable when Demo selected. • Modules GroupControl (width ~35%): -Title "Modules" - Use DevExpress CheckedListBoxControl or GridControl with RepositoryItemCheckEdit. - Must show vertical scroll bar when items exceed visible area. - Ensure group height equals Info/Types group height.
-//•	Under those groups, the date fields aligned left: • Issue Date(DateEdit) • Expire Date(DateEdit) • Put both on same column as Info group, left aligned with Info group inner padding.
-//•	Remarks: • A full-width MemoEdit under dates aligned with Info column (same left & right margins as Info).
-//•	Bottom row: • Left: readonly TextEdit txtLicenseKey(stretch full width from left margin to before buttons) • Right: 3 buttons horizontally aligned: btnGenerateLicenseKey, btnPreview, btnDownload. Buttons should be right-aligned and vertically centered with the txtLicenseKey control. • Button sizes: 140px × 32px, spacing 12px.
-//3.	Typography and colors:
-//•	Use Segoe UI for all labels and controls.
-//•	Field labels: 10pt, ForeColor #333333.
-//•	Big title / nav heading: 14pt bold.
-//•	GroupControl header background: light #F5F6F7 with border #D1D1D1.
-//•	Buttons: use DevExpress style, primary grey for action, primary blue for active if required.
-//4.	Margins & spacing (exact):
-//•	Outer page padding: 20px from form edge.
-//•	Gap between top nav and groups: 18px.
-//•	Horizontal gap between Info/Types/Modules groups: 24px.
-//•	Vertical gap between groups and Issue/Expire/Remarks: 18px.
-//•	Bottom gap before license key row: 20px.
-//5.Controls properties & names(must use these names so backend binding stays intact):
-//•	txtCompanyName(TextEdit, ReadOnly = true)
-//•	txtProductId(TextEdit, ReadOnly = true)
-//•	txtProductName(TextEdit, ReadOnly = true)
-//•	rgLicenseType(RadioGroup)
-//•	spnSubscriptionMonths(SpinEdit)
-//•	chkModules(CheckedListBoxControl) or grdModules(GridControl + viewModules)
-//•	dtIssueDate(DateEdit)
-//•	dtExpireDate(DateEdit)
-//•	memRemark(MemoEdit)
-//•	txtLicenseKey(TextEdit, ReadOnly = true)
-//•	btnGenerateLicenseKey(SimpleButton)
-//•	btnPreview(SimpleButton)
-//•	btnDownload(SimpleButton)
-//•	btnNav_GenerateLicense, btnNav_LicenseRecords, btnNav_ManageProduct, btnNav_ManageUser (SimpleButton / SvgImage)
-//6.	Visual details to correct from current state:
-//•	The Modules group in your screenshot is too large horizontally; reduce to ~35% width and align top with Info group header.
-//•	Types group needs the radio options centered vertically with the Months SpinEdit below (not left-flushed).
-//•	The Issue/Expire date fields must be aligned under Info group and not indented; set their Left constraint equal to Info group's left padding (use LayoutControlItem with ControlAlignment).
-//•	License Key textbox must stretch to left margin (same left as Info group) and end right before the buttons; ensure it is vertically aligned with the buttons.
-//•	The "Generate License Key" button must be visually primary (slightly darker border) and placed immediately to the right of txtLicenseKey; Preview then Download follow.
-//•	Add 3px orange underline under "Generate License" nav button to show active state.
-//7.	Accessibility & behavior:
-//•	Ensure TabOrder is logical: top nav → upload → Info fields → Types → Modules → dates → remark → license key → buttons.
-//•	Set Anchor/Dock: groups dock Top with fixed heights; modules fill vertical space.
-//•	Make controls DPI-aware (use LayoutControl to adapt).
-//8.	Use the reference screenshot (/mnt/data/3063181f-a3b5-478d-a081-1f766e7df742.png) as the authoritative visual. Adjust paddings, sizes and fonts until the page visually matches it. Output must be a Designer.cs update (and any small helper code if required for layout).
-//9.	If icons are missing, use DevExpress built-in SVG icons using ImageOptions.SvgImage = DevExpress.Utils.Svg.SvgImage.FromResources(...) or load placeholders from Assets/*.png.
-//Implementation note:
-//•	Keep all executable logic unchanged. This change is purely layout and style. Add // LAYOUT: adjusted to wireframe comments where you alter the Designer.
-//After completing the Designer changes, return only the updated Designer.cs code snippet (or the patch) and a short list of the exact property changes you made (sizes, paddings, names). Then stop and wait for review.
-
-
-
-
-// Designer partial for GenerateLicensePage
-// NOTE: kept intentionally minimal and designer-friendly.
-// Moved property-intensive initialization and event wiring into the code-behind constructor
-// to avoid designer parse-time null-reference issues.
-
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Drawing;
-using System.Windows.Forms;
-using System.IO;
 using DevExpress.XtraEditors;
-using DevExpress.XtraLayout;
+using DevExpress.XtraGrid;
+using DevExpress.XtraGrid.Views.Grid;
+using DevExpress.XtraEditors.Repository;
+using System.Windows.Forms; // Added: resolves DockStyle / AnchorStyles references
 
 namespace Autosoft_Licensing.UI.Pages
 {
@@ -83,32 +13,49 @@ namespace Autosoft_Licensing.UI.Pages
     {
         private IContainer components = null;
 
-        // Top navigation-ish buttons (visual parity with wireframe)
-        private SimpleButton btnNav_GenerateLicense;
-        private SimpleButton btnNav_LicenseRecords;
-        private SimpleButton btnNav_ManageProduct;
-        private SimpleButton btnNav_ManageUser;
+        // Header & nav
+        private PanelControl headerPanel;
+        private LabelControl lblHeaderTitle;
+        private SimpleButton btnLogout;
+        private PanelControl navPanel;
+        private PanelControl btnNav_GenerateLicense;
+        private PanelControl btnNav_LicenseRecords;
+        private PanelControl btnNav_ManageProduct;
+        private PanelControl btnNav_ManageUser;
+        private PictureEdit picNav_Generate;
+        private LabelControl lblNav_Generate;
+        private PictureEdit picNav_Records;
+        private LabelControl lblNav_Records;
+        private PictureEdit picNav_Product;
+        private LabelControl lblNav_Product;
+        private PictureEdit picNav_User;
+        private LabelControl lblNav_User;
 
+        // Upload
         private SimpleButton btnUploadArl;
 
         // Info group
         private GroupControl grpInfo;
-        private TextEdit txtCompanyName;
-        private TextEdit txtProductId;
-        private TextEdit txtProductName;
         private LabelControl lblCompanyName;
+        private TextEdit txtCompanyName;
         private LabelControl lblProductId;
+        private TextEdit txtProductId;
         private LabelControl lblProductName;
+        private TextEdit txtProductName;
 
         // Types group
         private GroupControl grpTypes;
         private RadioGroup rgLicenseType;
-        private SpinEdit numSubscriptionMonths;
         private LabelControl lblMonths;
+        private SpinEdit numSubscriptionMonths;
 
-        // Modules group (replaced GridControl with DevExpress CheckedListBoxControl)
+        // Modules group
         private GroupControl grpModules;
-        private CheckedListBoxControl chkModules;
+        private GridControl grdModules;
+        private GridView grdModulesView;
+        private DevExpress.XtraGrid.Columns.GridColumn colEnabled;
+        private RepositoryItemCheckEdit repositoryCheckEdit;
+        private DevExpress.XtraGrid.Columns.GridColumn colModuleName;
 
         // Dates & remark & key
         private LabelControl lblIssueDate;
@@ -126,28 +73,32 @@ namespace Autosoft_Licensing.UI.Pages
         private SimpleButton btnPreview;
         private SimpleButton btnDownload;
 
-        /// <summary> 
-        /// Clean up any resources being used.
-        /// </summary>
         protected override void Dispose(bool disposing)
         {
             if (disposing && (components != null))
-            {
                 components.Dispose();
-            }
             base.Dispose(disposing);
         }
 
-        /// <summary>
-        /// Minimal InitializeComponent to make the designer stable.
-        /// Heavy initialization (Properties.*, event wiring) is done in the code-behind constructor.
-        /// </summary>
         private void InitializeComponent()
         {
-            this.btnNav_GenerateLicense = new DevExpress.XtraEditors.SimpleButton();
-            this.btnNav_LicenseRecords = new DevExpress.XtraEditors.SimpleButton();
-            this.btnNav_ManageProduct = new DevExpress.XtraEditors.SimpleButton();
-            this.btnNav_ManageUser = new DevExpress.XtraEditors.SimpleButton();
+            this.headerPanel = new DevExpress.XtraEditors.PanelControl();
+            this.lblHeaderTitle = new DevExpress.XtraEditors.LabelControl();
+            this.btnLogout = new DevExpress.XtraEditors.SimpleButton();
+            this.navPanel = new DevExpress.XtraEditors.PanelControl();
+            this.btnNav_GenerateLicense = new DevExpress.XtraEditors.PanelControl();
+            this.picNav_Generate = new DevExpress.XtraEditors.PictureEdit();
+            this.lblNav_Generate = new DevExpress.XtraEditors.LabelControl();
+            this.underline = new DevExpress.XtraEditors.PanelControl();
+            this.btnNav_LicenseRecords = new DevExpress.XtraEditors.PanelControl();
+            this.picNav_Records = new DevExpress.XtraEditors.PictureEdit();
+            this.lblNav_Records = new DevExpress.XtraEditors.LabelControl();
+            this.btnNav_ManageProduct = new DevExpress.XtraEditors.PanelControl();
+            this.picNav_Product = new DevExpress.XtraEditors.PictureEdit();
+            this.lblNav_Product = new DevExpress.XtraEditors.LabelControl();
+            this.btnNav_ManageUser = new DevExpress.XtraEditors.PanelControl();
+            this.picNav_User = new DevExpress.XtraEditors.PictureEdit();
+            this.lblNav_User = new DevExpress.XtraEditors.LabelControl();
             this.btnUploadArl = new DevExpress.XtraEditors.SimpleButton();
             this.grpInfo = new DevExpress.XtraEditors.GroupControl();
             this.lblCompanyName = new DevExpress.XtraEditors.LabelControl();
@@ -161,7 +112,11 @@ namespace Autosoft_Licensing.UI.Pages
             this.lblMonths = new DevExpress.XtraEditors.LabelControl();
             this.numSubscriptionMonths = new DevExpress.XtraEditors.SpinEdit();
             this.grpModules = new DevExpress.XtraEditors.GroupControl();
-            this.chkModules = new DevExpress.XtraEditors.CheckedListBoxControl();
+            this.grdModules = new DevExpress.XtraGrid.GridControl();
+            this.grdModulesView = new DevExpress.XtraGrid.Views.Grid.GridView();
+            this.colEnabled = new DevExpress.XtraGrid.Columns.GridColumn();
+            this.repositoryCheckEdit = new DevExpress.XtraEditors.Repository.RepositoryItemCheckEdit();
+            this.colModuleName = new DevExpress.XtraGrid.Columns.GridColumn();
             this.lblIssueDate = new DevExpress.XtraEditors.LabelControl();
             this.dtIssueDate = new DevExpress.XtraEditors.DateEdit();
             this.lblExpireDate = new DevExpress.XtraEditors.LabelControl();
@@ -173,6 +128,23 @@ namespace Autosoft_Licensing.UI.Pages
             this.btnGenerateKey = new DevExpress.XtraEditors.SimpleButton();
             this.btnPreview = new DevExpress.XtraEditors.SimpleButton();
             this.btnDownload = new DevExpress.XtraEditors.SimpleButton();
+            ((System.ComponentModel.ISupportInitialize)(this.headerPanel)).BeginInit();
+            this.headerPanel.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.navPanel)).BeginInit();
+            this.navPanel.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.btnNav_GenerateLicense)).BeginInit();
+            this.btnNav_GenerateLicense.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.picNav_Generate.Properties)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.underline)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.btnNav_LicenseRecords)).BeginInit();
+            this.btnNav_LicenseRecords.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.picNav_Records.Properties)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.btnNav_ManageProduct)).BeginInit();
+            this.btnNav_ManageProduct.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.picNav_Product.Properties)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.btnNav_ManageUser)).BeginInit();
+            this.btnNav_ManageUser.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.picNav_User.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.grpInfo)).BeginInit();
             this.grpInfo.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.txtCompanyName.Properties)).BeginInit();
@@ -184,7 +156,9 @@ namespace Autosoft_Licensing.UI.Pages
             ((System.ComponentModel.ISupportInitialize)(this.numSubscriptionMonths.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.grpModules)).BeginInit();
             this.grpModules.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.chkModules)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.grdModules)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.grdModulesView)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.repositoryCheckEdit)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dtIssueDate.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dtIssueDate.Properties.CalendarTimeProperties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dtExpireDate.Properties)).BeginInit();
@@ -193,132 +167,294 @@ namespace Autosoft_Licensing.UI.Pages
             ((System.ComponentModel.ISupportInitialize)(this.txtLicenseKey.Properties)).BeginInit();
             this.SuspendLayout();
             // 
+            // headerPanel
+            // 
+            this.headerPanel.Appearance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(253)))), ((int)(((byte)(243)))), ((int)(((byte)(211)))));
+            this.headerPanel.Appearance.Options.UseBackColor = true;
+            this.headerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
+            this.headerPanel.Controls.Add(this.lblHeaderTitle);
+            this.headerPanel.Controls.Add(this.btnLogout);
+            this.headerPanel.Dock = System.Windows.Forms.DockStyle.Top;
+            this.headerPanel.Location = new System.Drawing.Point(0, 52);
+            this.headerPanel.LookAndFeel.Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat;
+            this.headerPanel.LookAndFeel.UseDefaultLookAndFeel = false;
+            this.headerPanel.Name = "headerPanel";
+            this.headerPanel.Size = new System.Drawing.Size(1147, 60);
+            this.headerPanel.TabIndex = 0;
+            // 
+            // lblHeaderTitle
+            // 
+            this.lblHeaderTitle.Appearance.Font = new System.Drawing.Font("Segoe UI", 14F, System.Drawing.FontStyle.Bold);
+            this.lblHeaderTitle.Appearance.Options.UseFont = true;
+            this.lblHeaderTitle.AutoSizeMode = DevExpress.XtraEditors.LabelAutoSizeMode.None;
+            this.lblHeaderTitle.Location = new System.Drawing.Point(18, 18);
+            this.lblHeaderTitle.Name = "lblHeaderTitle";
+            this.lblHeaderTitle.Size = new System.Drawing.Size(300, 28);
+            this.lblHeaderTitle.TabIndex = 0;
+            this.lblHeaderTitle.Text = "Autosoft Licensing";
+            // 
+            // btnLogout
+            // 
+            this.btnLogout.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnLogout.Appearance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(230)))), ((int)(((byte)(232)))), ((int)(((byte)(235)))));
+            this.btnLogout.Appearance.BorderColor = System.Drawing.Color.Gray;
+            this.btnLogout.Appearance.Options.UseBackColor = true;
+            this.btnLogout.Appearance.Options.UseBorderColor = true;
+            this.btnLogout.ImageOptions.Image = global::Autosoft_Licensing.Properties.Resources.Exit;
+            this.btnLogout.Location = new System.Drawing.Point(1942, 13);
+            this.btnLogout.LookAndFeel.UseDefaultLookAndFeel = false;
+            this.btnLogout.Name = "btnLogout";
+            this.btnLogout.Size = new System.Drawing.Size(110, 34);
+            this.btnLogout.TabIndex = 1;
+            this.btnLogout.Text = "Logout";
+            // 
+            // navPanel
+            // 
+            this.navPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
+            this.navPanel.Controls.Add(this.btnNav_GenerateLicense);
+            this.navPanel.Controls.Add(this.btnNav_LicenseRecords);
+            this.navPanel.Controls.Add(this.btnNav_ManageProduct);
+            this.navPanel.Controls.Add(this.btnNav_ManageUser);
+            this.navPanel.Dock = System.Windows.Forms.DockStyle.Top;
+            this.navPanel.Location = new System.Drawing.Point(0, 0);
+            this.navPanel.Name = "navPanel";
+            this.navPanel.Size = new System.Drawing.Size(1147, 52);
+            this.navPanel.TabIndex = 1;
+            // 
             // btnNav_GenerateLicense
             // 
-            this.btnNav_GenerateLicense.Location = new System.Drawing.Point(12, 12);
+            this.btnNav_GenerateLicense.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
+            this.btnNav_GenerateLicense.Controls.Add(this.picNav_Generate);
+            this.btnNav_GenerateLicense.Controls.Add(this.lblNav_Generate);
+            this.btnNav_GenerateLicense.Controls.Add(this.underline);
+            this.btnNav_GenerateLicense.Location = new System.Drawing.Point(12, 6);
             this.btnNav_GenerateLicense.Name = "btnNav_GenerateLicense";
-            this.btnNav_GenerateLicense.Size = new System.Drawing.Size(140, 28);
+            this.btnNav_GenerateLicense.Size = new System.Drawing.Size(180, 44);
             this.btnNav_GenerateLicense.TabIndex = 0;
-            this.btnNav_GenerateLicense.Text = "Generate License";
+            // 
+            // picNav_Generate
+            // 
+            this.picNav_Generate.EditValue = global::Autosoft_Licensing.Properties.Resources.Generate;
+            this.picNav_Generate.Location = new System.Drawing.Point(8, 6);
+            this.picNav_Generate.Name = "picNav_Generate";
+            this.picNav_Generate.Properties.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
+            this.picNav_Generate.Properties.ReadOnly = true;
+            this.picNav_Generate.Properties.SizeMode = DevExpress.XtraEditors.Controls.PictureSizeMode.Squeeze;
+            this.picNav_Generate.Size = new System.Drawing.Size(24, 24);
+            this.picNav_Generate.TabIndex = 0;
+            // 
+            // lblNav_Generate
+            // 
+            this.lblNav_Generate.Appearance.Font = new System.Drawing.Font("Segoe UI", 10F);
+            this.lblNav_Generate.Appearance.Options.UseFont = true;
+            this.lblNav_Generate.AutoSizeMode = DevExpress.XtraEditors.LabelAutoSizeMode.None;
+            this.lblNav_Generate.Location = new System.Drawing.Point(40, 8);
+            this.lblNav_Generate.Name = "lblNav_Generate";
+            this.lblNav_Generate.Size = new System.Drawing.Size(120, 28);
+            this.lblNav_Generate.TabIndex = 1;
+            this.lblNav_Generate.Text = "Generate License";
+            // 
+            // underline
+            // 
+            this.underline.Appearance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(153)))), ((int)(((byte)(51)))));
+            this.underline.Appearance.Options.UseBackColor = true;
+            this.underline.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
+            this.underline.Location = new System.Drawing.Point(20, 34);
+            this.underline.Name = "underline";
+            this.underline.Size = new System.Drawing.Size(140, 4);
+            this.underline.TabIndex = 2;
             // 
             // btnNav_LicenseRecords
             // 
-            this.btnNav_LicenseRecords.Location = new System.Drawing.Point(160, 12);
+            this.btnNav_LicenseRecords.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
+            this.btnNav_LicenseRecords.Controls.Add(this.picNav_Records);
+            this.btnNav_LicenseRecords.Controls.Add(this.lblNav_Records);
+            this.btnNav_LicenseRecords.Location = new System.Drawing.Point(206, 6);
             this.btnNav_LicenseRecords.Name = "btnNav_LicenseRecords";
-            this.btnNav_LicenseRecords.Size = new System.Drawing.Size(120, 28);
+            this.btnNav_LicenseRecords.Size = new System.Drawing.Size(150, 44);
             this.btnNav_LicenseRecords.TabIndex = 1;
-            this.btnNav_LicenseRecords.Text = "License Records";
+            // 
+            // picNav_Records
+            // 
+            this.picNav_Records.EditValue = global::Autosoft_Licensing.Properties.Resources.Records;
+            this.picNav_Records.Location = new System.Drawing.Point(8, 6);
+            this.picNav_Records.Name = "picNav_Records";
+            this.picNav_Records.Properties.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
+            this.picNav_Records.Properties.SizeMode = DevExpress.XtraEditors.Controls.PictureSizeMode.Squeeze;
+            this.picNav_Records.Size = new System.Drawing.Size(24, 24);
+            this.picNav_Records.TabIndex = 0;
+            // 
+            // lblNav_Records
+            // 
+            this.lblNav_Records.Appearance.Font = new System.Drawing.Font("Segoe UI", 10F);
+            this.lblNav_Records.Appearance.Options.UseFont = true;
+            this.lblNav_Records.AutoSizeMode = DevExpress.XtraEditors.LabelAutoSizeMode.None;
+            this.lblNav_Records.Location = new System.Drawing.Point(40, 8);
+            this.lblNav_Records.Name = "lblNav_Records";
+            this.lblNav_Records.Size = new System.Drawing.Size(110, 28);
+            this.lblNav_Records.TabIndex = 1;
+            this.lblNav_Records.Text = "License Records";
             // 
             // btnNav_ManageProduct
             // 
-            this.btnNav_ManageProduct.Location = new System.Drawing.Point(288, 12);
+            this.btnNav_ManageProduct.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
+            this.btnNav_ManageProduct.Controls.Add(this.picNav_Product);
+            this.btnNav_ManageProduct.Controls.Add(this.lblNav_Product);
+            this.btnNav_ManageProduct.Location = new System.Drawing.Point(366, 6);
             this.btnNav_ManageProduct.Name = "btnNav_ManageProduct";
-            this.btnNav_ManageProduct.Size = new System.Drawing.Size(120, 28);
+            this.btnNav_ManageProduct.Size = new System.Drawing.Size(150, 44);
             this.btnNav_ManageProduct.TabIndex = 2;
-            this.btnNav_ManageProduct.Text = "Manage Product";
+            // 
+            // picNav_Product
+            // 
+            this.picNav_Product.EditValue = global::Autosoft_Licensing.Properties.Resources.Product;
+            this.picNav_Product.Location = new System.Drawing.Point(8, 6);
+            this.picNav_Product.Name = "picNav_Product";
+            this.picNav_Product.Properties.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
+            this.picNav_Product.Properties.SizeMode = DevExpress.XtraEditors.Controls.PictureSizeMode.Squeeze;
+            this.picNav_Product.Size = new System.Drawing.Size(24, 24);
+            this.picNav_Product.TabIndex = 0;
+            // 
+            // lblNav_Product
+            // 
+            this.lblNav_Product.Appearance.Font = new System.Drawing.Font("Segoe UI", 10F);
+            this.lblNav_Product.Appearance.Options.UseFont = true;
+            this.lblNav_Product.AutoSizeMode = DevExpress.XtraEditors.LabelAutoSizeMode.None;
+            this.lblNav_Product.Location = new System.Drawing.Point(40, 8);
+            this.lblNav_Product.Name = "lblNav_Product";
+            this.lblNav_Product.Size = new System.Drawing.Size(110, 28);
+            this.lblNav_Product.TabIndex = 1;
+            this.lblNav_Product.Text = "Manage Product";
             // 
             // btnNav_ManageUser
             // 
-            this.btnNav_ManageUser.Location = new System.Drawing.Point(416, 12);
+            this.btnNav_ManageUser.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
+            this.btnNav_ManageUser.Controls.Add(this.picNav_User);
+            this.btnNav_ManageUser.Controls.Add(this.lblNav_User);
+            this.btnNav_ManageUser.Location = new System.Drawing.Point(526, 6);
             this.btnNav_ManageUser.Name = "btnNav_ManageUser";
-            this.btnNav_ManageUser.Size = new System.Drawing.Size(120, 28);
+            this.btnNav_ManageUser.Size = new System.Drawing.Size(150, 44);
             this.btnNav_ManageUser.TabIndex = 3;
-            this.btnNav_ManageUser.Text = "Manage User";
+            // 
+            // picNav_User
+            // 
+            this.picNav_User.EditValue = global::Autosoft_Licensing.Properties.Resources.User;
+            this.picNav_User.Location = new System.Drawing.Point(8, 6);
+            this.picNav_User.Name = "picNav_User";
+            this.picNav_User.Properties.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
+            this.picNav_User.Properties.SizeMode = DevExpress.XtraEditors.Controls.PictureSizeMode.Squeeze;
+            this.picNav_User.Size = new System.Drawing.Size(24, 24);
+            this.picNav_User.TabIndex = 0;
+            // 
+            // lblNav_User
+            // 
+            this.lblNav_User.Appearance.Font = new System.Drawing.Font("Segoe UI", 10F);
+            this.lblNav_User.Appearance.Options.UseFont = true;
+            this.lblNav_User.AutoSizeMode = DevExpress.XtraEditors.LabelAutoSizeMode.None;
+            this.lblNav_User.Location = new System.Drawing.Point(40, 8);
+            this.lblNav_User.Name = "lblNav_User";
+            this.lblNav_User.Size = new System.Drawing.Size(110, 28);
+            this.lblNav_User.TabIndex = 1;
+            this.lblNav_User.Text = "Manage User";
             // 
             // btnUploadArl
             // 
-            this.btnUploadArl.Location = new System.Drawing.Point(12, 56);
+            this.btnUploadArl.Appearance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(230)))), ((int)(((byte)(232)))), ((int)(((byte)(235)))));
+            this.btnUploadArl.Appearance.Options.UseBackColor = true;
+            this.btnUploadArl.Location = new System.Drawing.Point(12, 124);
+            this.btnUploadArl.LookAndFeel.UseDefaultLookAndFeel = false;
             this.btnUploadArl.Name = "btnUploadArl";
-            this.btnUploadArl.Size = new System.Drawing.Size(160, 34);
-            this.btnUploadArl.TabIndex = 4;
+            this.btnUploadArl.Size = new System.Drawing.Size(160, 36);
+            this.btnUploadArl.TabIndex = 2;
             this.btnUploadArl.Text = "Upload License File";
             // 
             // grpInfo
             // 
+            this.grpInfo.AppearanceCaption.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(245)))), ((int)(((byte)(245)))));
+            this.grpInfo.AppearanceCaption.Options.UseBackColor = true;
             this.grpInfo.Controls.Add(this.lblCompanyName);
             this.grpInfo.Controls.Add(this.txtCompanyName);
             this.grpInfo.Controls.Add(this.lblProductId);
             this.grpInfo.Controls.Add(this.txtProductId);
             this.grpInfo.Controls.Add(this.lblProductName);
             this.grpInfo.Controls.Add(this.txtProductName);
-            this.grpInfo.Location = new System.Drawing.Point(12, 110);
+            this.grpInfo.Location = new System.Drawing.Point(12, 120);
             this.grpInfo.Name = "grpInfo";
             this.grpInfo.Size = new System.Drawing.Size(420, 160);
-            this.grpInfo.TabIndex = 5;
+            this.grpInfo.TabIndex = 3;
             this.grpInfo.Text = "Info";
             // 
             // lblCompanyName
             // 
-            this.lblCompanyName.AutoSizeMode = DevExpress.XtraEditors.LabelAutoSizeMode.None;
-            this.lblCompanyName.Location = new System.Drawing.Point(12, 28);
+            this.lblCompanyName.Location = new System.Drawing.Point(12, 36);
             this.lblCompanyName.Name = "lblCompanyName";
-            this.lblCompanyName.Size = new System.Drawing.Size(110, 22);
+            this.lblCompanyName.Size = new System.Drawing.Size(82, 13);
             this.lblCompanyName.TabIndex = 0;
             this.lblCompanyName.Text = "Company Name :";
             // 
             // txtCompanyName
             // 
-            this.txtCompanyName.Location = new System.Drawing.Point(128, 26);
+            this.txtCompanyName.Location = new System.Drawing.Point(140, 34);
             this.txtCompanyName.Name = "txtCompanyName";
             this.txtCompanyName.Properties.ReadOnly = true;
-            this.txtCompanyName.Size = new System.Drawing.Size(280, 20);
+            this.txtCompanyName.Size = new System.Drawing.Size(260, 20);
             this.txtCompanyName.TabIndex = 1;
             // 
             // lblProductId
             // 
-            this.lblProductId.AutoSizeMode = DevExpress.XtraEditors.LabelAutoSizeMode.None;
-            this.lblProductId.Location = new System.Drawing.Point(12, 60);
+            this.lblProductId.Location = new System.Drawing.Point(12, 68);
             this.lblProductId.Name = "lblProductId";
-            this.lblProductId.Size = new System.Drawing.Size(110, 22);
+            this.lblProductId.Size = new System.Drawing.Size(58, 13);
             this.lblProductId.TabIndex = 2;
             this.lblProductId.Text = "Product ID :";
             // 
             // txtProductId
             // 
-            this.txtProductId.Location = new System.Drawing.Point(128, 58);
+            this.txtProductId.Location = new System.Drawing.Point(140, 66);
             this.txtProductId.Name = "txtProductId";
             this.txtProductId.Properties.ReadOnly = true;
-            this.txtProductId.Size = new System.Drawing.Size(150, 20);
+            this.txtProductId.Size = new System.Drawing.Size(120, 20);
             this.txtProductId.TabIndex = 3;
             // 
             // lblProductName
             // 
-            this.lblProductName.AutoSizeMode = DevExpress.XtraEditors.LabelAutoSizeMode.None;
-            this.lblProductName.Location = new System.Drawing.Point(12, 92);
+            this.lblProductName.Location = new System.Drawing.Point(12, 100);
             this.lblProductName.Name = "lblProductName";
-            this.lblProductName.Size = new System.Drawing.Size(110, 22);
+            this.lblProductName.Size = new System.Drawing.Size(74, 13);
             this.lblProductName.TabIndex = 4;
             this.lblProductName.Text = "Product Name :";
             // 
             // txtProductName
             // 
-            this.txtProductName.Location = new System.Drawing.Point(128, 90);
+            this.txtProductName.Location = new System.Drawing.Point(140, 98);
             this.txtProductName.Name = "txtProductName";
             this.txtProductName.Properties.ReadOnly = true;
-            this.txtProductName.Size = new System.Drawing.Size(280, 20);
+            this.txtProductName.Size = new System.Drawing.Size(260, 20);
             this.txtProductName.TabIndex = 5;
             // 
             // grpTypes
             // 
+            this.grpTypes.AppearanceCaption.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(245)))), ((int)(((byte)(245)))));
+            this.grpTypes.AppearanceCaption.Options.UseBackColor = true;
             this.grpTypes.Controls.Add(this.rgLicenseType);
             this.grpTypes.Controls.Add(this.lblMonths);
             this.grpTypes.Controls.Add(this.numSubscriptionMonths);
-            this.grpTypes.Location = new System.Drawing.Point(444, 110);
+            this.grpTypes.Location = new System.Drawing.Point(444, 120);
             this.grpTypes.Name = "grpTypes";
             this.grpTypes.Size = new System.Drawing.Size(220, 160);
-            this.grpTypes.TabIndex = 6;
+            this.grpTypes.TabIndex = 4;
             this.grpTypes.Text = "Types";
             // 
             // rgLicenseType
             // 
-            this.rgLicenseType.Location = new System.Drawing.Point(12, 24);
+            this.rgLicenseType.Location = new System.Drawing.Point(10, 28);
             this.rgLicenseType.Name = "rgLicenseType";
-            this.rgLicenseType.Size = new System.Drawing.Size(190, 80);
+            this.rgLicenseType.Size = new System.Drawing.Size(200, 90);
             this.rgLicenseType.TabIndex = 0;
             // 
             // lblMonths
             // 
-            this.lblMonths.Location = new System.Drawing.Point(12, 110);
+            this.lblMonths.Location = new System.Drawing.Point(12, 128);
             this.lblMonths.Name = "lblMonths";
             this.lblMonths.Size = new System.Drawing.Size(42, 13);
             this.lblMonths.TabIndex = 1;
@@ -327,137 +463,200 @@ namespace Autosoft_Licensing.UI.Pages
             // numSubscriptionMonths
             // 
             this.numSubscriptionMonths.EditValue = new decimal(new int[] {
-            0,
+            1,
             0,
             0,
             0});
-            this.numSubscriptionMonths.Location = new System.Drawing.Point(70, 108);
+            this.numSubscriptionMonths.Location = new System.Drawing.Point(74, 126);
             this.numSubscriptionMonths.Name = "numSubscriptionMonths";
+            this.numSubscriptionMonths.Properties.IsFloatValue = false;
+            this.numSubscriptionMonths.Properties.MaskSettings.Set("mask", "N00");
+            this.numSubscriptionMonths.Properties.MaxValue = new decimal(new int[] {
+            1200,
+            0,
+            0,
+            0});
+            this.numSubscriptionMonths.Properties.MinValue = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
             this.numSubscriptionMonths.Size = new System.Drawing.Size(80, 20);
             this.numSubscriptionMonths.TabIndex = 2;
             // 
             // grpModules
             // 
-            this.grpModules.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.grpModules.Controls.Add(this.chkModules);
-            this.grpModules.Location = new System.Drawing.Point(701, 110);
+            this.grpModules.AppearanceCaption.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(245)))), ((int)(((byte)(245)))));
+            this.grpModules.AppearanceCaption.Options.UseBackColor = true;
+            this.grpModules.Controls.Add(this.grdModules);
+            this.grpModules.Location = new System.Drawing.Point(680, 120);
             this.grpModules.Name = "grpModules";
             this.grpModules.Size = new System.Drawing.Size(320, 260);
-            this.grpModules.TabIndex = 7;
+            this.grpModules.TabIndex = 5;
             this.grpModules.Text = "Modules";
             // 
-            // chkModules
+            // grdModules
             // 
-            this.chkModules.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.chkModules.Location = new System.Drawing.Point(2, 23);
-            this.chkModules.Name = "chkModules";
-            this.chkModules.Size = new System.Drawing.Size(316, 235);
-            this.chkModules.TabIndex = 0;
+            this.grdModules.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.grdModules.Location = new System.Drawing.Point(8, 28);
+            this.grdModules.MainView = this.grdModulesView;
+            this.grdModules.Name = "grdModules";
+            this.grdModules.RepositoryItems.AddRange(new DevExpress.XtraEditors.Repository.RepositoryItem[] {
+            this.repositoryCheckEdit});
+            this.grdModules.Size = new System.Drawing.Size(304, 220);
+            this.grdModules.TabIndex = 0;
+            this.grdModules.ViewCollection.AddRange(new DevExpress.XtraGrid.Views.Base.BaseView[] {
+            this.grdModulesView});
+            // 
+            // grdModulesView
+            // 
+            this.grdModulesView.Appearance.Row.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.grdModulesView.Appearance.Row.Options.UseFont = true;
+            this.grdModulesView.Columns.AddRange(new DevExpress.XtraGrid.Columns.GridColumn[] {
+            this.colEnabled,
+            this.colModuleName});
+            this.grdModulesView.GridControl = this.grdModules;
+            this.grdModulesView.Name = "grdModulesView";
+            this.grdModulesView.OptionsView.ColumnAutoWidth = false;
+            this.grdModulesView.OptionsView.ShowIndicator = false;
+            // 
+            // colEnabled
+            // 
+            this.colEnabled.ColumnEdit = this.repositoryCheckEdit;
+            this.colEnabled.FieldName = "Enabled";
+            this.colEnabled.Name = "colEnabled";
+            this.colEnabled.Visible = true;
+            this.colEnabled.VisibleIndex = 0;
+            this.colEnabled.Width = 48;
+            // 
+            // repositoryCheckEdit
+            // 
+            this.repositoryCheckEdit.AutoHeight = false;
+            this.repositoryCheckEdit.Name = "repositoryCheckEdit";
+            // 
+            // colModuleName
+            // 
+            this.colModuleName.Caption = "Module";
+            this.colModuleName.FieldName = "ModuleName";
+            this.colModuleName.Name = "colModuleName";
+            this.colModuleName.Visible = true;
+            this.colModuleName.VisibleIndex = 1;
+            this.colModuleName.Width = 240;
             // 
             // lblIssueDate
             // 
-            this.lblIssueDate.Location = new System.Drawing.Point(12, 288);
+            this.lblIssueDate.Location = new System.Drawing.Point(12, 400);
             this.lblIssueDate.Name = "lblIssueDate";
             this.lblIssueDate.Size = new System.Drawing.Size(59, 13);
-            this.lblIssueDate.TabIndex = 8;
+            this.lblIssueDate.TabIndex = 6;
             this.lblIssueDate.Text = "Issue Date :";
             // 
             // dtIssueDate
             // 
-            this.dtIssueDate.EditValue = new System.DateTime(2025, 11, 24, 0, 0, 0, 0);
-            this.dtIssueDate.Location = new System.Drawing.Point(100, 286);
+            this.dtIssueDate.EditValue = new System.DateTime(2025, 11, 26, 0, 0, 0, 0);
+            this.dtIssueDate.Location = new System.Drawing.Point(100, 396);
             this.dtIssueDate.Name = "dtIssueDate";
             this.dtIssueDate.Properties.CalendarTimeProperties.Buttons.AddRange(new DevExpress.XtraEditors.Controls.EditorButton[] {
+            new DevExpress.XtraEditors.Controls.EditorButton(DevExpress.XtraEditors.Controls.ButtonPredefines.Combo),
             new DevExpress.XtraEditors.Controls.EditorButton(DevExpress.XtraEditors.Controls.ButtonPredefines.Combo)});
             this.dtIssueDate.Size = new System.Drawing.Size(150, 20);
-            this.dtIssueDate.TabIndex = 9;
+            this.dtIssueDate.TabIndex = 7;
             // 
             // lblExpireDate
             // 
-            this.lblExpireDate.Location = new System.Drawing.Point(12, 320);
+            this.lblExpireDate.Location = new System.Drawing.Point(280, 400);
             this.lblExpireDate.Name = "lblExpireDate";
             this.lblExpireDate.Size = new System.Drawing.Size(63, 13);
-            this.lblExpireDate.TabIndex = 10;
+            this.lblExpireDate.TabIndex = 8;
             this.lblExpireDate.Text = "Expire Date :";
             // 
             // dtExpireDate
             // 
-            this.dtExpireDate.EditValue = new System.DateTime(2025, 11, 24, 0, 0, 0, 0);
-            this.dtExpireDate.Location = new System.Drawing.Point(100, 318);
+            this.dtExpireDate.EditValue = new System.DateTime(2025, 11, 26, 0, 0, 0, 0);
+            this.dtExpireDate.Location = new System.Drawing.Point(360, 396);
             this.dtExpireDate.Name = "dtExpireDate";
             this.dtExpireDate.Properties.CalendarTimeProperties.Buttons.AddRange(new DevExpress.XtraEditors.Controls.EditorButton[] {
+            new DevExpress.XtraEditors.Controls.EditorButton(DevExpress.XtraEditors.Controls.ButtonPredefines.Combo),
             new DevExpress.XtraEditors.Controls.EditorButton(DevExpress.XtraEditors.Controls.ButtonPredefines.Combo)});
             this.dtExpireDate.Size = new System.Drawing.Size(150, 20);
-            this.dtExpireDate.TabIndex = 11;
+            this.dtExpireDate.TabIndex = 9;
             // 
             // lblRemark
             // 
-            this.lblRemark.Location = new System.Drawing.Point(12, 352);
+            this.lblRemark.Location = new System.Drawing.Point(12, 436);
             this.lblRemark.Name = "lblRemark";
             this.lblRemark.Size = new System.Drawing.Size(43, 13);
-            this.lblRemark.TabIndex = 12;
+            this.lblRemark.TabIndex = 10;
             this.lblRemark.Text = "Remark :";
             // 
             // memRemark
             // 
             this.memRemark.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.memRemark.Location = new System.Drawing.Point(100, 350);
+            this.memRemark.Location = new System.Drawing.Point(100, 432);
             this.memRemark.Name = "memRemark";
-            this.memRemark.Size = new System.Drawing.Size(921, 80);
-            this.memRemark.TabIndex = 13;
+            this.memRemark.Size = new System.Drawing.Size(912, 80);
+            this.memRemark.TabIndex = 11;
             // 
             // lblLicenseKey
             // 
-            this.lblLicenseKey.Location = new System.Drawing.Point(12, 444);
+            this.lblLicenseKey.Location = new System.Drawing.Point(12, 528);
             this.lblLicenseKey.Name = "lblLicenseKey";
             this.lblLicenseKey.Size = new System.Drawing.Size(63, 13);
-            this.lblLicenseKey.TabIndex = 14;
+            this.lblLicenseKey.TabIndex = 12;
             this.lblLicenseKey.Text = "License Key :";
             // 
             // txtLicenseKey
             // 
-            this.txtLicenseKey.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.txtLicenseKey.Location = new System.Drawing.Point(100, 442);
+            this.txtLicenseKey.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+            this.txtLicenseKey.Location = new System.Drawing.Point(100, 538);
             this.txtLicenseKey.Name = "txtLicenseKey";
             this.txtLicenseKey.Properties.ReadOnly = true;
-            this.txtLicenseKey.Size = new System.Drawing.Size(741, 20);
-            this.txtLicenseKey.TabIndex = 15;
+            this.txtLicenseKey.Size = new System.Drawing.Size(572, 20);
+            this.txtLicenseKey.TabIndex = 13;
             // 
             // btnGenerateKey
             // 
             this.btnGenerateKey.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnGenerateKey.Location = new System.Drawing.Point(851, 438);
+            this.btnGenerateKey.Appearance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(230)))), ((int)(((byte)(232)))), ((int)(((byte)(235)))));
+            this.btnGenerateKey.Appearance.Options.UseBackColor = true;
+            this.btnGenerateKey.Location = new System.Drawing.Point(692, 520);
+            this.btnGenerateKey.LookAndFeel.UseDefaultLookAndFeel = false;
             this.btnGenerateKey.Name = "btnGenerateKey";
             this.btnGenerateKey.Size = new System.Drawing.Size(160, 30);
-            this.btnGenerateKey.TabIndex = 16;
+            this.btnGenerateKey.TabIndex = 14;
             this.btnGenerateKey.Text = "Generate License Key";
             // 
             // btnPreview
             // 
             this.btnPreview.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnPreview.Location = new System.Drawing.Point(1023, 438);
+            this.btnPreview.Appearance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(230)))), ((int)(((byte)(232)))), ((int)(((byte)(235)))));
+            this.btnPreview.Appearance.Options.UseBackColor = true;
+            this.btnPreview.Location = new System.Drawing.Point(864, 520);
+            this.btnPreview.LookAndFeel.UseDefaultLookAndFeel = false;
             this.btnPreview.Name = "btnPreview";
             this.btnPreview.Size = new System.Drawing.Size(80, 30);
-            this.btnPreview.TabIndex = 17;
+            this.btnPreview.TabIndex = 15;
             this.btnPreview.Text = "Preview";
             // 
             // btnDownload
             // 
             this.btnDownload.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnDownload.Location = new System.Drawing.Point(1115, 438);
+            this.btnDownload.Appearance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(230)))), ((int)(((byte)(232)))), ((int)(((byte)(235)))));
+            this.btnDownload.Appearance.Options.UseBackColor = true;
+            this.btnDownload.Location = new System.Drawing.Point(960, 520);
+            this.btnDownload.LookAndFeel.UseDefaultLookAndFeel = false;
             this.btnDownload.Name = "btnDownload";
             this.btnDownload.Size = new System.Drawing.Size(160, 30);
-            this.btnDownload.TabIndex = 18;
+            this.btnDownload.TabIndex = 16;
             this.btnDownload.Text = "Download License";
             // 
             // GenerateLicensePage
             // 
-            this.Controls.Add(this.btnNav_GenerateLicense);
-            this.Controls.Add(this.btnNav_LicenseRecords);
-            this.Controls.Add(this.btnNav_ManageProduct);
-            this.Controls.Add(this.btnNav_ManageUser);
+            this.Controls.Add(this.headerPanel);
+            this.Controls.Add(this.navPanel);
             this.Controls.Add(this.btnUploadArl);
             this.Controls.Add(this.grpInfo);
             this.Controls.Add(this.grpTypes);
@@ -474,9 +673,27 @@ namespace Autosoft_Licensing.UI.Pages
             this.Controls.Add(this.btnPreview);
             this.Controls.Add(this.btnDownload);
             this.Name = "GenerateLicensePage";
-            this.Size = new System.Drawing.Size(1189, 580);
+            this.Size = new System.Drawing.Size(1147, 649);
+            ((System.ComponentModel.ISupportInitialize)(this.headerPanel)).EndInit();
+            this.headerPanel.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.navPanel)).EndInit();
+            this.navPanel.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.btnNav_GenerateLicense)).EndInit();
+            this.btnNav_GenerateLicense.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.picNav_Generate.Properties)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.underline)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.btnNav_LicenseRecords)).EndInit();
+            this.btnNav_LicenseRecords.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.picNav_Records.Properties)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.btnNav_ManageProduct)).EndInit();
+            this.btnNav_ManageProduct.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.picNav_Product.Properties)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.btnNav_ManageUser)).EndInit();
+            this.btnNav_ManageUser.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.picNav_User.Properties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.grpInfo)).EndInit();
             this.grpInfo.ResumeLayout(false);
+            this.grpInfo.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.txtCompanyName.Properties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.txtProductId.Properties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.txtProductName.Properties)).EndInit();
@@ -487,7 +704,9 @@ namespace Autosoft_Licensing.UI.Pages
             ((System.ComponentModel.ISupportInitialize)(this.numSubscriptionMonths.Properties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.grpModules)).EndInit();
             this.grpModules.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.chkModules)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.grdModules)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.grdModulesView)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.repositoryCheckEdit)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.dtIssueDate.Properties.CalendarTimeProperties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.dtIssueDate.Properties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.dtExpireDate.Properties.CalendarTimeProperties)).EndInit();
@@ -498,5 +717,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.PerformLayout();
 
         }
+
+        private PanelControl underline;
     }
 }

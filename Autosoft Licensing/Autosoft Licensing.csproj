@@ -259,6 +259,7 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <EmbeddedResource Include="UI\Pages\GenerateLicensePage.resx">
       <DependentUpon>GenerateLicensePage.cs</DependentUpon>
@@ -315,6 +316,7 @@
     <Compile Include="Services\Interfaces\ILicenseDatabaseService.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Assets\exit.png" />
     <Content Include="Assets\generate.png" />
     <Content Include="Assets\product.png" />
     <Content Include="Assets\records.png" />
