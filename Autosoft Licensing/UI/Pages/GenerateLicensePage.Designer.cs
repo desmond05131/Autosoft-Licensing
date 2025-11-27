@@ -175,11 +175,11 @@ namespace Autosoft_Licensing.UI.Pages
             this.headerPanel.Controls.Add(this.lblHeaderTitle);
             this.headerPanel.Controls.Add(this.btnLogout);
             this.headerPanel.Dock = System.Windows.Forms.DockStyle.Top;
-            this.headerPanel.Location = new System.Drawing.Point(0, 52);
+            this.headerPanel.Location = new System.Drawing.Point(0, 0);
             this.headerPanel.LookAndFeel.Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat;
             this.headerPanel.LookAndFeel.UseDefaultLookAndFeel = false;
             this.headerPanel.Name = "headerPanel";
-            this.headerPanel.Size = new System.Drawing.Size(1147, 60);
+            this.headerPanel.Size = new System.Drawing.Size(1057, 60);
             this.headerPanel.TabIndex = 0;
             // 
             // lblHeaderTitle
@@ -201,7 +201,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.btnLogout.Appearance.Options.UseBackColor = true;
             this.btnLogout.Appearance.Options.UseBorderColor = true;
             this.btnLogout.ImageOptions.Image = global::Autosoft_Licensing.Properties.Resources.Exit;
-            this.btnLogout.Location = new System.Drawing.Point(1942, 13);
+            this.btnLogout.Location = new System.Drawing.Point(1852, 13);
             this.btnLogout.LookAndFeel.UseDefaultLookAndFeel = false;
             this.btnLogout.Name = "btnLogout";
             this.btnLogout.Size = new System.Drawing.Size(110, 34);
@@ -216,9 +216,9 @@ namespace Autosoft_Licensing.UI.Pages
             this.navPanel.Controls.Add(this.btnNav_ManageProduct);
             this.navPanel.Controls.Add(this.btnNav_ManageUser);
             this.navPanel.Dock = System.Windows.Forms.DockStyle.Top;
-            this.navPanel.Location = new System.Drawing.Point(0, 0);
+            this.navPanel.Location = new System.Drawing.Point(0, 60);
             this.navPanel.Name = "navPanel";
-            this.navPanel.Size = new System.Drawing.Size(1147, 52);
+            this.navPanel.Size = new System.Drawing.Size(1057, 52);
             this.navPanel.TabIndex = 1;
             // 
             // btnNav_GenerateLicense
@@ -597,7 +597,7 @@ namespace Autosoft_Licensing.UI.Pages
             | System.Windows.Forms.AnchorStyles.Right)));
             this.memRemark.Location = new System.Drawing.Point(100, 432);
             this.memRemark.Name = "memRemark";
-            this.memRemark.Size = new System.Drawing.Size(912, 80);
+            this.memRemark.Size = new System.Drawing.Size(822, 80);
             this.memRemark.TabIndex = 11;
             // 
             // lblLicenseKey
@@ -611,10 +611,10 @@ namespace Autosoft_Licensing.UI.Pages
             // txtLicenseKey
             // 
             this.txtLicenseKey.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-            this.txtLicenseKey.Location = new System.Drawing.Point(100, 538);
+            this.txtLicenseKey.Location = new System.Drawing.Point(100, 514);
             this.txtLicenseKey.Name = "txtLicenseKey";
             this.txtLicenseKey.Properties.ReadOnly = true;
-            this.txtLicenseKey.Size = new System.Drawing.Size(572, 20);
+            this.txtLicenseKey.Size = new System.Drawing.Size(482, 20);
             this.txtLicenseKey.TabIndex = 13;
             // 
             // btnGenerateKey
@@ -622,7 +622,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.btnGenerateKey.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.btnGenerateKey.Appearance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(230)))), ((int)(((byte)(232)))), ((int)(((byte)(235)))));
             this.btnGenerateKey.Appearance.Options.UseBackColor = true;
-            this.btnGenerateKey.Location = new System.Drawing.Point(692, 520);
+            this.btnGenerateKey.Location = new System.Drawing.Point(602, 520);
             this.btnGenerateKey.LookAndFeel.UseDefaultLookAndFeel = false;
             this.btnGenerateKey.Name = "btnGenerateKey";
             this.btnGenerateKey.Size = new System.Drawing.Size(160, 30);
@@ -634,7 +634,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.btnPreview.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.btnPreview.Appearance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(230)))), ((int)(((byte)(232)))), ((int)(((byte)(235)))));
             this.btnPreview.Appearance.Options.UseBackColor = true;
-            this.btnPreview.Location = new System.Drawing.Point(864, 520);
+            this.btnPreview.Location = new System.Drawing.Point(774, 520);
             this.btnPreview.LookAndFeel.UseDefaultLookAndFeel = false;
             this.btnPreview.Name = "btnPreview";
             this.btnPreview.Size = new System.Drawing.Size(80, 30);
@@ -646,7 +646,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.btnDownload.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.btnDownload.Appearance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(230)))), ((int)(((byte)(232)))), ((int)(((byte)(235)))));
             this.btnDownload.Appearance.Options.UseBackColor = true;
-            this.btnDownload.Location = new System.Drawing.Point(960, 520);
+            this.btnDownload.Location = new System.Drawing.Point(870, 520);
             this.btnDownload.LookAndFeel.UseDefaultLookAndFeel = false;
             this.btnDownload.Name = "btnDownload";
             this.btnDownload.Size = new System.Drawing.Size(160, 30);
@@ -655,8 +655,8 @@ namespace Autosoft_Licensing.UI.Pages
             // 
             // GenerateLicensePage
             // 
-            this.Controls.Add(this.headerPanel);
             this.Controls.Add(this.navPanel);
+            this.Controls.Add(this.headerPanel);
             this.Controls.Add(this.btnUploadArl);
             this.Controls.Add(this.grpInfo);
             this.Controls.Add(this.grpTypes);
@@ -673,7 +673,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.Controls.Add(this.btnPreview);
             this.Controls.Add(this.btnDownload);
             this.Name = "GenerateLicensePage";
-            this.Size = new System.Drawing.Size(1147, 649);
+            this.Size = new System.Drawing.Size(1057, 600);
             ((System.ComponentModel.ISupportInitialize)(this.headerPanel)).EndInit();
             this.headerPanel.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.navPanel)).EndInit();
