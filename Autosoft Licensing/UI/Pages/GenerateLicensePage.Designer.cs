@@ -6,6 +6,7 @@ using DevExpress.XtraGrid;
 using DevExpress.XtraGrid.Views.Grid;
 using DevExpress.XtraEditors.Repository;
 using System.Windows.Forms; // Added: resolves DockStyle / AnchorStyles references
+using DevExpress.Utils;
 
 namespace Autosoft_Licensing.UI.Pages
 {
@@ -30,6 +31,9 @@ namespace Autosoft_Licensing.UI.Pages
         private LabelControl lblNav_Product;
         private PictureEdit picNav_User;
         private LabelControl lblNav_User;
+        private PanelControl pnlNavLogout;        // replaced previous SimpleButton with a Panel containing text button + picture
+        private SimpleButton btnNavLogoutText;
+        private PictureEdit picNav_Logout;
 
         // Upload
         private SimpleButton btnUploadArl;
@@ -99,6 +103,9 @@ namespace Autosoft_Licensing.UI.Pages
             this.btnNav_ManageUser = new DevExpress.XtraEditors.PanelControl();
             this.picNav_User = new DevExpress.XtraEditors.PictureEdit();
             this.lblNav_User = new DevExpress.XtraEditors.LabelControl();
+            this.pnlNavLogout = new DevExpress.XtraEditors.PanelControl();
+            this.btnNavLogoutText = new DevExpress.XtraEditors.SimpleButton();
+            this.picNav_Logout = new DevExpress.XtraEditors.PictureEdit();
             this.btnUploadArl = new DevExpress.XtraEditors.SimpleButton();
             this.grpInfo = new DevExpress.XtraEditors.GroupControl();
             this.lblCompanyName = new DevExpress.XtraEditors.LabelControl();
@@ -145,6 +152,9 @@ namespace Autosoft_Licensing.UI.Pages
             ((System.ComponentModel.ISupportInitialize)(this.btnNav_ManageUser)).BeginInit();
             this.btnNav_ManageUser.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.picNav_User.Properties)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pnlNavLogout)).BeginInit();
+            this.pnlNavLogout.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.picNav_Logout.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.grpInfo)).BeginInit();
             this.grpInfo.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.txtCompanyName.Properties)).BeginInit();
@@ -179,7 +189,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.headerPanel.LookAndFeel.Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat;
             this.headerPanel.LookAndFeel.UseDefaultLookAndFeel = false;
             this.headerPanel.Name = "headerPanel";
-            this.headerPanel.Size = new System.Drawing.Size(1057, 60);
+            this.headerPanel.Size = new System.Drawing.Size(960, 60);
             this.headerPanel.TabIndex = 0;
             // 
             // lblHeaderTitle
@@ -201,7 +211,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.btnLogout.Appearance.Options.UseBackColor = true;
             this.btnLogout.Appearance.Options.UseBorderColor = true;
             this.btnLogout.ImageOptions.Image = global::Autosoft_Licensing.Properties.Resources.Exit;
-            this.btnLogout.Location = new System.Drawing.Point(1852, 13);
+            this.btnLogout.Location = new System.Drawing.Point(1755, 13);
             this.btnLogout.LookAndFeel.UseDefaultLookAndFeel = false;
             this.btnLogout.Name = "btnLogout";
             this.btnLogout.Size = new System.Drawing.Size(110, 34);
@@ -215,10 +225,11 @@ namespace Autosoft_Licensing.UI.Pages
             this.navPanel.Controls.Add(this.btnNav_LicenseRecords);
             this.navPanel.Controls.Add(this.btnNav_ManageProduct);
             this.navPanel.Controls.Add(this.btnNav_ManageUser);
+            this.navPanel.Controls.Add(this.pnlNavLogout);
             this.navPanel.Dock = System.Windows.Forms.DockStyle.Top;
             this.navPanel.Location = new System.Drawing.Point(0, 60);
             this.navPanel.Name = "navPanel";
-            this.navPanel.Size = new System.Drawing.Size(1057, 52);
+            this.navPanel.Size = new System.Drawing.Size(960, 52);
             this.navPanel.TabIndex = 1;
             // 
             // btnNav_GenerateLicense
@@ -235,7 +246,7 @@ namespace Autosoft_Licensing.UI.Pages
             // picNav_Generate
             // 
             this.picNav_Generate.EditValue = global::Autosoft_Licensing.Properties.Resources.Generate;
-            this.picNav_Generate.Location = new System.Drawing.Point(8, 6);
+            this.picNav_Generate.Location = new System.Drawing.Point(78, 4);
             this.picNav_Generate.Name = "picNav_Generate";
             this.picNav_Generate.Properties.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             this.picNav_Generate.Properties.ReadOnly = true;
@@ -247,10 +258,12 @@ namespace Autosoft_Licensing.UI.Pages
             // 
             this.lblNav_Generate.Appearance.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.lblNav_Generate.Appearance.Options.UseFont = true;
+            this.lblNav_Generate.Appearance.Options.UseTextOptions = true;
+            this.lblNav_Generate.Appearance.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Center;
             this.lblNav_Generate.AutoSizeMode = DevExpress.XtraEditors.LabelAutoSizeMode.None;
-            this.lblNav_Generate.Location = new System.Drawing.Point(40, 8);
+            this.lblNav_Generate.Location = new System.Drawing.Point(0, 28);
             this.lblNav_Generate.Name = "lblNav_Generate";
-            this.lblNav_Generate.Size = new System.Drawing.Size(120, 28);
+            this.lblNav_Generate.Size = new System.Drawing.Size(180, 16);
             this.lblNav_Generate.TabIndex = 1;
             this.lblNav_Generate.Text = "Generate License";
             // 
@@ -277,7 +290,7 @@ namespace Autosoft_Licensing.UI.Pages
             // picNav_Records
             // 
             this.picNav_Records.EditValue = global::Autosoft_Licensing.Properties.Resources.Records;
-            this.picNav_Records.Location = new System.Drawing.Point(8, 6);
+            this.picNav_Records.Location = new System.Drawing.Point(63, 4);
             this.picNav_Records.Name = "picNav_Records";
             this.picNav_Records.Properties.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             this.picNav_Records.Properties.SizeMode = DevExpress.XtraEditors.Controls.PictureSizeMode.Squeeze;
@@ -288,10 +301,12 @@ namespace Autosoft_Licensing.UI.Pages
             // 
             this.lblNav_Records.Appearance.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.lblNav_Records.Appearance.Options.UseFont = true;
+            this.lblNav_Records.Appearance.Options.UseTextOptions = true;
+            this.lblNav_Records.Appearance.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Center;
             this.lblNav_Records.AutoSizeMode = DevExpress.XtraEditors.LabelAutoSizeMode.None;
-            this.lblNav_Records.Location = new System.Drawing.Point(40, 8);
+            this.lblNav_Records.Location = new System.Drawing.Point(0, 28);
             this.lblNav_Records.Name = "lblNav_Records";
-            this.lblNav_Records.Size = new System.Drawing.Size(110, 28);
+            this.lblNav_Records.Size = new System.Drawing.Size(150, 16);
             this.lblNav_Records.TabIndex = 1;
             this.lblNav_Records.Text = "License Records";
             // 
@@ -308,7 +323,7 @@ namespace Autosoft_Licensing.UI.Pages
             // picNav_Product
             // 
             this.picNav_Product.EditValue = global::Autosoft_Licensing.Properties.Resources.Product;
-            this.picNav_Product.Location = new System.Drawing.Point(8, 6);
+            this.picNav_Product.Location = new System.Drawing.Point(63, 4);
             this.picNav_Product.Name = "picNav_Product";
             this.picNav_Product.Properties.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             this.picNav_Product.Properties.SizeMode = DevExpress.XtraEditors.Controls.PictureSizeMode.Squeeze;
@@ -319,10 +334,12 @@ namespace Autosoft_Licensing.UI.Pages
             // 
             this.lblNav_Product.Appearance.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.lblNav_Product.Appearance.Options.UseFont = true;
+            this.lblNav_Product.Appearance.Options.UseTextOptions = true;
+            this.lblNav_Product.Appearance.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Center;
             this.lblNav_Product.AutoSizeMode = DevExpress.XtraEditors.LabelAutoSizeMode.None;
-            this.lblNav_Product.Location = new System.Drawing.Point(40, 8);
+            this.lblNav_Product.Location = new System.Drawing.Point(0, 28);
             this.lblNav_Product.Name = "lblNav_Product";
-            this.lblNav_Product.Size = new System.Drawing.Size(110, 28);
+            this.lblNav_Product.Size = new System.Drawing.Size(150, 16);
             this.lblNav_Product.TabIndex = 1;
             this.lblNav_Product.Text = "Manage Product";
             // 
@@ -339,7 +356,7 @@ namespace Autosoft_Licensing.UI.Pages
             // picNav_User
             // 
             this.picNav_User.EditValue = global::Autosoft_Licensing.Properties.Resources.User;
-            this.picNav_User.Location = new System.Drawing.Point(8, 6);
+            this.picNav_User.Location = new System.Drawing.Point(63, 4);
             this.picNav_User.Name = "picNav_User";
             this.picNav_User.Properties.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             this.picNav_User.Properties.SizeMode = DevExpress.XtraEditors.Controls.PictureSizeMode.Squeeze;
@@ -350,12 +367,47 @@ namespace Autosoft_Licensing.UI.Pages
             // 
             this.lblNav_User.Appearance.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.lblNav_User.Appearance.Options.UseFont = true;
+            this.lblNav_User.Appearance.Options.UseTextOptions = true;
+            this.lblNav_User.Appearance.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Center;
             this.lblNav_User.AutoSizeMode = DevExpress.XtraEditors.LabelAutoSizeMode.None;
-            this.lblNav_User.Location = new System.Drawing.Point(40, 8);
+            this.lblNav_User.Location = new System.Drawing.Point(0, 28);
             this.lblNav_User.Name = "lblNav_User";
-            this.lblNav_User.Size = new System.Drawing.Size(110, 28);
+            this.lblNav_User.Size = new System.Drawing.Size(150, 16);
             this.lblNav_User.TabIndex = 1;
             this.lblNav_User.Text = "Manage User";
+            // 
+            // pnlNavLogout
+            // 
+            this.pnlNavLogout.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.pnlNavLogout.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
+            this.pnlNavLogout.Controls.Add(this.btnNavLogoutText);
+            this.pnlNavLogout.Controls.Add(this.picNav_Logout);
+            this.pnlNavLogout.Location = new System.Drawing.Point(848, 11);
+            this.pnlNavLogout.Name = "pnlNavLogout";
+            this.pnlNavLogout.Size = new System.Drawing.Size(110, 30);
+            this.pnlNavLogout.TabIndex = 4;
+            // 
+            // btnNavLogoutText
+            // 
+            this.btnNavLogoutText.AllowFocus = false;
+            this.btnNavLogoutText.Appearance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(230)))), ((int)(((byte)(232)))), ((int)(((byte)(235)))));
+            this.btnNavLogoutText.Appearance.Options.UseBackColor = true;
+            this.btnNavLogoutText.Location = new System.Drawing.Point(0, 0);
+            this.btnNavLogoutText.LookAndFeel.UseDefaultLookAndFeel = false;
+            this.btnNavLogoutText.Name = "btnNavLogoutText";
+            this.btnNavLogoutText.Size = new System.Drawing.Size(78, 30);
+            this.btnNavLogoutText.TabIndex = 0;
+            this.btnNavLogoutText.Text = "Logout";
+            // 
+            // picNav_Logout
+            // 
+            this.picNav_Logout.EditValue = global::Autosoft_Licensing.Properties.Resources.Exit;
+            this.picNav_Logout.Location = new System.Drawing.Point(80, 0);
+            this.picNav_Logout.Name = "picNav_Logout";
+            this.picNav_Logout.Properties.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
+            this.picNav_Logout.Properties.SizeMode = DevExpress.XtraEditors.Controls.PictureSizeMode.Squeeze;
+            this.picNav_Logout.Size = new System.Drawing.Size(30, 30);
+            this.picNav_Logout.TabIndex = 1;
             // 
             // btnUploadArl
             // 
@@ -597,7 +649,7 @@ namespace Autosoft_Licensing.UI.Pages
             | System.Windows.Forms.AnchorStyles.Right)));
             this.memRemark.Location = new System.Drawing.Point(100, 432);
             this.memRemark.Name = "memRemark";
-            this.memRemark.Size = new System.Drawing.Size(822, 80);
+            this.memRemark.Size = new System.Drawing.Size(1012, 80);
             this.memRemark.TabIndex = 11;
             // 
             // lblLicenseKey
@@ -614,7 +666,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.txtLicenseKey.Location = new System.Drawing.Point(100, 514);
             this.txtLicenseKey.Name = "txtLicenseKey";
             this.txtLicenseKey.Properties.ReadOnly = true;
-            this.txtLicenseKey.Size = new System.Drawing.Size(482, 20);
+            this.txtLicenseKey.Size = new System.Drawing.Size(672, 20);
             this.txtLicenseKey.TabIndex = 13;
             // 
             // btnGenerateKey
@@ -622,7 +674,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.btnGenerateKey.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.btnGenerateKey.Appearance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(230)))), ((int)(((byte)(232)))), ((int)(((byte)(235)))));
             this.btnGenerateKey.Appearance.Options.UseBackColor = true;
-            this.btnGenerateKey.Location = new System.Drawing.Point(602, 520);
+            this.btnGenerateKey.Location = new System.Drawing.Point(792, 520);
             this.btnGenerateKey.LookAndFeel.UseDefaultLookAndFeel = false;
             this.btnGenerateKey.Name = "btnGenerateKey";
             this.btnGenerateKey.Size = new System.Drawing.Size(160, 30);
@@ -634,7 +686,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.btnPreview.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.btnPreview.Appearance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(230)))), ((int)(((byte)(232)))), ((int)(((byte)(235)))));
             this.btnPreview.Appearance.Options.UseBackColor = true;
-            this.btnPreview.Location = new System.Drawing.Point(774, 520);
+            this.btnPreview.Location = new System.Drawing.Point(964, 520);
             this.btnPreview.LookAndFeel.UseDefaultLookAndFeel = false;
             this.btnPreview.Name = "btnPreview";
             this.btnPreview.Size = new System.Drawing.Size(80, 30);
@@ -646,7 +698,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.btnDownload.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.btnDownload.Appearance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(230)))), ((int)(((byte)(232)))), ((int)(((byte)(235)))));
             this.btnDownload.Appearance.Options.UseBackColor = true;
-            this.btnDownload.Location = new System.Drawing.Point(870, 520);
+            this.btnDownload.Location = new System.Drawing.Point(1060, 520);
             this.btnDownload.LookAndFeel.UseDefaultLookAndFeel = false;
             this.btnDownload.Name = "btnDownload";
             this.btnDownload.Size = new System.Drawing.Size(160, 30);
@@ -673,7 +725,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.Controls.Add(this.btnPreview);
             this.Controls.Add(this.btnDownload);
             this.Name = "GenerateLicensePage";
-            this.Size = new System.Drawing.Size(1057, 600);
+            this.Size = new System.Drawing.Size(960, 617);
             ((System.ComponentModel.ISupportInitialize)(this.headerPanel)).EndInit();
             this.headerPanel.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.navPanel)).EndInit();
@@ -691,6 +743,9 @@ namespace Autosoft_Licensing.UI.Pages
             ((System.ComponentModel.ISupportInitialize)(this.btnNav_ManageUser)).EndInit();
             this.btnNav_ManageUser.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.picNav_User.Properties)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pnlNavLogout)).EndInit();
+            this.pnlNavLogout.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.picNav_Logout.Properties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.grpInfo)).EndInit();
             this.grpInfo.ResumeLayout(false);
             this.grpInfo.PerformLayout();
