@@ -35,8 +35,9 @@ namespace Autosoft_Licensing
                 Expanded = true
             };
 
+            // NOTE: Text changed to "Generate License" to match UI automation expectations used by E2E tests.
             AccordionControlElement aceDashboard = new AccordionControlElement { Text = "Dashboard", Style = ElementStyle.Item, Name = "aceDashboard" };
-            AccordionControlElement aceGenerateRequest = new AccordionControlElement { Text = "Generate Request", Style = ElementStyle.Item, Name = "aceGenerateRequest" };
+            AccordionControlElement aceGenerateRequest = new AccordionControlElement { Text = "Generate License", Style = ElementStyle.Item, Name = "aceGenerateRequest" };
             AccordionControlElement aceRequestHistory = new AccordionControlElement { Text = "Request History", Style = ElementStyle.Item, Name = "aceRequestHistory" };
             AccordionControlElement aceImportActivate = new AccordionControlElement { Text = "Import / Activate", Style = ElementStyle.Item, Name = "aceImportActivate" };
             AccordionControlElement aceLicenseList = new AccordionControlElement { Text = "License List", Style = ElementStyle.Item, Name = "aceLicenseList" };

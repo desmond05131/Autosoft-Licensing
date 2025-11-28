@@ -1,0 +1,13 @@
+{
+  "CompanyName": "Acme Corp",
+  "ProductID": "PROD-001",
+  "DealerCode": "DEALER-001",
+  "RequestedPeriodMonths": 1,
+  "LicenseType": "Demo",
+  "LicenseKey": "REQ-001",
+  "CurrencyCode": "USD",
+  "RequestDateUtc": "2025-01-01T00:00:00Z",
+  "ModuleCodes": [
+    "MODULE-001"
+  ]
+}

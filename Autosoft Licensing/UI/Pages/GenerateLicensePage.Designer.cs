@@ -189,7 +189,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.headerPanel.LookAndFeel.Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat;
             this.headerPanel.LookAndFeel.UseDefaultLookAndFeel = false;
             this.headerPanel.Name = "headerPanel";
-            this.headerPanel.Size = new System.Drawing.Size(960, 60);
+            this.headerPanel.Size = new System.Drawing.Size(1091, 60);
             this.headerPanel.TabIndex = 0;
             // 
             // lblHeaderTitle
@@ -206,12 +206,12 @@ namespace Autosoft_Licensing.UI.Pages
             // btnLogout
             // 
             this.btnLogout.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnLogout.Appearance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(230)))), ((int)(((byte)(232)))), ((int)(((byte)(235)))));
+            this.btnLogout.Appearance.BackColor = System.Drawing.Color.White;
             this.btnLogout.Appearance.BorderColor = System.Drawing.Color.Gray;
             this.btnLogout.Appearance.Options.UseBackColor = true;
             this.btnLogout.Appearance.Options.UseBorderColor = true;
             this.btnLogout.ImageOptions.Image = global::Autosoft_Licensing.Properties.Resources.Exit;
-            this.btnLogout.Location = new System.Drawing.Point(1755, 13);
+            this.btnLogout.Location = new System.Drawing.Point(1839, 13);
             this.btnLogout.LookAndFeel.UseDefaultLookAndFeel = false;
             this.btnLogout.Name = "btnLogout";
             this.btnLogout.Size = new System.Drawing.Size(110, 34);
@@ -220,6 +220,8 @@ namespace Autosoft_Licensing.UI.Pages
             // 
             // navPanel
             // 
+            this.navPanel.Appearance.BackColor = System.Drawing.Color.White;
+            this.navPanel.Appearance.Options.UseBackColor = true;
             this.navPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             this.navPanel.Controls.Add(this.btnNav_GenerateLicense);
             this.navPanel.Controls.Add(this.btnNav_LicenseRecords);
@@ -229,16 +231,21 @@ namespace Autosoft_Licensing.UI.Pages
             this.navPanel.Dock = System.Windows.Forms.DockStyle.Top;
             this.navPanel.Location = new System.Drawing.Point(0, 60);
             this.navPanel.Name = "navPanel";
-            this.navPanel.Size = new System.Drawing.Size(960, 52);
+            this.navPanel.Size = new System.Drawing.Size(1091, 52);
             this.navPanel.TabIndex = 1;
             // 
             // btnNav_GenerateLicense
             // 
+            this.btnNav_GenerateLicense.Appearance.BackColor = System.Drawing.Color.White;
+            this.btnNav_GenerateLicense.Appearance.BorderColor = System.Drawing.Color.Transparent;
+            this.btnNav_GenerateLicense.Appearance.Options.UseBackColor = true;
+            this.btnNav_GenerateLicense.Appearance.Options.UseBorderColor = true;
             this.btnNav_GenerateLicense.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             this.btnNav_GenerateLicense.Controls.Add(this.picNav_Generate);
             this.btnNav_GenerateLicense.Controls.Add(this.lblNav_Generate);
             this.btnNav_GenerateLicense.Controls.Add(this.underline);
             this.btnNav_GenerateLicense.Location = new System.Drawing.Point(12, 6);
+            this.btnNav_GenerateLicense.LookAndFeel.UseDefaultLookAndFeel = false;
             this.btnNav_GenerateLicense.Name = "btnNav_GenerateLicense";
             this.btnNav_GenerateLicense.Size = new System.Drawing.Size(180, 44);
             this.btnNav_GenerateLicense.TabIndex = 0;
@@ -279,6 +286,8 @@ namespace Autosoft_Licensing.UI.Pages
             // 
             // btnNav_LicenseRecords
             // 
+            this.btnNav_LicenseRecords.Appearance.BackColor = System.Drawing.Color.White;
+            this.btnNav_LicenseRecords.Appearance.Options.UseBackColor = true;
             this.btnNav_LicenseRecords.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             this.btnNav_LicenseRecords.Controls.Add(this.picNav_Records);
             this.btnNav_LicenseRecords.Controls.Add(this.lblNav_Records);
@@ -312,6 +321,8 @@ namespace Autosoft_Licensing.UI.Pages
             // 
             // btnNav_ManageProduct
             // 
+            this.btnNav_ManageProduct.Appearance.BackColor = System.Drawing.Color.White;
+            this.btnNav_ManageProduct.Appearance.Options.UseBackColor = true;
             this.btnNav_ManageProduct.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             this.btnNav_ManageProduct.Controls.Add(this.picNav_Product);
             this.btnNav_ManageProduct.Controls.Add(this.lblNav_Product);
@@ -345,6 +356,8 @@ namespace Autosoft_Licensing.UI.Pages
             // 
             // btnNav_ManageUser
             // 
+            this.btnNav_ManageUser.Appearance.BackColor = System.Drawing.Color.White;
+            this.btnNav_ManageUser.Appearance.Options.UseBackColor = true;
             this.btnNav_ManageUser.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             this.btnNav_ManageUser.Controls.Add(this.picNav_User);
             this.btnNav_ManageUser.Controls.Add(this.lblNav_User);
@@ -379,10 +392,12 @@ namespace Autosoft_Licensing.UI.Pages
             // pnlNavLogout
             // 
             this.pnlNavLogout.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.pnlNavLogout.Appearance.BackColor = System.Drawing.Color.White;
+            this.pnlNavLogout.Appearance.Options.UseBackColor = true;
             this.pnlNavLogout.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             this.pnlNavLogout.Controls.Add(this.btnNavLogoutText);
             this.pnlNavLogout.Controls.Add(this.picNav_Logout);
-            this.pnlNavLogout.Location = new System.Drawing.Point(848, 11);
+            this.pnlNavLogout.Location = new System.Drawing.Point(591, 11);
             this.pnlNavLogout.Name = "pnlNavLogout";
             this.pnlNavLogout.Size = new System.Drawing.Size(110, 30);
             this.pnlNavLogout.TabIndex = 4;
@@ -390,7 +405,7 @@ namespace Autosoft_Licensing.UI.Pages
             // btnNavLogoutText
             // 
             this.btnNavLogoutText.AllowFocus = false;
-            this.btnNavLogoutText.Appearance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(230)))), ((int)(((byte)(232)))), ((int)(((byte)(235)))));
+            this.btnNavLogoutText.Appearance.BackColor = System.Drawing.Color.White;
             this.btnNavLogoutText.Appearance.Options.UseBackColor = true;
             this.btnNavLogoutText.Location = new System.Drawing.Point(0, 0);
             this.btnNavLogoutText.LookAndFeel.UseDefaultLookAndFeel = false;
@@ -411,7 +426,7 @@ namespace Autosoft_Licensing.UI.Pages
             // 
             // btnUploadArl
             // 
-            this.btnUploadArl.Appearance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(230)))), ((int)(((byte)(232)))), ((int)(((byte)(235)))));
+            this.btnUploadArl.Appearance.BackColor = System.Drawing.Color.White;
             this.btnUploadArl.Appearance.Options.UseBackColor = true;
             this.btnUploadArl.Location = new System.Drawing.Point(12, 124);
             this.btnUploadArl.LookAndFeel.UseDefaultLookAndFeel = false;
@@ -422,7 +437,13 @@ namespace Autosoft_Licensing.UI.Pages
             // 
             // grpInfo
             // 
-            this.grpInfo.AppearanceCaption.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(245)))), ((int)(((byte)(245)))));
+            this.grpInfo.Appearance.BackColor = System.Drawing.Color.White;
+            this.grpInfo.Appearance.BackColor2 = System.Drawing.Color.White;
+            this.grpInfo.Appearance.BorderColor = System.Drawing.Color.White;
+            this.grpInfo.Appearance.Options.UseBackColor = true;
+            this.grpInfo.Appearance.Options.UseBorderColor = true;
+            this.grpInfo.AppearanceCaption.BackColor = System.Drawing.Color.White;
+            this.grpInfo.AppearanceCaption.BackColor2 = System.Drawing.Color.White;
             this.grpInfo.AppearanceCaption.Options.UseBackColor = true;
             this.grpInfo.Controls.Add(this.lblCompanyName);
             this.grpInfo.Controls.Add(this.txtCompanyName);
@@ -430,7 +451,9 @@ namespace Autosoft_Licensing.UI.Pages
             this.grpInfo.Controls.Add(this.txtProductId);
             this.grpInfo.Controls.Add(this.lblProductName);
             this.grpInfo.Controls.Add(this.txtProductName);
-            this.grpInfo.Location = new System.Drawing.Point(12, 120);
+            this.grpInfo.Location = new System.Drawing.Point(12, 170);
+            this.grpInfo.LookAndFeel.Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat;
+            this.grpInfo.LookAndFeel.UseDefaultLookAndFeel = false;
             this.grpInfo.Name = "grpInfo";
             this.grpInfo.Size = new System.Drawing.Size(420, 160);
             this.grpInfo.TabIndex = 3;
@@ -448,6 +471,13 @@ namespace Autosoft_Licensing.UI.Pages
             // 
             this.txtCompanyName.Location = new System.Drawing.Point(140, 34);
             this.txtCompanyName.Name = "txtCompanyName";
+            this.txtCompanyName.Properties.Appearance.BackColor = System.Drawing.Color.White;
+            this.txtCompanyName.Properties.Appearance.Options.UseBackColor = true;
+            this.txtCompanyName.Properties.AppearanceDisabled.BackColor = System.Drawing.Color.White;
+            this.txtCompanyName.Properties.AppearanceDisabled.Options.UseBackColor = true;
+            this.txtCompanyName.Properties.AppearanceReadOnly.BackColor = System.Drawing.Color.White;
+            this.txtCompanyName.Properties.AppearanceReadOnly.Options.UseBackColor = true;
+            this.txtCompanyName.Properties.LookAndFeel.UseDefaultLookAndFeel = false;
             this.txtCompanyName.Properties.ReadOnly = true;
             this.txtCompanyName.Size = new System.Drawing.Size(260, 20);
             this.txtCompanyName.TabIndex = 1;
@@ -464,6 +494,13 @@ namespace Autosoft_Licensing.UI.Pages
             // 
             this.txtProductId.Location = new System.Drawing.Point(140, 66);
             this.txtProductId.Name = "txtProductId";
+            this.txtProductId.Properties.Appearance.BackColor = System.Drawing.Color.White;
+            this.txtProductId.Properties.Appearance.Options.UseBackColor = true;
+            this.txtProductId.Properties.AppearanceDisabled.BackColor = System.Drawing.Color.White;
+            this.txtProductId.Properties.AppearanceDisabled.Options.UseBackColor = true;
+            this.txtProductId.Properties.AppearanceReadOnly.BackColor = System.Drawing.Color.White;
+            this.txtProductId.Properties.AppearanceReadOnly.Options.UseBackColor = true;
+            this.txtProductId.Properties.LookAndFeel.UseDefaultLookAndFeel = false;
             this.txtProductId.Properties.ReadOnly = true;
             this.txtProductId.Size = new System.Drawing.Size(120, 20);
             this.txtProductId.TabIndex = 3;
@@ -480,18 +517,33 @@ namespace Autosoft_Licensing.UI.Pages
             // 
             this.txtProductName.Location = new System.Drawing.Point(140, 98);
             this.txtProductName.Name = "txtProductName";
+            this.txtProductName.Properties.Appearance.BackColor = System.Drawing.Color.White;
+            this.txtProductName.Properties.Appearance.Options.UseBackColor = true;
+            this.txtProductName.Properties.AppearanceDisabled.BackColor = System.Drawing.Color.White;
+            this.txtProductName.Properties.AppearanceDisabled.Options.UseBackColor = true;
+            this.txtProductName.Properties.AppearanceReadOnly.BackColor = System.Drawing.Color.White;
+            this.txtProductName.Properties.AppearanceReadOnly.Options.UseBackColor = true;
+            this.txtProductName.Properties.LookAndFeel.UseDefaultLookAndFeel = false;
             this.txtProductName.Properties.ReadOnly = true;
             this.txtProductName.Size = new System.Drawing.Size(260, 20);
             this.txtProductName.TabIndex = 5;
             // 
             // grpTypes
             // 
-            this.grpTypes.AppearanceCaption.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(245)))), ((int)(((byte)(245)))));
+            this.grpTypes.Appearance.BackColor = System.Drawing.Color.White;
+            this.grpTypes.Appearance.BackColor2 = System.Drawing.Color.White;
+            this.grpTypes.Appearance.BorderColor = System.Drawing.Color.White;
+            this.grpTypes.Appearance.Options.UseBackColor = true;
+            this.grpTypes.Appearance.Options.UseBorderColor = true;
+            this.grpTypes.AppearanceCaption.BackColor = System.Drawing.Color.White;
+            this.grpTypes.AppearanceCaption.BackColor2 = System.Drawing.Color.White;
             this.grpTypes.AppearanceCaption.Options.UseBackColor = true;
             this.grpTypes.Controls.Add(this.rgLicenseType);
             this.grpTypes.Controls.Add(this.lblMonths);
             this.grpTypes.Controls.Add(this.numSubscriptionMonths);
-            this.grpTypes.Location = new System.Drawing.Point(444, 120);
+            this.grpTypes.Location = new System.Drawing.Point(444, 170);
+            this.grpTypes.LookAndFeel.Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat;
+            this.grpTypes.LookAndFeel.UseDefaultLookAndFeel = false;
             this.grpTypes.Name = "grpTypes";
             this.grpTypes.Size = new System.Drawing.Size(220, 160);
             this.grpTypes.TabIndex = 4;
@@ -533,19 +585,28 @@ namespace Autosoft_Licensing.UI.Pages
             0,
             0,
             0});
-            this.numSubscriptionMonths.Size = new System.Drawing.Size(80, 20);
+            this.numSubscriptionMonths.Size = new System.Drawing.Size(80, 22);
             this.numSubscriptionMonths.TabIndex = 2;
             // 
             // grpModules
             // 
-            this.grpModules.AppearanceCaption.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(245)))), ((int)(((byte)(245)))), ((int)(((byte)(245)))));
+            this.grpModules.Appearance.BackColor = System.Drawing.Color.White;
+            this.grpModules.Appearance.BackColor2 = System.Drawing.Color.White;
+            this.grpModules.Appearance.BorderColor = System.Drawing.Color.White;
+            this.grpModules.Appearance.Options.UseBackColor = true;
+            this.grpModules.Appearance.Options.UseBorderColor = true;
+            this.grpModules.AppearanceCaption.BackColor = System.Drawing.Color.White;
+            this.grpModules.AppearanceCaption.BackColor2 = System.Drawing.Color.White;
             this.grpModules.AppearanceCaption.Options.UseBackColor = true;
             this.grpModules.Controls.Add(this.grdModules);
-            this.grpModules.Location = new System.Drawing.Point(680, 120);
+            this.grpModules.Location = new System.Drawing.Point(680, 170);
+            this.grpModules.LookAndFeel.Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat;
+            this.grpModules.LookAndFeel.UseDefaultLookAndFeel = false;
             this.grpModules.Name = "grpModules";
             this.grpModules.Size = new System.Drawing.Size(320, 260);
             this.grpModules.TabIndex = 5;
             this.grpModules.Text = "Modules";
+            this.grpModules.Paint += new System.Windows.Forms.PaintEventHandler(this.grpModules_Paint);
             // 
             // grdModules
             // 
@@ -649,7 +710,7 @@ namespace Autosoft_Licensing.UI.Pages
             | System.Windows.Forms.AnchorStyles.Right)));
             this.memRemark.Location = new System.Drawing.Point(100, 432);
             this.memRemark.Name = "memRemark";
-            this.memRemark.Size = new System.Drawing.Size(1012, 80);
+            this.memRemark.Size = new System.Drawing.Size(203, 80);
             this.memRemark.TabIndex = 11;
             // 
             // lblLicenseKey
@@ -663,18 +724,18 @@ namespace Autosoft_Licensing.UI.Pages
             // txtLicenseKey
             // 
             this.txtLicenseKey.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-            this.txtLicenseKey.Location = new System.Drawing.Point(100, 514);
+            this.txtLicenseKey.Location = new System.Drawing.Point(100, 446);
             this.txtLicenseKey.Name = "txtLicenseKey";
             this.txtLicenseKey.Properties.ReadOnly = true;
-            this.txtLicenseKey.Size = new System.Drawing.Size(672, 20);
+            this.txtLicenseKey.Size = new System.Drawing.Size(203, 20);
             this.txtLicenseKey.TabIndex = 13;
             // 
             // btnGenerateKey
             // 
             this.btnGenerateKey.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnGenerateKey.Appearance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(230)))), ((int)(((byte)(232)))), ((int)(((byte)(235)))));
+            this.btnGenerateKey.Appearance.BackColor = System.Drawing.Color.White;
             this.btnGenerateKey.Appearance.Options.UseBackColor = true;
-            this.btnGenerateKey.Location = new System.Drawing.Point(792, 520);
+            this.btnGenerateKey.Location = new System.Drawing.Point(323, 520);
             this.btnGenerateKey.LookAndFeel.UseDefaultLookAndFeel = false;
             this.btnGenerateKey.Name = "btnGenerateKey";
             this.btnGenerateKey.Size = new System.Drawing.Size(160, 30);
@@ -684,9 +745,9 @@ namespace Autosoft_Licensing.UI.Pages
             // btnPreview
             // 
             this.btnPreview.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnPreview.Appearance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(230)))), ((int)(((byte)(232)))), ((int)(((byte)(235)))));
+            this.btnPreview.Appearance.BackColor = System.Drawing.Color.White;
             this.btnPreview.Appearance.Options.UseBackColor = true;
-            this.btnPreview.Location = new System.Drawing.Point(964, 520);
+            this.btnPreview.Location = new System.Drawing.Point(495, 520);
             this.btnPreview.LookAndFeel.UseDefaultLookAndFeel = false;
             this.btnPreview.Name = "btnPreview";
             this.btnPreview.Size = new System.Drawing.Size(80, 30);
@@ -696,9 +757,9 @@ namespace Autosoft_Licensing.UI.Pages
             // btnDownload
             // 
             this.btnDownload.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnDownload.Appearance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(230)))), ((int)(((byte)(232)))), ((int)(((byte)(235)))));
+            this.btnDownload.Appearance.BackColor = System.Drawing.Color.White;
             this.btnDownload.Appearance.Options.UseBackColor = true;
-            this.btnDownload.Location = new System.Drawing.Point(1060, 520);
+            this.btnDownload.Location = new System.Drawing.Point(591, 520);
             this.btnDownload.LookAndFeel.UseDefaultLookAndFeel = false;
             this.btnDownload.Name = "btnDownload";
             this.btnDownload.Size = new System.Drawing.Size(160, 30);
@@ -707,6 +768,8 @@ namespace Autosoft_Licensing.UI.Pages
             // 
             // GenerateLicensePage
             // 
+            this.Appearance.BackColor = System.Drawing.Color.White;
+            this.Appearance.Options.UseBackColor = true;
             this.Controls.Add(this.navPanel);
             this.Controls.Add(this.headerPanel);
             this.Controls.Add(this.btnUploadArl);
@@ -725,7 +788,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.Controls.Add(this.btnPreview);
             this.Controls.Add(this.btnDownload);
             this.Name = "GenerateLicensePage";
-            this.Size = new System.Drawing.Size(960, 617);
+            this.Size = new System.Drawing.Size(1091, 558);
             ((System.ComponentModel.ISupportInitialize)(this.headerPanel)).EndInit();
             this.headerPanel.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.navPanel)).EndInit();

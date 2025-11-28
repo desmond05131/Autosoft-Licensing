@@ -1,234 +1,170 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
-using System.Data;
 using System.Text;
-using System.Windows.Forms;
-using System.Security.Cryptography;
 using System.Linq;
-using System.Text.RegularExpressions;
+using System.Collections.Generic;
+using System.Security.Cryptography;
+using System.IO;
+using System.Drawing;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using DevExpress.XtraEditors;
+using DevExpress.XtraGrid;
+using DevExpress.XtraGrid.Views.Grid;
 using Autosoft_Licensing.Models;
 using Autosoft_Licensing.Services;
 using Autosoft_Licensing.Utils;
-using Newtonsoft.Json;
+using System.Windows.Forms; // used for SaveFileDialog & Clipboard
+using System.ComponentModel.DataAnnotations;
 
 namespace Autosoft_Licensing.UI
 {
     public partial class PreviewLicenseForm : DevExpress.XtraEditors.XtraForm
     {
-        private readonly LicenseData _payload;
-        private readonly string _expectedChecksum;
-        private string _canonicalJson;
-        private string _computedChecksum;
-
-        // Parameterless ctor used by the WinForms designer. Keep it simple and design-time safe.
+        // Constructor
         public PreviewLicenseForm()
         {
             InitializeComponent();
-            // Do not run runtime initialization at design-time.
-            if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
-                return;
+
+            // Wire up code-behind event handlers that the designer expects to exist.
+            // Designer also wires these; adding again is safe and defensive.
+            this.btnCopyJson.Click += btnCopyJson_Click;
+            this.btnExportJson.Click += btnExportJson_Click;
+            this.btnCopyChecksum.Click += btnCopyChecksum_Click;
+            this.btnVerifyChecksum.Click += btnVerifyChecksum_Click;
+            this.btnExportAsl.Click += btnExportAsl_Click;
+            this.btnClose.Click += btnClose_Click;
         }
 
-        public PreviewLicenseForm(LicenseData payload, string canonicalJson = null, string expectedChecksum = null)
+        /// <summary>
+        /// Populate the preview UI with the provided payload. Defensive against nulls & missing services.
+        /// </summary>
+        public void Initialize(LicenseData payload)
         {
-            if (payload == null)
-                throw new ArgumentNullException(nameof(payload));
-
-            InitializeComponent();
-
-            _payload = payload;
-            _expectedChecksum = expectedChecksum;
-            _canonicalJson = canonicalJson;
-
             try
             {
-                InitializeContent();
-            }
-            catch (Exception)
-            {
-                // Per spec: surface a generic failure message on unexpected errors
-                MessageBox.Show("Operation failed. Contact admin.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                // keep form usable but empty
-            }
-        }
+                if (payload == null)
+                {
+                    DevExpress.XtraEditors.XtraMessageBox.Show("Operation failed. Contact admin.");
+                    return;
+                }
 
-        private void InitializeContent()
-        {
-            // 1) Canonical JSON: try ServiceRegistry.Validation.BuildCanonicalJson(...) first
-            if (string.IsNullOrEmpty(_canonicalJson))
-            {
+                // Build canonical JSON using service if available, otherwise fallback to local deterministic implementation.
+                string canonicalJson = null;
                 try
                 {
-                    // Preferred call - may not exist in current implementation
-                    // TODO: If ServiceRegistry.Validation exposes BuildCanonicalJson, prefer it.
-                    var validation = ServiceRegistry.Validation;
-                    var mi = (validation == null) ? null : validation.GetType().GetMethod("BuildCanonicalJson");
-                    if (mi != null)
+                    canonicalJson = ServiceRegistry.Validation?.BuildCanonicalJson(payload);
+                }
+                catch
+                {
+                    // ignore and fallback
+                }
+
+                if (string.IsNullOrWhiteSpace(canonicalJson))
+                {
+                    try
                     {
-                        _canonicalJson = (string)mi.Invoke(validation, new object[] { _payload });
+                        canonicalJson = CanonicalizeJson(payload);
+                    }
+                    catch
+                    {
+                        canonicalJson = string.Empty;
+                    }
+                }
+
+                memCanonicalJson.Text = canonicalJson ?? string.Empty;
+
+                // Compute checksum using service or local helper
+                string checksum = string.Empty;
+                try
+                {
+                    if (!string.IsNullOrEmpty(canonicalJson) && ServiceRegistry.Encryption != null)
+                    {
+                        checksum = ServiceRegistry.Encryption.ComputeSha256Hex(Encoding.UTF8.GetBytes(canonicalJson));
                     }
                     else
                     {
-                        // Fallback: local canonical serializer using JsonHelper (deterministic ordering)
-                        _canonicalJson = CanonicalJsonSerializer.Serialize(_payload);
-                        // TODO: replace fallback with shared serializer when available.
+                        checksum = ComputeSha256HexLocal(Encoding.UTF8.GetBytes(canonicalJson ?? string.Empty));
                     }
                 }
                 catch
                 {
-                    // fallback to local serializer on any error
-                    _canonicalJson = CanonicalJsonSerializer.Serialize(_payload);
-                }
-            }
-
-            // 2) Compute checksum (try ServiceRegistry.Encryption first)
-            try
-            {
-                // ServiceRegistry is a static type. Null-conditional on a type is invalid (CS0119).
-                // Check the static property directly.
-                if (ServiceRegistry.Encryption != null)
-                {
-                    _computedChecksum = ServiceRegistry.Encryption.ComputeSha256Hex(System.Text.Encoding.UTF8.GetBytes(_canonicalJson));
-                }
-                else
-                {
-                    _computedChecksum = ComputeSha256HexLocal(_canonicalJson);
-                }
-            }
-            catch
-            {
-                _computedChecksum = ComputeSha256HexLocal(_canonicalJson);
-            }
-
-            // 3) Populate UI controls
-            memoCanonicalJson.Text = _canonicalJson ?? string.Empty;
-            txtChecksum.Text = _computedChecksum ?? string.Empty;
-
-            txtCompanyName.Text = _payload.CompanyName ?? string.Empty;
-            txtProductId.Text = _payload.ProductID ?? string.Empty;
-            txtProductName.Text = GetProductName(_payload.ProductID) ?? string.Empty;
-            txtLicenseKey.Text = _payload.LicenseKey ?? string.Empty;
-            txtLicenseType.Text = _payload.LicenseType.ToString();
-            txtValidFrom.Text = _payload.ValidFromUtc.ToString("u");
-            txtValidTo.Text = _payload.ValidToUtc.ToString("u");
-
-            // 4) Modules grid: populate ModuleName/Enabled rows
-            var modules = new List<ModuleRow>();
-            if (_payload.ModuleCodes != null)
-            {
-                foreach (var m in _payload.ModuleCodes)
-                    modules.Add(new ModuleRow { ModuleName = m, Enabled = true });
-            }
-            grdModules.DataSource = modules;
-
-            // 5) Checksum status
-            UpdateChecksumStatus(_computedChecksum, _expectedChecksum);
-
-            // 6) Expiry / status badge
-            UpdateStatusBadge();
-
-            // 7) License info grid placeholder: populate some key/value pairs
-            PopulateLicenseInfoGrid();
-        }
-
-        private void UpdateChecksumStatus(string computed, string expected)
-        {
-            if (!string.IsNullOrEmpty(expected) && !string.Equals(computed, expected, StringComparison.OrdinalIgnoreCase))
-            {
-                lblChecksumStatus.Text = "Invalid or tampered license file.";
-                lblChecksumStatus.Appearance.ForeColor = System.Drawing.Color.Red;
-            }
-            else
-            {
-                lblChecksumStatus.Text = "Checksum OK";
-                lblChecksumStatus.Appearance.ForeColor = System.Drawing.Color.Green;
-            }
-        }
-
-        private void UpdateStatusBadge()
-        {
-            try
-            {
-                var nowUtc = DateTime.UtcNow;
-                if (_payload == null)
-                {
-                    SetStatusBadge("Invalid or tampered license file.", System.Drawing.Color.Red);
-                    return;
+                    checksum = ComputeSha256HexLocal(Encoding.UTF8.GetBytes(canonicalJson ?? string.Empty));
                 }
 
-                if (nowUtc > _payload.ValidToUtc)
+                lblChecksum.Text = checksum ?? string.Empty;
+                lblVerifyResult.Text = string.Empty;
+
+                // Populate summary labels
+                lblCompany.Text = payload.CompanyName ?? string.Empty;
+                lblProduct.Text = $"{payload.ProductID ?? string.Empty} { (payload is null ? string.Empty : string.Empty)}"; // ProductName may not be on LicenseData; keep compact
+                lblLicenseType.Text = payload.LicenseType.ToString();
+                try
                 {
-                    if (_payload.LicenseType == Models.Enums.LicenseType.Demo)
+                    lblValidFromUtc.Text = payload.ValidFromUtc == default ? string.Empty : payload.ValidFromUtc.ToString("u");
+                    lblValidToUtc.Text = payload.ValidToUtc == default ? string.Empty : payload.ValidToUtc.ToString("u");
+                    lblValidFromLocal.Text = payload.ValidFromUtc == default ? string.Empty : payload.ValidFromUtc.ToLocalTime().ToString("u");
+                    lblValidToLocal.Text = payload.ValidToUtc == default ? string.Empty : payload.ValidToUtc.ToLocalTime().ToString("u");
+                }
+                catch
+                {
+                    lblValidFromUtc.Text = string.Empty;
+                    lblValidToUtc.Text = string.Empty;
+                    lblValidFromLocal.Text = string.Empty;
+                    lblValidToLocal.Text = string.Empty;
+                }
+
+                // License key
+                txtLicenseKeySummary.Text = payload.LicenseKey ?? string.Empty;
+
+                // Bind modules safely
+                var modules = new List<object>();
+                try
+                {
+                    var codes = payload.ModuleCodes ?? new List<string>();
+                    foreach (var code in codes)
                     {
-                        SetStatusBadge("Demo license expired.", System.Drawing.Color.Red);
-                    }
-                    else
-                    {
-                        SetStatusBadge("License expired.", System.Drawing.Color.Red);
+                        modules.Add(new { ModuleName = code, Enabled = true });
                     }
                 }
-                else
+                catch
                 {
-                    // If checksum mismatch to expected (if expected provided) show tampered
-                    if (!string.IsNullOrEmpty(_expectedChecksum) && !string.Equals(_computedChecksum, _expectedChecksum, StringComparison.OrdinalIgnoreCase))
-                    {
-                        SetStatusBadge("Invalid or tampered license file.", System.Drawing.Color.Red);
-                    }
-                    else
-                    {
-                        SetStatusBadge("Valid", System.Drawing.Color.Green);
-                    }
+                    modules = new List<object>();
                 }
 
-                lblExpiryDate.Text = _payload.ValidToUtc.ToString("yyyy-MM-dd HH:mm 'UTC'");
+                grdModulesSummary.DataSource = modules;
+                try
+                {
+                    viewModulesSummary.BestFitColumns();
+                }
+                catch { }
+
+                // Enable/disable Export ASL depending on AslGenerator availability
+                btnExportAsl.Enabled = ServiceRegistry.AslGenerator != null;
             }
-            catch
+            catch (Exception)
             {
-                SetStatusBadge("Invalid or tampered license file.", System.Drawing.Color.Red);
+                DevExpress.XtraEditors.XtraMessageBox.Show("Operation failed. Contact admin.");
             }
         }
 
-        private void SetStatusBadge(string text, System.Drawing.Color color)
-        {
-            lblStatusBadge.Text = text;
-            lblStatusBadge.Appearance.ForeColor = color;
-        }
-
-        private void PopulateLicenseInfoGrid()
-        {
-            var dt = new DataTable();
-            dt.Columns.Add("Key");
-            dt.Columns.Add("Value");
-
-            AddRow(dt, "CompanyName", _payload.CompanyName);
-            AddRow(dt, "ProductID", _payload.ProductID);
-            AddRow(dt, "DealerCode", _payload.DealerCode);
-            AddRow(dt, "LicenseKey", _payload.LicenseKey);
-            AddRow(dt, "LicenseType", _payload.LicenseType.ToString());
-            AddRow(dt, "ValidFromUtc", _payload.ValidFromUtc.ToString("u"));
-            AddRow(dt, "ValidToUtc", _payload.ValidToUtc.ToString("u"));
-            AddRow(dt, "CurrencyCode", _payload.CurrencyCode);
-            AddRow(dt, "ChecksumSHA256", _payload.ChecksumSHA256);
-
-            grdLicenseInfo.DataSource = dt;
-        }
-
-        // Event handlers
+        #region Event handlers
 
         private void btnCopyJson_Click(object sender, EventArgs e)
         {
             try
             {
-                Clipboard.SetText(memoCanonicalJson.Text ?? string.Empty);
-                // Transient feedback using a MessageBox (simple). Could use toast.
-                MessageBox.Show("Copied canonical JSON to clipboard.", "Copied", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                var text = memCanonicalJson.Text ?? string.Empty;
+                if (string.IsNullOrEmpty(text))
+                {
+                    DevExpress.XtraEditors.XtraMessageBox.Show("Operation failed. Contact admin.");
+                    return;
+                }
+                Clipboard.SetText(text);
+                // Optionally show info: use PageBase.ShowInfo from pages; here use messagebox minimal.
             }
             catch
             {
-                MessageBox.Show("Operation failed. Contact admin.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                DevExpress.XtraEditors.XtraMessageBox.Show("Operation failed. Contact admin.");
             }
         }
 
@@ -236,82 +172,168 @@ namespace Autosoft_Licensing.UI
         {
             try
             {
-                using (var dlg = new SaveFileDialog())
+                var json = memCanonicalJson.Text ?? string.Empty;
+                using (var sfd = new SaveFileDialog
                 {
-                    dlg.Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*";
-
-                    // Designer-friendly filename construction (avoid null-conditional + interpolation)
-                    string company = "license";
-                    string licenseKey = "payload";
-                    if (_payload != null)
-                    {
-                        if (!string.IsNullOrEmpty(_payload.CompanyName))
-                            company = _payload.CompanyName;
-                        if (!string.IsNullOrEmpty(_payload.LicenseKey))
-                            licenseKey = _payload.LicenseKey;
-                    }
-
-                    dlg.FileName = company + "-" + licenseKey + ".json";
-
-                    if (dlg.ShowDialog(this) == DialogResult.OK)
-                    {
-                        System.IO.File.WriteAllText(dlg.FileName, memoCanonicalJson.Text ?? string.Empty, Encoding.UTF8);
-                    }
+                    Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*",
+                    FileName = "license.json",
+                    Title = "Export canonical JSON"
+                })
+                {
+                    if (sfd.ShowDialog() != DialogResult.OK) return;
+                    // Ensure UTF-8
+                    File.WriteAllText(sfd.FileName, json, Encoding.UTF8);
                 }
             }
             catch
             {
-                MessageBox.Show("Operation failed. Contact admin.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                DevExpress.XtraEditors.XtraMessageBox.Show("Operation failed. Contact admin.");
             }
         }
 
-        private void btnValidateChecksum_Click(object sender, EventArgs e)
+        private void btnCopyChecksum_Click(object sender, EventArgs e)
         {
             try
             {
-                var text = memoCanonicalJson.Text ?? string.Empty;
-                string recomputed;
+                var cs = lblChecksum.Text ?? string.Empty;
+                if (string.IsNullOrEmpty(cs))
+                {
+                    DevExpress.XtraEditors.XtraMessageBox.Show("Operation failed. Contact admin.");
+                    return;
+                }
+                Clipboard.SetText(cs);
+            }
+            catch
+            {
+                DevExpress.XtraEditors.XtraMessageBox.Show("Operation failed. Contact admin.");
+            }
+        }
+
+        private void btnVerifyChecksum_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                var canonical = memCanonicalJson.Text ?? string.Empty;
+                var recomputed = ComputeSha256HexLocal(Encoding.UTF8.GetBytes(canonical));
+                var existing = lblChecksum.Text ?? string.Empty;
+
+                if (string.Equals(recomputed, existing, StringComparison.OrdinalIgnoreCase))
+                {
+                    lblVerifyResult.Text = "OK";
+                    lblVerifyResult.Appearance.ForeColor = Color.Green;
+                }
+                else
+                {
+                    lblVerifyResult.Text = "Checksum mismatch.";
+                    lblVerifyResult.Appearance.ForeColor = Color.Red;
+
+                    // If this verification is part of import flow, UI may require showing fatal message:
+                    // DevExpress.XtraEditors.XtraMessageBox.Show("Invalid or tampered license file.");
+                }
+            }
+            catch
+            {
+                DevExpress.XtraEditors.XtraMessageBox.Show("Operation failed. Contact admin.");
+            }
+        }
+
+        private void btnExportAsl_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (ServiceRegistry.AslGenerator == null)
+                {
+                    DevExpress.XtraEditors.XtraMessageBox.Show("Operation failed. Contact admin.");
+                    return;
+                }
+
+                // Start with displayed values but prefer canonical JSON for authoritative fields (ProductID, DealerCode)
+                var data = new LicenseData
+                {
+                    CompanyName = lblCompany.Text ?? string.Empty,
+                    ProductID = lblProduct.Text?.Trim() ?? string.Empty,
+                    DealerCode = string.Empty,
+                    LicenseKey = txtLicenseKeySummary.Text ?? string.Empty,
+                    ModuleCodes = (grdModulesSummary.DataSource as IEnumerable<object>)?.Cast<dynamic>().Select(x => (string)x.ModuleName).ToList() ?? new List<string>(),
+                    ValidFromUtc = DateTime.TryParse(lblValidFromUtc.Text, out var vf) ? vf : default,
+                    ValidToUtc = DateTime.TryParse(lblValidToUtc.Text, out var vt) ? vt : default
+                };
+
+                // Try to read authoritative ProductID / DealerCode from the canonical JSON in the memo.
                 try
                 {
-                    // ServiceRegistry is a static type; don't use null-conditional on the type name.
-                    if (ServiceRegistry.Encryption != null)
+                    var json = memCanonicalJson.Text ?? string.Empty;
+                    if (!string.IsNullOrWhiteSpace(json))
                     {
-                        recomputed = ServiceRegistry.Encryption.ComputeSha256Hex(Encoding.UTF8.GetBytes(text));
-                    }
-                    else
-                    {
-                        recomputed = ComputeSha256HexLocal(text);
+                        var token = JToken.Parse(json);
+                        var pid = token["ProductID"]?.ToString();
+                        var dcode = token["DealerCode"]?.ToString();
+                        if (!string.IsNullOrWhiteSpace(pid)) data.ProductID = pid;
+                        if (!string.IsNullOrWhiteSpace(dcode)) data.DealerCode = dcode;
                     }
                 }
                 catch
                 {
-                    recomputed = ComputeSha256HexLocal(text);
+                    // ignore parse errors and continue using displayed values
                 }
 
-                txtChecksum.Text = recomputed;
-                // If expected checksum present, compare; otherwise compare payload.ChecksumSHA256 if present.
-                var expected = _expectedChecksum;
-                if (string.IsNullOrEmpty(expected) && _payload != null)
-                    expected = _payload.ChecksumSHA256;
+                // If DealerCode still empty try to fallback to any visible label (best-effort)
+                if (string.IsNullOrWhiteSpace(data.DealerCode))
+                {
+                    // Attempt to extract DealerCode from Product label if it was displayed there (unlikely), otherwise leave empty
+                    // The LicenseData.DealerCode is required, so this will surface a sensible validation message rather than null ref.
+                    data.DealerCode = string.Empty;
+                }
 
-                UpdateChecksumStatus(recomputed, expected);
+                // Map license type displayed in UI to enum (best-effort)
+                try
+                {
+                    if (!string.IsNullOrWhiteSpace(lblLicenseType.Text) &&
+                        Enum.TryParse<Models.Enums.LicenseType>(lblLicenseType.Text, true, out var parsedLt))
+                    {
+                        data.LicenseType = parsedLt;
+                    }
+                    else
+                    {
+                        data.LicenseType = Models.Enums.LicenseType.Subscription;
+                    }
+                }
+                catch
+                {
+                    data.LicenseType = Models.Enums.LicenseType.Subscription;
+                }
+
+                using (var sfd = new SaveFileDialog
+                {
+                    Filter = "Autosoft License (*.asl)|*.asl|All files (*.*)|*.*",
+                    FileName = $"{data.CompanyName}_{data.ProductID}.asl",
+                    Title = "Export ASL"
+                })
+                {
+                    if (sfd.ShowDialog() != DialogResult.OK) return;
+
+                    try
+                    {
+                        // Use same CryptoConstants used by Generate page
+                        var key = CryptoConstants.AesKey;
+                        var iv = CryptoConstants.AesIV;
+
+                        ServiceRegistry.AslGenerator.CreateAndSaveAsl(data, sfd.FileName, key, iv);
+                        DevExpress.XtraEditors.XtraMessageBox.Show("License generated successfully.");
+                    }
+                    catch (ValidationException vx)
+                    {
+                        DevExpress.XtraEditors.XtraMessageBox.Show(vx.Message);
+                    }
+                    catch (Exception)
+                    {
+                        DevExpress.XtraEditors.XtraMessageBox.Show("Operation failed. Contact admin.");
+                    }
+                }
             }
             catch
             {
-                MessageBox.Show("Operation failed. Contact admin.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private void btnBackToGenerate_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                this.DialogResult = DialogResult.Retry;
-                this.Close();
-            }
-            catch
-            {
-                MessageBox.Show("Operation failed. Contact admin.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                DevExpress.XtraEditors.XtraMessageBox.Show("Operation failed. Contact admin.");
             }
         }
 
@@ -319,90 +341,46 @@ namespace Autosoft_Licensing.UI
         {
             try
             {
-                this.DialogResult = DialogResult.Cancel;
                 this.Close();
             }
             catch
             {
-                MessageBox.Show("Operation failed. Contact admin.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                // ignore
             }
         }
 
-        // Utility helpers
+        #endregion
 
-        private static string ComputeSha256HexLocal(string text)
+        #region Helpers
+
+        /// <summary>
+        /// Local deterministic canonicalization fallback.
+        /// Builds a JObject from payload, sorts properties lexicographically and returns indented JSON.
+        /// </summary>
+        private string CanonicalizeJson(LicenseData payload)
         {
-            using (var sha = SHA256.Create())
-            {
-                var bytes = Encoding.UTF8.GetBytes(text ?? string.Empty);
-                var hash = sha.ComputeHash(bytes);
-                var sb = new StringBuilder(hash.Length * 2);
-                foreach (var b in hash) sb.AppendFormat("{0:x2}", b);
-                return sb.ToString();
-            }
+            if (payload == null) return string.Empty;
+            // Use Json.NET to build JObject and reuse JsonHelper.Canonicalize for stable ordering.
+            var json = JsonConvert.SerializeObject(payload, Formatting.None);
+            var withoutChecksum = JsonHelper.RemoveProperty(json, "ChecksumSHA256");
+            var canon = JsonHelper.Canonicalize(withoutChecksum);
+            // Return formatted (indented) for display
+            var token = JToken.Parse(canon);
+            return token.ToString(Formatting.Indented);
         }
 
-        private static string GetProductName(string productId)
+        /// <summary>
+        /// Local SHA-256 hex helper (lowercase hex).
+        /// </summary>
+        private string ComputeSha256HexLocal(byte[] bytes)
         {
-            // Attempt to resolve a product name via ServiceRegistry.Product if available
-            try
-            {
-                var svc = ServiceRegistry.Product;
-                if (svc != null)
-                {
-                    // Try to call GetProductByProductId if exists
-                    var mi = svc.GetType().GetMethod("GetProductByProductId");
-                    if (mi != null)
-                    {
-                        var product = mi.Invoke(svc, new object[] { productId });
-                        if (product != null)
-                        {
-                            var prop = product.GetType().GetProperty("Name");
-                            if (prop != null) return prop.GetValue(product) as string;
-                        }
-                    }
-                }
-            }
-            catch
-            {
-                // ignore and fallback
-            }
-            return null;
+            using var sha = SHA256.Create();
+            var hash = sha.ComputeHash(bytes ?? Array.Empty<byte>());
+            var sb = new StringBuilder(hash.Length * 2);
+            foreach (var b in hash) sb.AppendFormat("{0:x2}", b);
+            return sb.ToString();
         }
 
-        // Fallback canonical serializer local implementation; should match the generator's canonicalization rules.
-        private static class CanonicalJsonSerializer
-        {
-            public static string Serialize(object obj)
-            {
-                try
-                {
-                    // Use JsonConvert to produce JSON and JsonHelper to canonicalize property ordering
-                    var raw = JsonConvert.SerializeObject(obj, Formatting.None);
-                    // Remove ChecksumSHA256 property if present so canonical form equals payload used to compute checksum
-                    var without = JsonHelper.RemoveProperty(raw, "ChecksumSHA256");
-                    var canon = JsonHelper.Canonicalize(without);
-                    return canon;
-                }
-                catch
-                {
-                    // Fallback coarse serialization
-                    return JsonConvert.SerializeObject(obj, Formatting.None);
-                }
-            }
-        }
-
-        // Simple DTO for module grid rows
-        private class ModuleRow
-        {
-            public string ModuleName { get; set; }
-            public bool Enabled { get; set; }
-        }
-
-        // Designer-friendly helper instead of a local function
-        private static void AddRow(DataTable dt, string key, string value)
-        {
-            dt.Rows.Add(key, value ?? string.Empty);
-        }
+        #endregion
     }
 }

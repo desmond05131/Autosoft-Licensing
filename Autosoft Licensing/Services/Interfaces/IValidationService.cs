@@ -8,5 +8,8 @@ namespace Autosoft_Licensing.Services
         ValidationResult ValidateLicenseRequest(LicenseRequest request);
         ValidationResult ValidateLicenseData(LicenseData data);
         bool IsExpired(LicenseData data, System.DateTime utcNow);
+
+        // Build a deterministic canonical JSON representation for display (checksum removed).
+        string BuildCanonicalJson(LicenseData payload);
     }
 }

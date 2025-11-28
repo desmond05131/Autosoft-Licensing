@@ -4,6 +4,9 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using Autosoft_Licensing.Models;
 using Autosoft_Licensing.Models.Enums;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Autosoft_Licensing.Utils;
 
 namespace Autosoft_Licensing.Services
 {
@@ -41,5 +44,20 @@ namespace Autosoft_Licensing.Services
         }
 
         public bool IsExpired(LicenseData d, System.DateTime utcNow) => utcNow > d.ValidToUtc;
+
+        /// <summary>
+        /// Build deterministic canonical JSON for the given payload.
+        /// Removes the ChecksumSHA256 property and returns pretty-printed (indented) canonical JSON for display.
+        /// Matches the UI fallback behaviour.
+        /// </summary>
+        public string BuildCanonicalJson(LicenseData payload)
+        {
+            if (payload == null) return string.Empty;
+            var json = JsonConvert.SerializeObject(payload, Formatting.None);
+            var withoutChecksum = JsonHelper.RemoveProperty(json, "ChecksumSHA256");
+            var canon = JsonHelper.Canonicalize(withoutChecksum);
+            var token = JToken.Parse(canon);
+            return token.ToString(Formatting.Indented);
+        }
     }
 }

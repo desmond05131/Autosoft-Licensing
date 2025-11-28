@@ -145,10 +145,21 @@ namespace Autosoft_Licensing
 
             if (!_pageCache.TryGetValue(elementName, out var page))
             {
-                // Instantiate placeholder pages here. Replace with real page types when available.
+                // Instantiate specific pages for known navigation element names.
                 switch (elementName)
                 {
-                    // e.g. case "aceGenerateRequest": page = new GenerateLicensePage(); break;
+                    // Map the accordion element used for Generate License to the real page.
+                    // BuildAccordion sets the element Name = "aceGenerateRequest".
+                    case "aceGenerateRequest":
+                    // Also accept alternative automation-friendly name if used by tests/automation.
+                    case "btnNav_GenerateLicense":
+                    case "aceGenerateLicense":
+                        page = new GenerateLicensePage();
+                        break;
+
+                    // other pages can be wired here when implemented:
+                    // case "aceLicenseList": page = new LicenseRecordsPage(); break;
+
                     default:
                         page = new GenericPage(elementText ?? elementName);
                         break;

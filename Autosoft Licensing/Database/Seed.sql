@@ -15,14 +15,14 @@ BEGIN
     VALUES ('DEALER-001', 'Default Dealer');
 END
 
--- Sample product
-IF NOT EXISTS (SELECT 1 FROM dbo.Products WHERE ProductID = 'SAMPLE-PRODUCT')
+-- Sample product (business ProductID = PROD-001)
+IF NOT EXISTS (SELECT 1 FROM dbo.Products WHERE ProductID = 'PROD-001')
 BEGIN
     INSERT INTO dbo.Products (ProductID, Name)
-    VALUES ('SAMPLE-PRODUCT', 'Sample Product');
+    VALUES ('PROD-001', 'Sample Product');
 END
 
-DECLARE @ProductId INT = (SELECT TOP(1) Id FROM dbo.Products WHERE ProductID = 'SAMPLE-PRODUCT');
+DECLARE @ProductId INT = (SELECT TOP(1) Id FROM dbo.Products WHERE ProductID = 'PROD-001');
 
 -- Sample modules for the sample product
 IF NOT EXISTS (SELECT 1 FROM dbo.Modules WHERE ProductId = @ProductId AND ModuleCode = 'MODULE-001')
