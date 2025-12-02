@@ -3,6 +3,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Autosoft_Licensing.Models;
 using Autosoft_Licensing.Utils;
 
@@ -42,26 +43,34 @@ namespace Autosoft_Licensing.Services
 
         public string ComputeSha256Hex(byte[] data)
         {
-            using var sha = SHA256.Create();
-            var hash = sha.ComputeHash(data);
-            return string.Concat(hash.Select(b => b.ToString("x2")));
+            return Autosoft_Licensing.Utils.ChecksumHelper.ComputeSha256HexLower(data);
         }
 
         public bool VerifyChecksum(string jsonWithoutChecksum, string checksumHex)
         {
-            var hex = ComputeSha256Hex(Encoding.UTF8.GetBytes(jsonWithoutChecksum));
+            var bytes = CanonicalJsonSerializer.SerializeToUtf8Bytes(JObject.Parse(jsonWithoutChecksum));
+            var hex = Autosoft_Licensing.Utils.ChecksumHelper.ComputeSha256HexLower(bytes);
             return string.Equals(hex, checksumHex, StringComparison.OrdinalIgnoreCase);
         }
 
         public string BuildJsonWithChecksum(LicenseData licenseWithoutChecksum)
         {
-            var temp = JsonConvert.SerializeObject(licenseWithoutChecksum, Formatting.None);
-            var without = JsonHelper.RemoveProperty(temp, "ChecksumSHA256");
-            var canon = JsonHelper.Canonicalize(without);
-            var checksum = ComputeSha256Hex(Encoding.UTF8.GetBytes(canon));
+            // Create a JObject from the license data.
+            var jObject = JObject.FromObject(licenseWithoutChecksum);
 
-            licenseWithoutChecksum.ChecksumSHA256 = checksum;
-            return JsonHelper.Canonicalize(JsonConvert.SerializeObject(licenseWithoutChecksum, Formatting.None));
+            // Remove the checksum property for hashing.
+            jObject.Property("ChecksumSHA256")?.Remove();
+
+            // Create the canonical representation for hashing.
+            var canonicalForHashing = CanonicalJsonSerializer.Serialize(jObject);
+            var bytes = Encoding.UTF8.GetBytes(canonicalForHashing);
+            var checksum = Autosoft_Licensing.Utils.ChecksumHelper.ComputeSha256HexLower(bytes);
+
+            // Add the checksum back to the original JObject.
+            jObject.AddFirst(new JProperty("ChecksumSHA256", checksum));
+
+            // Return the final canonical JSON with the checksum.
+            return CanonicalJsonSerializer.Serialize(jObject);
         }
     }
 }

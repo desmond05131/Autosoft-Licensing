@@ -28,15 +28,14 @@ namespace Autosoft_Licensing.UI
             // Wire up code-behind event handlers that the designer expects to exist.
             // Designer also wires these; adding again is safe and defensive.
             this.btnCopyJson.Click += btnCopyJson_Click;
-            this.btnExportJson.Click += btnExportJson_Click;
             this.btnCopyChecksum.Click += btnCopyChecksum_Click;
             this.btnVerifyChecksum.Click += btnVerifyChecksum_Click;
-            this.btnExportAsl.Click += btnExportAsl_Click;
             this.btnClose.Click += btnClose_Click;
         }
 
         /// <summary>
-        /// Populate the preview UI with the provided payload. Defensive against nulls & missing services.
+        /// Populate the preview UI with the provided payload.
+        /// Uses central canonical pipeline (CanonicalJsonSerializer + Utils.ChecksumHelper).
         /// </summary>
         public void Initialize(LicenseData payload)
         {
@@ -48,55 +47,51 @@ namespace Autosoft_Licensing.UI
                     return;
                 }
 
-                // Build canonical JSON using service if available, otherwise fallback to local deterministic implementation.
-                string canonicalJson = null;
+                // Build canonical JSON from payload WITHOUT ChecksumSHA256 property.
+                string canonicalJson;
+                byte[] canonicalBytes;
                 try
                 {
-                    canonicalJson = ServiceRegistry.Validation?.BuildCanonicalJson(payload);
+                    var j = JObject.FromObject(payload);
+                    j.Property("ChecksumSHA256")?.Remove();
+                    canonicalJson = CanonicalJsonSerializer.Serialize(j); // compact canonical string
+                    canonicalBytes = CanonicalJsonSerializer.SerializeToUtf8Bytes(j);
                 }
                 catch
                 {
-                    // ignore and fallback
+                    canonicalJson = string.Empty;
+                    canonicalBytes = new byte[0];
                 }
 
-                if (string.IsNullOrWhiteSpace(canonicalJson))
-                {
-                    try
-                    {
-                        canonicalJson = CanonicalizeJson(payload);
-                    }
-                    catch
-                    {
-                        canonicalJson = string.Empty;
-                    }
-                }
-
-                memCanonicalJson.Text = canonicalJson ?? string.Empty;
-
-                // Compute checksum using service or local helper
-                string checksum = string.Empty;
+                // Display canonical JSON exactly as used for checksum (compact)
                 try
                 {
-                    if (!string.IsNullOrEmpty(canonicalJson) && ServiceRegistry.Encryption != null)
-                    {
-                        checksum = ServiceRegistry.Encryption.ComputeSha256Hex(Encoding.UTF8.GetBytes(canonicalJson));
-                    }
-                    else
-                    {
-                        checksum = ComputeSha256HexLocal(Encoding.UTF8.GetBytes(canonicalJson ?? string.Empty));
-                    }
+                    memCanonicalJson.Text = canonicalJson ?? string.Empty;
+                    memCanonicalJson.Font = new Font("Consolas", memCanonicalJson.Font.Size);
                 }
                 catch
                 {
-                    checksum = ComputeSha256HexLocal(Encoding.UTF8.GetBytes(canonicalJson ?? string.Empty));
+                    memCanonicalJson.Text = canonicalJson ?? string.Empty;
                 }
 
+                // Compute checksum using canonical pipeline (bytes)
+                string checksum;
+                try
+                {
+                    checksum = Autosoft_Licensing.Utils.ChecksumHelper.ComputeSha256HexLower(canonicalBytes ?? Array.Empty<byte>());
+                }
+                catch
+                {
+                    checksum = ComputeSha256HexLocal(canonicalBytes ?? Array.Empty<byte>());
+                }
+
+                // Show checksum in label (existing control)
                 lblChecksum.Text = checksum ?? string.Empty;
                 lblVerifyResult.Text = string.Empty;
 
-                // Populate summary labels
+                // Populate summary labels (unchanged)
                 lblCompany.Text = payload.CompanyName ?? string.Empty;
-                lblProduct.Text = $"{payload.ProductID ?? string.Empty} { (payload is null ? string.Empty : string.Empty)}"; // ProductName may not be on LicenseData; keep compact
+                lblProduct.Text = $"{payload.ProductID ?? string.Empty} { (payload is null ? string.Empty : string.Empty)}";
                 lblLicenseType.Text = payload.LicenseType.ToString();
                 try
                 {
@@ -138,7 +133,6 @@ namespace Autosoft_Licensing.UI
                 }
                 catch { }
 
-                // Enable/disable Export ASL depending on AslGenerator availability
                 btnExportAsl.Enabled = ServiceRegistry.AslGenerator != null;
             }
             catch (Exception)
@@ -160,7 +154,6 @@ namespace Autosoft_Licensing.UI
                     return;
                 }
                 Clipboard.SetText(text);
-                // Optionally show info: use PageBase.ShowInfo from pages; here use messagebox minimal.
             }
             catch
             {
@@ -168,26 +161,62 @@ namespace Autosoft_Licensing.UI
             }
         }
 
-        private void btnExportJson_Click(object sender, EventArgs e)
+        // Single-shot save guard used by both export handlers.
+        private bool _isSaving = false;
+
+        private async void btnExportJson_Click(object sender, EventArgs e)
         {
+            System.Diagnostics.Debug.WriteLine("btnExportJson_Click invoked");
+
+            if (_isSaving) return;
+            _isSaving = true;
+            btnExportJson.Enabled = false;
+
             try
             {
-                var json = memCanonicalJson.Text ?? string.Empty;
-                using (var sfd = new SaveFileDialog
+                using (var dlg = new System.Windows.Forms.SaveFileDialog())
                 {
-                    Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*",
-                    FileName = "license.json",
-                    Title = "Export canonical JSON"
-                })
-                {
-                    if (sfd.ShowDialog() != DialogResult.OK) return;
-                    // Ensure UTF-8
-                    File.WriteAllText(sfd.FileName, json, Encoding.UTF8);
+                    dlg.Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*";
+                    dlg.DefaultExt = "json";
+
+                    // Suggest a sensible filename from displayed values; fall back to license.json.
+                    string suggested = "license.json";
+                    try
+                    {
+                        var company = (lblCompany?.Text ?? string.Empty).Trim();
+                        var product = (lblProduct?.Text ?? string.Empty).Trim();
+                        if (!string.IsNullOrWhiteSpace(company) || !string.IsNullOrWhiteSpace(product))
+                        {
+                            var safeCompany = string.IsNullOrWhiteSpace(company) ? string.Empty : company.Replace(' ', '_');
+                            var safeProduct = string.IsNullOrWhiteSpace(product) ? string.Empty : product.Replace(' ', '_');
+                            suggested = $"{(string.IsNullOrWhiteSpace(safeCompany) ? "license" : safeCompany)}_{(string.IsNullOrWhiteSpace(safeProduct) ? "license" : safeProduct)}.json";
+                        }
+                    }
+                    catch { /* non-fatal */ }
+
+                    dlg.FileName = suggested;
+
+                    var result = dlg.ShowDialog(this);
+                    if (result != System.Windows.Forms.DialogResult.OK) return;
+
+                    var path = dlg.FileName;
+                    var text = memCanonicalJson?.Text ?? string.Empty;
+
+                    // Do the write once on a background thread to keep UI responsive.
+                    await System.Threading.Tasks.Task.Run(() =>
+                    {
+                        System.IO.File.WriteAllText(path, text, new System.Text.UTF8Encoding(false));
+                    });
                 }
             }
-            catch
+            catch (Exception)
             {
                 DevExpress.XtraEditors.XtraMessageBox.Show("Operation failed. Contact admin.");
+            }
+            finally
+            {
+                _isSaving = false;
+                try { btnExportJson.Enabled = true; } catch { /* ignore */ }
             }
         }
 
@@ -214,7 +243,8 @@ namespace Autosoft_Licensing.UI
             try
             {
                 var canonical = memCanonicalJson.Text ?? string.Empty;
-                var recomputed = ComputeSha256HexLocal(Encoding.UTF8.GetBytes(canonical));
+                var bytes = Encoding.UTF8.GetBytes(canonical);
+                var recomputed = Autosoft_Licensing.Utils.ChecksumHelper.ComputeSha256HexLower(bytes);
                 var existing = lblChecksum.Text ?? string.Empty;
 
                 if (string.Equals(recomputed, existing, StringComparison.OrdinalIgnoreCase))
@@ -226,9 +256,6 @@ namespace Autosoft_Licensing.UI
                 {
                     lblVerifyResult.Text = "Checksum mismatch.";
                     lblVerifyResult.Appearance.ForeColor = Color.Red;
-
-                    // If this verification is part of import flow, UI may require showing fatal message:
-                    // DevExpress.XtraEditors.XtraMessageBox.Show("Invalid or tampered license file.");
                 }
             }
             catch
@@ -237,8 +264,14 @@ namespace Autosoft_Licensing.UI
             }
         }
 
-        private void btnExportAsl_Click(object sender, EventArgs e)
+        private async void btnExportAsl_Click(object sender, EventArgs e)
         {
+            System.Diagnostics.Debug.WriteLine("btnExportAsl_Click invoked");
+
+            if (_isSaving) return;
+            _isSaving = true;
+            btnExportAsl.Enabled = false;
+
             try
             {
                 if (ServiceRegistry.AslGenerator == null)
@@ -247,93 +280,94 @@ namespace Autosoft_Licensing.UI
                     return;
                 }
 
-                // Start with displayed values but prefer canonical JSON for authoritative fields (ProductID, DealerCode)
-                var data = new LicenseData
+                // Build LicenseData from displayed fields (same mapping as original implementation).
+                var data = new Autosoft_Licensing.Models.LicenseData
                 {
-                    CompanyName = lblCompany.Text ?? string.Empty,
-                    ProductID = lblProduct.Text?.Trim() ?? string.Empty,
+                    CompanyName = lblCompany?.Text ?? string.Empty,
+                    ProductID = (lblProduct?.Text ?? string.Empty).Trim(),
                     DealerCode = string.Empty,
-                    LicenseKey = txtLicenseKeySummary.Text ?? string.Empty,
-                    ModuleCodes = (grdModulesSummary.DataSource as IEnumerable<object>)?.Cast<dynamic>().Select(x => (string)x.ModuleName).ToList() ?? new List<string>(),
-                    ValidFromUtc = DateTime.TryParse(lblValidFromUtc.Text, out var vf) ? vf : default,
-                    ValidToUtc = DateTime.TryParse(lblValidToUtc.Text, out var vt) ? vt : default
+                    LicenseKey = txtLicenseKeySummary?.Text ?? string.Empty,
+                    ModuleCodes = (grdModulesSummary.DataSource as System.Collections.IEnumerable) != null
+                        ? (grdModulesSummary.DataSource as System.Collections.IEnumerable)
+                            .Cast<object>()
+                            .Select(x => {
+                                try { dynamic d = x; return (string)d.ModuleName; } catch { return string.Empty; }
+                            })
+                            .Where(s => !string.IsNullOrEmpty(s))
+                            .ToList()
+                        : new System.Collections.Generic.List<string>(),
+                    ValidFromUtc = DateTime.TryParse(lblValidFromUtc?.Text, out var vf) ? vf : default,
+                    ValidToUtc = DateTime.TryParse(lblValidToUtc?.Text, out var vt) ? vt : default
                 };
 
-                // Try to read authoritative ProductID / DealerCode from the canonical JSON in the memo.
+                // Try to prefer authoritative values from canonical JSON in memo.
                 try
                 {
-                    var json = memCanonicalJson.Text ?? string.Empty;
+                    var json = memCanonicalJson?.Text ?? string.Empty;
                     if (!string.IsNullOrWhiteSpace(json))
                     {
-                        var token = JToken.Parse(json);
+                        var token = Newtonsoft.Json.Linq.JToken.Parse(json);
                         var pid = token["ProductID"]?.ToString();
                         var dcode = token["DealerCode"]?.ToString();
                         if (!string.IsNullOrWhiteSpace(pid)) data.ProductID = pid;
                         if (!string.IsNullOrWhiteSpace(dcode)) data.DealerCode = dcode;
                     }
                 }
-                catch
-                {
-                    // ignore parse errors and continue using displayed values
-                }
+                catch { /* ignore parse errors */ }
 
-                // If DealerCode still empty try to fallback to any visible label (best-effort)
-                if (string.IsNullOrWhiteSpace(data.DealerCode))
-                {
-                    // Attempt to extract DealerCode from Product label if it was displayed there (unlikely), otherwise leave empty
-                    // The LicenseData.DealerCode is required, so this will surface a sensible validation message rather than null ref.
-                    data.DealerCode = string.Empty;
-                }
-
-                // Map license type displayed in UI to enum (best-effort)
+                // Map license type defensively
                 try
                 {
-                    if (!string.IsNullOrWhiteSpace(lblLicenseType.Text) &&
-                        Enum.TryParse<Models.Enums.LicenseType>(lblLicenseType.Text, true, out var parsedLt))
+                    if (!string.IsNullOrWhiteSpace(lblLicenseType?.Text) &&
+                        Enum.TryParse<Autosoft_Licensing.Models.Enums.LicenseType>(lblLicenseType.Text, true, out var parsedLt))
                     {
                         data.LicenseType = parsedLt;
                     }
                     else
                     {
-                        data.LicenseType = Models.Enums.LicenseType.Subscription;
+                        data.LicenseType = Autosoft_Licensing.Models.Enums.LicenseType.Subscription;
                     }
                 }
                 catch
                 {
-                    data.LicenseType = Models.Enums.LicenseType.Subscription;
+                    data.LicenseType = Autosoft_Licensing.Models.Enums.LicenseType.Subscription;
                 }
 
-                using (var sfd = new SaveFileDialog
+                using (var sfd = new System.Windows.Forms.SaveFileDialog())
                 {
-                    Filter = "Autosoft License (*.asl)|*.asl|All files (*.*)|*.*",
-                    FileName = $"{data.CompanyName}_{data.ProductID}.asl",
-                    Title = "Export ASL"
-                })
-                {
-                    if (sfd.ShowDialog() != DialogResult.OK) return;
+                    sfd.Filter = "Autosoft License (*.asl)|*.asl|All files (*.*)|*.*";
+                    var suggested = $"{(data.CompanyName ?? "license").Replace(' ', '_')}_{(data.ProductID ?? "product").Replace(' ', '_')}.asl";
+                    sfd.FileName = suggested;
+                    sfd.Title = "Export ASL";
 
-                    try
+                    var dlgRes = sfd.ShowDialog(this);
+                    if (dlgRes != System.Windows.Forms.DialogResult.OK) return;
+
+                    var path = sfd.FileName;
+
+                    // Run the create-and-save on background thread; service will throw on validation which we catch below.
+                    await System.Threading.Tasks.Task.Run(() =>
                     {
-                        // Use same CryptoConstants used by Generate page
                         var key = CryptoConstants.AesKey;
                         var iv = CryptoConstants.AesIV;
+                        ServiceRegistry.AslGenerator.CreateAndSaveAsl(data, path, key, iv);
+                    });
 
-                        ServiceRegistry.AslGenerator.CreateAndSaveAsl(data, sfd.FileName, key, iv);
-                        DevExpress.XtraEditors.XtraMessageBox.Show("License generated successfully.");
-                    }
-                    catch (ValidationException vx)
-                    {
-                        DevExpress.XtraEditors.XtraMessageBox.Show(vx.Message);
-                    }
-                    catch (Exception)
-                    {
-                        DevExpress.XtraEditors.XtraMessageBox.Show("Operation failed. Contact admin.");
-                    }
+                    DevExpress.XtraEditors.XtraMessageBox.Show("License generated successfully.");
                 }
             }
-            catch
+            catch (System.ComponentModel.DataAnnotations.ValidationException vx)
+            {
+                DevExpress.XtraEditors.XtraMessageBox.Show(vx.Message);
+            }
+            catch (Exception)
             {
                 DevExpress.XtraEditors.XtraMessageBox.Show("Operation failed. Contact admin.");
+            }
+            finally
+            {
+                _isSaving = false;
+                try { btnExportAsl.Enabled = ServiceRegistry.AslGenerator != null; } catch { /* ignore */ }
             }
         }
 
@@ -355,18 +389,15 @@ namespace Autosoft_Licensing.UI
 
         /// <summary>
         /// Local deterministic canonicalization fallback.
-        /// Builds a JObject from payload, sorts properties lexicographically and returns indented JSON.
+        /// (Kept for backward compatibility but primary path is ServiceRegistry.Validation.BuildCanonicalJson)
         /// </summary>
         private string CanonicalizeJson(LicenseData payload)
         {
             if (payload == null) return string.Empty;
-            // Use Json.NET to build JObject and reuse JsonHelper.Canonicalize for stable ordering.
             var json = JsonConvert.SerializeObject(payload, Formatting.None);
             var withoutChecksum = JsonHelper.RemoveProperty(json, "ChecksumSHA256");
             var canon = JsonHelper.Canonicalize(withoutChecksum);
-            // Return formatted (indented) for display
-            var token = JToken.Parse(canon);
-            return token.ToString(Formatting.Indented);
+            return canon; // already compact from JsonHelper.Canonicalize
         }
 
         /// <summary>

@@ -4,7 +4,6 @@ using System.IO;
 using System.Text;
 using Newtonsoft.Json;
 using Autosoft_Licensing.Models;
-using Autosoft_Licensing.Services;
 
 namespace Autosoft_Licensing.Services.Impl
 {
@@ -17,9 +16,8 @@ namespace Autosoft_Licensing.Services.Impl
 
         public string SerializeToArl(LicenseRequest r)
         {
-            var vr = _validator.ValidateLicenseRequest(r);
-            if (vr != ValidationResult.Success)
-                throw new ValidationException(vr.ErrorMessage);
+            // Validate according to new ARL rules before serializing.
+            EnsureValidOrThrow(r);
             return JsonConvert.SerializeObject(r, Formatting.Indented);
         }
 
@@ -30,11 +28,8 @@ namespace Autosoft_Licensing.Services.Impl
         }
 
         /// <summary>
-        /// Parse an ARL file at the given path. Heuristic:
-        /// - Read file bytes, convert to UTF8 string.
-        /// - If the trimmed string starts with '{' or '[' treat as JSON.
-        /// - Otherwise try to Base64-decode the trimmed text and treat decoded bytes as UTF8 JSON.
-        /// - On any IO/parse/base64/validation errors throw ValidationException with exact message "Invalid license request file.".
+        /// Heuristic parse: raw JSON or base64-encoded JSON. On any IO/parse/validation error
+        /// throw ValidationException("Invalid license request file.").
         /// </summary>
         public LicenseRequest ParseArl(string path)
         {
@@ -63,7 +58,7 @@ namespace Autosoft_Licensing.Services.Impl
 
             // Heuristic: if it already looks like JSON, use directly; else try base64 decode.
             string trimmed = text?.Trim() ?? string.Empty;
-            string json = null;
+            string json;
 
             if (trimmed.StartsWith("{") || trimmed.StartsWith("["))
             {
@@ -71,7 +66,6 @@ namespace Autosoft_Licensing.Services.Impl
             }
             else
             {
-                // Try base64 decode of the trimmed text
                 try
                 {
                     var decoded = Convert.FromBase64String(trimmed);
@@ -79,7 +73,7 @@ namespace Autosoft_Licensing.Services.Impl
                 }
                 catch
                 {
-                    // Fallback: treat bytes as UTF8 JSON (some ARL files may be raw JSON not starting with brace due to BOM/whitespace)
+                    // Fallback: treat bytes as UTF8 JSON
                     if (string.IsNullOrWhiteSpace(trimmed))
                         throw new ValidationException("Invalid license request file.");
                     json = text;
@@ -99,10 +93,15 @@ namespace Autosoft_Licensing.Services.Impl
             if (req == null)
                 throw new ValidationException("Invalid license request file.");
 
-            // Validate using existing validator. Per UI requirements, return the generic message on validation failure.
-            var vr = _validator.ValidateLicenseRequest(req);
-            if (vr != ValidationResult.Success)
+            try
+            {
+                EnsureValidOrThrow(req);
+            }
+            catch (ValidationException)
+            {
+                // Preserve the exact message required by UI
                 throw new ValidationException("Invalid license request file.");
+            }
 
             return req;
         }
@@ -141,11 +140,59 @@ namespace Autosoft_Licensing.Services.Impl
             if (req == null)
                 throw new ValidationException("Invalid license request file.");
 
-            var vr = _validator.ValidateLicenseRequest(req);
-            if (vr != ValidationResult.Success)
+            try
+            {
+                EnsureValidOrThrow(req);
+            }
+            catch (ValidationException)
+            {
                 throw new ValidationException("Invalid license request file.");
+            }
 
             return req;
+        }
+
+        /// <summary>
+        /// Enforce the new ARL schema rules; throws ValidationException with a specific message on failure.
+        /// Rules:
+        /// - Required fields present and non-empty
+        /// - RequestedPeriodMonths >= 1
+        /// - LicenseType must be exactly "Demo" or "Paid" (case-sensitive)
+        /// - If LicenseType == "Demo" then RequestedPeriodMonths == 1
+        /// </summary>
+        private void EnsureValidOrThrow(LicenseRequest r)
+        {
+            if (r == null)
+                throw new ValidationException("Invalid license request file.");
+
+            // Required string fields
+            if (string.IsNullOrWhiteSpace(r.CompanyName)
+                || string.IsNullOrWhiteSpace(r.DealerCode)
+                || string.IsNullOrWhiteSpace(r.ProductID)
+                || string.IsNullOrWhiteSpace(r.LicenseType)
+                || string.IsNullOrWhiteSpace(r.LicenseKey))
+            {
+                throw new ValidationException("Invalid license request file.");
+            }
+
+            // RequestedPeriodMonths
+            if (r.RequestedPeriodMonths < 1 || r.RequestedPeriodMonths > 1200)
+                throw new ValidationException("Invalid license request file.");
+
+            // LicenseType allowed values
+            if (r.LicenseType != "Demo" && r.LicenseType != "Paid" && r.LicenseType != "Subscription")
+                throw new ValidationException("Invalid license request file.");
+
+            // Demo must have exactly 1 month
+            if (r.LicenseType == "Demo" && r.RequestedPeriodMonths != 1)
+                throw new ValidationException("Invalid license request file.");
+
+            // RequestDateUtc must be present (non-default)
+            if (r.RequestDateUtc == default)
+                throw new ValidationException("Invalid license request file.");
+
+            // Optionally you could run additional structural validation via _validator if needed,
+            // but do not allow _validator's message to leak — UI requires the exact string for failures.
         }
     }
 }

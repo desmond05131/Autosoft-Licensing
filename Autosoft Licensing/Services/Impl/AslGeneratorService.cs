@@ -2,6 +2,8 @@
 using System.ComponentModel.DataAnnotations;
 using Autosoft_Licensing.Models;
 using Autosoft_Licensing.Services;
+using System.Text;
+using Autosoft_Licensing.Utils;
 
 namespace Autosoft_Licensing.Services.Impl
 {
@@ -44,8 +46,39 @@ namespace Autosoft_Licensing.Services.Impl
                     data.LicenseKey = _keyGenerator.GenerateKey(data.CompanyName, data.ProductID);
                 }
 
-                var base64Asl = _licenseService.GenerateAsl(data, key, iv);
-                return base64Asl;
+                // Build canonical JSON (without checksum) using centralized validation service
+                string canonicalWithoutChecksum = _validation.BuildCanonicalJson(data);
+                // Compute checksum over canonical JSON bytes (UTF-8, no BOM)
+                string checksum;
+                if (ServiceRegistry.Encryption != null)
+                {
+                    checksum = ServiceRegistry.Encryption.ComputeSha256Hex(Encoding.UTF8.GetBytes(canonicalWithoutChecksum ?? string.Empty));
+                }
+                else
+                {
+                    // fallback - local simple compute
+                    using var sha = System.Security.Cryptography.SHA256.Create();
+                    var hash = sha.ComputeHash(Encoding.UTF8.GetBytes(canonicalWithoutChecksum ?? string.Empty));
+                    checksum = string.Concat(Array.ConvertAll(hash, b => b.ToString("x2")));
+                }
+
+                // Inject checksum into payload
+                data.ChecksumSHA256 = checksum;
+
+                // Serialize final canonical JSON including checksum (sorted keys)
+                var finalJson = CanonicalJsonSerializer.Serialize(data);
+
+                // Encrypt final JSON and return Base64 ASL
+                if (ServiceRegistry.Encryption != null)
+                {
+                    return ServiceRegistry.Encryption.EncryptJsonToAsl(finalJson, key, iv);
+                }
+                else
+                {
+                    // If encryption service unavailable, fallback to using ILicenseService if it handles encryption
+                    // Keep compatibility: try license service as last resort
+                    return _licenseService.GenerateAsl(data, key, iv);
+                }
             }
             catch (ValidationException)
             {

@@ -65,11 +65,11 @@ namespace Autosoft_Licensing.Tools
                     ProductID = "SAMPLE-PRODUCT",
                     DealerCode = "DEALER-001",
                     RequestedPeriodMonths = 1,
-                    LicenseType = LicenseType.Demo,
+                    // LicenseRequest.LicenseType is a string in the ARL model
+                    LicenseType = "Demo",
                     LicenseKey = "SMOKETEST-KEY-001",
                     CurrencyCode = "USD",
-                    RequestDateUtc = DateTime.UtcNow,
-                    ModuleCodes = new List<string> { "MODULE-001" }
+                    RequestDateUtc = DateTime.UtcNow
                 };
 
                 string arl = ServiceRegistry.LicenseRequest.SerializeToArl(req);

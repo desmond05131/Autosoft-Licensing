@@ -1,0 +1,9 @@
+{
+  "CompanyName": "QCP Paver SDN BHD",
+  "ProductID": "20001",
+  "RequestedPeriodMonths": 12,
+  "LicenseType": "Subscription",
+  "LicenseKey": "REQ-12345",
+  "CurrencyCode": "MYR",
+  "RequestDateUtc": "2025-11-24T00:00:00Z"
+}

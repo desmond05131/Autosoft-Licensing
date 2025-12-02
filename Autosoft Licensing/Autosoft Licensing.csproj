@@ -243,8 +243,11 @@
     <Compile Include="Services\Interfaces\ILicenseKeyGenerator.cs" />
     <Compile Include="Services\Interfaces\IProductService.cs" />
     <Compile Include="Services\Interfaces\IUserService.cs" />
+    <None Include="TestAssets\sample_invalid.arl" />
+    <None Include="TestAssets\sample_valid.arl" />
     <Compile Include="Tests\Helpers\UiTestHost.cs" />
     <Compile Include="Tools\AslTestHelper.cs" />
+    <Compile Include="Tools\CanonicalJsonTests.cs" />
     <Compile Include="Tools\E2e_GenerateLicense_FlaUi.cs" />
     <Compile Include="Tools\GenerateLicensePageIntegrationTests.cs" />
     <Compile Include="Tools\GenerateLicensePageLogicTests.cs" />
@@ -322,6 +325,9 @@
     </Compile>
     <Compile Include="UI\Pages\ProductDetailsPage.cs" />
     <Compile Include="UI\Pages\UserDetailsPage.cs" />
+    <Compile Include="Utils\CanonicalJson.cs" />
+    <Compile Include="Utils\CanonicalJsonSerializer.cs" />
+    <Compile Include="Utils\ChecksumHelper.cs" />
     <Compile Include="Utils\JsonHelper.cs" />
     <Compile Include="Utils\CryptoConstants.cs" />
     <Compile Include="Utils\UiMessages.cs" />

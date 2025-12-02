@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Collections.Generic;
 using Autosoft_Licensing.Models;
 
 namespace Autosoft_Licensing.Services.Impl
@@ -36,18 +37,19 @@ namespace Autosoft_Licensing.Services.Impl
             if (licenseRequest == null)
                 throw new ArgumentNullException(nameof(licenseRequest));
 
+            // IMPORTANT: ignore any ModuleCodes — ARL must not drive module selection.
             return new ArlRequest
             {
                 CompanyName = licenseRequest.CompanyName,
                 ProductID = licenseRequest.ProductID,
-                ProductName = null, // Set appropriately if available
+                ProductName = null,
                 DealerCode = licenseRequest.DealerCode,
                 RequestedPeriodMonths = licenseRequest.RequestedPeriodMonths,
-                LicenseType = licenseRequest.LicenseType.ToString(),
+                LicenseType = licenseRequest.LicenseType, // pass through string ("Demo" or "Paid")
                 LicenseKey = licenseRequest.LicenseKey,
                 CurrencyCode = licenseRequest.CurrencyCode,
                 RequestDateUtc = licenseRequest.RequestDateUtc,
-                ModuleCodes = licenseRequest.ModuleCodes?.ToList() ?? Enumerable.Empty<string>()
+                ModuleCodes = Enumerable.Empty<string>() // deliberately empty
             };
         }
     }

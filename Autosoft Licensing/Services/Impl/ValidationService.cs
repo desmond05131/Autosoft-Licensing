@@ -19,10 +19,12 @@ namespace Autosoft_Licensing.Services
             if (!Validator.TryValidateObject(r, ctx, results, true))
                 return results[0];
 
-            if (r.LicenseType == LicenseType.Demo && r.RequestedPeriodMonths != 1)
+            // LicenseRequest.LicenseType is a string ("Demo" or "Paid")
+            if (string.Equals(r.LicenseType, "Demo", StringComparison.Ordinal) && r.RequestedPeriodMonths != 1)
                 return new ValidationResult("Demo license must request 1 month.");
 
-            if (r.LicenseType == LicenseType.Subscription)
+            // Treat "Paid" ARL requests as subscription business rules
+            if (string.Equals(r.LicenseType, "Paid", StringComparison.Ordinal))
             {
                 var allowed = new[] { 3, 6, 12, 24 };
                 if (!allowed.Contains(r.RequestedPeriodMonths))
@@ -53,9 +55,9 @@ namespace Autosoft_Licensing.Services
         public string BuildCanonicalJson(LicenseData payload)
         {
             if (payload == null) return string.Empty;
-            var json = JsonConvert.SerializeObject(payload, Formatting.None);
-            var withoutChecksum = JsonHelper.RemoveProperty(json, "ChecksumSHA256");
-            var canon = JsonHelper.Canonicalize(withoutChecksum);
+            var jObject = JObject.FromObject(payload);
+            jObject.Property("ChecksumSHA256")?.Remove();
+            var canon = CanonicalJsonSerializer.Serialize(jObject);
             var token = JToken.Parse(canon);
             return token.ToString(Formatting.Indented);
         }

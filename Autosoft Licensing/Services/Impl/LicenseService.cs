@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using Autosoft_Licensing.Models;
 using Autosoft_Licensing.Models.Enums;
 using Autosoft_Licensing.Utils;
+using Newtonsoft.Json.Linq;
 
 namespace Autosoft_Licensing.Services
 {
@@ -37,20 +38,42 @@ namespace Autosoft_Licensing.Services
                 throw new ValidationException("Invalid or tampered license file.");
             }
 
-            LicenseData data;
+            JObject parsed;
             try
             {
-                data = JsonConvert.DeserializeObject<LicenseData>(json);
+                parsed = JObject.Parse(json);
             }
             catch
             {
                 throw new ValidationException("Invalid or tampered license file.");
             }
 
-            var withoutChecksum = JsonHelper.RemoveProperty(json, "ChecksumSHA256");
-            var canon = JsonHelper.Canonicalize(withoutChecksum);
-            if (!_crypto.VerifyChecksum(canon, data.ChecksumSHA256))
+            // Extract checksum and remove before canonicalizing
+            var extracted = parsed["ChecksumSHA256"]?.ToString();
+            if (string.IsNullOrWhiteSpace(extracted))
                 throw new ValidationException("Invalid or tampered license file.");
+
+            parsed.Property("ChecksumSHA256")?.Remove();
+
+            // Build canonical JSON from the parsed object (without checksum) and recompute
+            var canonicalBytes = CanonicalJson.SerializeCanonicalToUtf8Bytes(parsed);
+            var recomputed = ChecksumHelper.ComputeSha256HexLower(canonicalBytes);
+
+            if (!string.Equals(recomputed, extracted, StringComparison.OrdinalIgnoreCase))
+                throw new ValidationException("Invalid or tampered license file.");
+
+            LicenseData data;
+            try
+            {
+                // Deserialize into LicenseData for validation and further use
+                data = parsed.ToObject<LicenseData>();
+                // Ensure checksum property restored on object for downstream code that expects it
+                data.ChecksumSHA256 = extracted;
+            }
+            catch
+            {
+                throw new ValidationException("Invalid or tampered license file.");
+            }
 
             var vr = _validator.ValidateLicenseData(data);
             if (vr != ValidationResult.Success)
@@ -70,8 +93,6 @@ namespace Autosoft_Licensing.Services
         {
             // Validation should run against the required business fields,
             // but the ChecksumSHA256 property is computed by this method and therefore must be allowed missing.
-            // Create a lightweight copy of the incoming data with a placeholder checksum so DataAnnotations
-            // validation (which requires ChecksumSHA256) succeeds without mutating the original object.
             var copy = new LicenseData
             {
                 CompanyName = data.CompanyName,
@@ -90,10 +111,20 @@ namespace Autosoft_Licensing.Services
             if (vr != ValidationResult.Success)
                 throw new ValidationException(vr.ErrorMessage);
 
-            // Ensure original object has no checksum before building the canonical JSON and computing real checksum.
-            data.ChecksumSHA256 = null;
-            var jsonWithChecksum = _crypto.BuildJsonWithChecksum(data);
-            return _crypto.EncryptJsonToAsl(jsonWithChecksum, key, iv);
+            // Build canonical JSON from object without checksum
+            var j = JObject.FromObject(data);
+            j.Property("ChecksumSHA256")?.Remove();
+
+            var bytes = CanonicalJson.SerializeCanonicalToUtf8Bytes(j);
+            var checksum = ChecksumHelper.ComputeSha256HexLower(bytes);
+
+            // Inject checksum into final payload (checksum computed BEFORE adding it)
+            j.AddFirst(new JProperty("ChecksumSHA256", checksum));
+
+            // Final compact canonical JSON (sorted keys)
+            var finalJson = CanonicalJson.SerializeCanonical(j);
+
+            return _crypto.EncryptJsonToAsl(finalJson, key, iv);
         }
 
         public LicenseMetadata Activate(LicenseData data, string rawAslBase64 = null, int? importedByUserId = null)

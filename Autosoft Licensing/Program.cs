@@ -8,6 +8,7 @@ using Autosoft_Licensing.Utils;
 using DevExpress.XtraEditors;
 using DevExpress.LookAndFeel;
 using Autosoft_Licensing.UI.Pages;
+using System.Diagnostics;
 
 namespace Autosoft_Licensing
 {
@@ -176,6 +177,55 @@ namespace Autosoft_Licensing
                 MessageBox.Show(msg, caption, MessageBoxButtons.OK, icon);
                 return;
             }
+
+#if DEBUG
+            // Debug convenience: when launching the EXE from Visual Studio in Debug without args
+            // open a lightweight form hosting the GenerateLicensePage so you can test it directly.
+            // This block runs only in DEBUG builds and only when no command-line args are present.
+            if (args == null || args.Length == 0)
+            {
+                try
+                {
+                    var host = new XtraForm
+                    {
+                        Text = "Generate License Visual Test",
+                        StartPosition = FormStartPosition.CenterScreen,
+                        Width = 1100,
+                        Height = 820
+                    };
+
+                    // Prefer explicit look/feel disabling to match other visual test behavior
+                    host.LookAndFeel.UseDefaultLookAndFeel = false;
+                    host.BackColor = System.Drawing.Color.White;
+
+                    var page = new GenerateLicensePage();
+                    page.Dock = DockStyle.Fill;
+
+                    // Best-effort: inject runtime services from ServiceRegistry so page behaves normally in the test host.
+                    try
+                    {
+                        page.Initialize(
+                            ServiceRegistry.ArlReader,
+                            ServiceRegistry.AslGenerator,
+                            ServiceRegistry.Product,
+                            ServiceRegistry.Database,
+                            ServiceRegistry.User);
+                    }
+                    catch
+                    {
+                        // ignore injection errors; page ctor already tries to wire defaults
+                    }
+
+                    host.Controls.Add(page);
+                    Application.Run(host);
+                    return;
+                }
+                catch
+                {
+                    // fall back to normal interactive run if anything goes wrong here
+                }
+            }
+#endif
 
             // Normal interactive run
             Application.Run(new MainForm());

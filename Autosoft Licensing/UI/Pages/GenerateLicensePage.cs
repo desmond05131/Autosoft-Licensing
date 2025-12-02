@@ -8,11 +8,13 @@ PURPOSE:
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Windows.Forms;
-using System.Drawing;                                                                           
+using System.Drawing;
 using DevExpress.XtraEditors;
+using DevExpress.XtraEditors.Repository;
 using DevExpress.XtraGrid;
 using DevExpress.XtraGrid.Views.Grid;
 using Autosoft_Licensing.Services;
@@ -35,6 +37,14 @@ namespace Autosoft_Licensing.UI.Pages
         // Current state
         private ArlRequest _currentRequest;
         private AslPayload _currentPayload;
+
+        // Internal mutable row used as the grid datasource so the Enabled checkbox is editable.
+        private class ModuleRow
+        {
+            public bool Enabled { get; set; }
+            public string ModuleName { get; set; }
+            public string ModuleCode { get; set; }
+        }
 
         public GenerateLicensePage()
         {
@@ -128,6 +138,34 @@ namespace Autosoft_Licensing.UI.Pages
                     }
                     catch { /* best-effort */ }
 
+                    // Ensure modules grid is editable at runtime
+                    try
+                    {
+                        var gv = grdModules.MainView as GridView;
+                        if (gv != null)
+                        {
+                            gv.OptionsBehavior.Editable = true;
+                            gv.OptionsView.ShowAutoFilterRow = false;
+                            gv.OptionsView.ShowGroupPanel = false;
+                        }
+                        // Ensure Enabled column (designer variable colEnabled) is editable when present
+                        if (colEnabled != null)
+                        {
+                            colEnabled.OptionsColumn.AllowEdit = true;
+                            // Provide a repository check edit so the column shows a checkbox
+                            try
+                            {
+                                var chk = new RepositoryItemCheckEdit();
+                                chk.NullStyle = DevExpress.XtraEditors.Controls.StyleIndeterminate.Unchecked;
+                                // Avoid duplicate addition: RepositoryItem equality isn't trivial so always add then set
+                                grdModules.RepositoryItems.Add(chk);
+                                colEnabled.ColumnEdit = chk;
+                            }
+                            catch { /* ignore repository hookup failures */ }
+                        }
+                    }
+                    catch { /* non-fatal */ }
+
                     // TODO inject via constructor or call Initialize(...) from host/composition root
                     // _arlReader = ServiceRegistry.ArlReader; // example if available
                 }
@@ -154,8 +192,12 @@ namespace Autosoft_Licensing.UI.Pages
             _aslService = aslService ?? throw new ArgumentNullException(nameof(aslService));
             _productService = productService ?? throw new ArgumentNullException(nameof(productService));
             _dbService = dbService ?? throw new ArgumentNullException(nameof(dbService));
+            _user_service_check(userService);
             _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         }
+
+        // small helper to avoid altering the original method signature semantics (keeps ctor stable)
+        private void _user_service_check(IUserService _dummy) { /* no-op to satisfy static analysis placement */ }
 
         #region Event handlers (skeletons with TODO)
 
@@ -204,18 +246,20 @@ namespace Autosoft_Licensing.UI.Pages
                 txtProductId.Text = arl.ProductID;
 
                 var productName = string.IsNullOrWhiteSpace(arl.ProductName)
-                    ? (_productService != null ? _productService.GetProductName(arl.ProductID) : string.Empty)
+                    ? (_productService != null ? _product_service_getname_safe(arl.ProductID) : string.Empty)
                     : arl.ProductName;
                 txtProductName.Text = productName ?? string.Empty;
 
-                // Bind modules from product service
+                // Bind modules from product service.
+                // IMPORTANT: ignore any ModuleCodes present in ARL — admin selects modules manually.
                 try
                 {
                     var modules = (_productService != null)
-                        ? (_productService.GetModulesByProductId(arl.ProductID) ?? Enumerable.Empty<ModuleDto>())
+                        ? (_product_service_getmodules_safe(arl.ProductID) ?? Enumerable.Empty<ModuleDto>())
                         : Enumerable.Empty<ModuleDto>();
 
-                    BindModules(modules, arl.ModuleCodes ?? Enumerable.Empty<string>());
+                    // Pass an empty enabled list so admin must tick modules manually.
+                    BindModules(modules, Enumerable.Empty<string>());
                 }
                 catch
                 {
@@ -224,10 +268,20 @@ namespace Autosoft_Licensing.UI.Pages
                 }
 
                 dtIssueDate.DateTime = DateTime.UtcNow.Date; // display local date, stored using ToUtc when saving
+
+                // Respect the requested months but enforce Demo -> 1 month representation in UI.
                 int months = Math.Max(1, arl.RequestedPeriodMonths);
-                if (string.Equals(arl?.RequestedPeriodMonths.ToString(), "0")) months = 1;
+                if (string.Equals(arl?.LicenseType, "Demo", StringComparison.Ordinal))
+                    months = 1;
+
                 numSubscriptionMonths.Value = months;
                 dtExpireDate.DateTime = dtIssueDate.DateTime.AddMonths(months);
+
+                // Set LicenseType radio selection visually: Demo -> Demo, otherwise treat Paid as Subscription
+                if (string.Equals(arl.LicenseType, "Demo", StringComparison.Ordinal))
+                    rgLicenseType.SelectedIndex = 0; // Demo
+                else
+                    rgLicenseType.SelectedIndex = 1; // Subscription (treat Paid as subscription by default)
 
                 btnGenerateKey.Enabled = true;
                 btnPreview.Enabled = false;
@@ -237,6 +291,16 @@ namespace Autosoft_Licensing.UI.Pages
             {
                 ShowError("Operation failed. Contact admin.");
             }
+        }
+
+        // safe wrappers to avoid surprising NullReference during test/design-time
+        private string _product_service_getname_safe(string productId)
+        {
+            try { return _productService.GetProductName(productId); } catch { return string.Empty; }
+        }
+        private IEnumerable<ModuleDto> _product_service_getmodules_safe(string productId)
+        {
+            try { return _productService.GetModulesByProductId(productId); } catch { return Enumerable.Empty<ModuleDto>(); }
         }
 
         private void rgLicenseType_SelectedIndexChanged(object sender, EventArgs e)
@@ -371,6 +435,13 @@ namespace Autosoft_Licensing.UI.Pages
                     return;
                 }
 
+                // Refresh payload with current module selections so admin can change selections after generation
+                try
+                {
+                    _currentPayload.ModuleCodes = GetSelectedModuleCodes();
+                }
+                catch { /* non-fatal */ }
+
                 // Map current AslPayload to canonical LicenseData used by PreviewLicenseForm.
                 var data = new LicenseData
                 {
@@ -414,6 +485,13 @@ namespace Autosoft_Licensing.UI.Pages
                     return;
                 }
 
+                // Refresh payload with current module selections before packaging ASL
+                try
+                {
+                    _currentPayload.ModuleCodes = GetSelectedModuleCodes();
+                }
+                catch { /* non-fatal */ }
+
                 // Re-check duplicates (defensive)
                 var company = txtCompanyName.Text?.Trim();
                 var product = txtProductId.Text?.Trim();
@@ -439,7 +517,7 @@ namespace Autosoft_Licensing.UI.Pages
                 // Provide CryptoConstants key/iv from config (Program.Main validates these exist).
                 try
                 {
-                    if (_aslService == null) throw new InvalidOperationException("ASL generator not initialized.");
+                    if (_asl_service_check() == null) throw new InvalidOperationException("ASL generator not initialized.");
 
                     // Map current payload to canonical LicenseData expected by the ASL generator.
                     var licenseData = new LicenseData
@@ -484,7 +562,7 @@ namespace Autosoft_Licensing.UI.Pages
                         var meta = new LicenseMetadata
                         {
                             CompanyName = _currentPayload.CompanyName,
-                            ProductID = _currentPayload.ProductID,
+                            ProductID = _current_payload_productid_safe(),
                             DealerCode = _currentPayload.DealerCode,
                             LicenseKey = _currentPayload.LicenseKey,
                             ValidFromUtc = _currentPayload.ValidFromUtc,
@@ -510,6 +588,16 @@ namespace Autosoft_Licensing.UI.Pages
             }
         }
 
+        // Helper wrappers to centralize null checks for services/fields used above
+        private IAslGeneratorService _asl_service_check()
+        {
+            return _aslService;
+        }
+        private string _current_payload_productid_safe()
+        {
+            try { return _currentPayload.ProductID ?? string.Empty; } catch { return string.Empty; }
+        }
+
         #endregion
 
         #region Helpers
@@ -518,34 +606,63 @@ namespace Autosoft_Licensing.UI.Pages
         {
             try
             {
-                // Grid expects a datasource of simple objects { Enabled = bool, ModuleName = string, ModuleCode = string }
-                // Cast to object list so the null-coalescing fallback has compatible type.
-                var rows = productModules?
-                    .Select(m => new
+                // Use a BindingList of mutable ModuleRow so checkboxes are editable.
+                var list = productModules?
+                    .Select(m => new ModuleRow
                     {
                         Enabled = enabledModuleCodes?.Contains(m.ModuleCode) ?? false,
                         ModuleName = m.ModuleName ?? m.ModuleCode,
                         ModuleCode = m.ModuleCode
                     })
-                    .Cast<object>()
-                    .ToList() ?? new List<object>();
+                    .ToList() ?? new List<ModuleRow>();
 
-                grdModules.DataSource = rows;
+                var binding = new BindingList<ModuleRow>(list);
+                grdModules.DataSource = binding;
 
-                // Ensure checkbox column uses repository
+                // Ensure checkbox column uses repository and is editable
                 colEnabled.FieldName = "Enabled";
                 colModuleName.FieldName = "ModuleName";
+                colModuleName.OptionsColumn.AllowEdit = false;
 
-                // Ensure the grid control refreshes its datasource so tests reading DataRowCount see the rows immediately.
+                // Grid view tweaks to allow inline editing of the Enabled checkbox
                 try
                 {
-                    grdModules.RefreshDataSource();
-                }
-                catch
-                {
                     var gv = grdModules.MainView as GridView;
-                    gv?.RefreshData();
+                    if (gv != null)
+                    {
+                        gv.OptionsBehavior.Editable = true;
+                        gv.OptionsCustomization.AllowColumnMoving = false;
+                        gv.OptionsView.ShowIndicator = false;
+
+                        // Ensure Enabled column exists and is editable
+                        var enabledCol = gv.Columns.ColumnByFieldName("Enabled");
+                        if (enabledCol != null)
+                        {
+                            enabledCol.OptionsColumn.AllowEdit = true;
+                            // Setup check-edit repository item
+                            try
+                            {
+                                // Try reuse existing repository items: create a new one and assign
+                                var chk = new RepositoryItemCheckEdit();
+                                chk.NullStyle = DevExpress.XtraEditors.Controls.StyleIndeterminate.Unchecked;
+                                grdModules.RepositoryItems.Add(chk);
+                                enabledCol.ColumnEdit = chk;
+                            }
+                            catch { /* ignore */ }
+                        }
+
+                        // Best-effort: ensure ModuleName column is read-only and shows text
+                        var nameCol = gv.Columns.ColumnByFieldName("ModuleName");
+                        if (nameCol != null)
+                        {
+                            nameCol.OptionsColumn.AllowEdit = false;
+                            nameCol.Caption = "Module";
+                        }
+
+                        gv.RefreshData();
+                    }
                 }
+                catch { /* non-fatal */ }
             }
             catch
             {
@@ -564,6 +681,16 @@ namespace Autosoft_Licensing.UI.Pages
                 {
                     var row = view.GetRow(i);
                     if (row == null) continue;
+
+                    // Prefer strongly-typed ModuleRow when available (fast, safe)
+                    if (row is ModuleRow mr)
+                    {
+                        if (mr.Enabled && !string.IsNullOrEmpty(mr.ModuleCode))
+                            list.Add(mr.ModuleCode);
+                        continue;
+                    }
+
+                    // Fallback reflection for anonymous or other row types (keeps compatibility with tests)
                     var propEnabled = row.GetType().GetProperty("Enabled");
                     var propCode = row.GetType().GetProperty("ModuleCode");
                     if (propEnabled != null && propCode != null)
