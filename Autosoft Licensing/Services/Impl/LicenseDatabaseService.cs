@@ -598,7 +598,7 @@ VALUES (@lid, @mid);", conn, tx);
             {
                 using var conn = _factory.Create();
                 using var cmd = new SqlCommand(@"
-SELECT m.ModuleCode, m.Name, m.Description
+SELECT m.ModuleCode, m.Name
 FROM dbo.Modules m
 JOIN dbo.Products p ON p.Id = m.ProductId
 WHERE p.ProductID = @pid
@@ -611,8 +611,7 @@ ORDER BY m.ModuleCode;", conn);
                     list.Add(new ModuleDto
                     {
                         ModuleCode = r.GetString(0),
-                        ModuleName = r.IsDBNull(1) ? null : r.GetString(1),
-                        Description = r.IsDBNull(2) ? null : r.GetString(2)
+                        ModuleName = r.IsDBNull(1) ? null : r.GetString(1)
                     });
                 }
             }

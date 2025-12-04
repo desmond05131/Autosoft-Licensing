@@ -22,6 +22,26 @@ namespace Autosoft_Licensing
         public MainForm()
         {
             InitializeComponent();
+
+            // REMOVE AFTER MANUAL TESTING
+            try
+            {
+                var adminUser = new Autosoft_Licensing.Models.User
+                {
+                    Id = 9999,
+                    Username = "visual-admin",
+                    DisplayName = "Visual Admin",
+                    Role = "Admin",
+                    Email = "admin@test.local",
+                    PasswordHash = "dummy",
+                    CreatedUtc = DateTime.UtcNow
+                };
+
+                this.SetLoggedInUser(adminUser);
+                // Force-load LicenseRecordsPage
+                LoadPage("LicenseRecordsPage", "License Records");
+            }
+            catch { /* ignore for manual test boot */ }
         }
 
         /// <summary>
@@ -131,6 +151,12 @@ namespace Autosoft_Licensing
             if (string.IsNullOrEmpty(elementName))
                 return;
 
+            // Ensure runtime UI exists (avoid NRE when called before form Load)
+            if (this.accordion == null || this.contentPanel == null)
+            {
+                this.BuildAccordion();
+            }
+
             // Protect admin-only elements
             if ((elementName.Equals("aceUserManagement", StringComparison.OrdinalIgnoreCase) ||
                  elementName.Equals("aceSettingsSecurity", StringComparison.OrdinalIgnoreCase)) &&
@@ -209,40 +235,31 @@ namespace Autosoft_Licensing
         /// <summary>
         /// Handle navigation requests from child pages.
         /// </summary>
-        private void OnPageNavigationRequested(object sender, LicenseRecordsPage.NavigateEventArgs e)
+        // In MainForm, replace/confirm the body of OnPageNavigationRequested with:
+        private void OnPageNavigationRequested(object sender, Autosoft_Licensing.UI.Pages.LicenseRecordsPage.NavigateEventArgs e)
         {
             try
             {
                 if (string.IsNullOrEmpty(e.TargetPage))
                     return;
 
-                // Handle different target pages
                 switch (e.TargetPage)
                 {
                     case "LicenseRecordDetailsPage":
                         if (e.LicenseId.HasValue)
                         {
-                            // Load or get cached details page
                             if (!_pageCache.TryGetValue("LicenseRecordDetailsPage", out var page))
                             {
                                 page = new LicenseRecordDetailsPage();
-                                
-                                // FIXED: Wire back navigation event for newly created page
                                 if (page is LicenseRecordDetailsPage detailsPage)
-                                {
                                     detailsPage.NavigateRequested += OnDetailsPageNavigationRequested;
-                                }
-                                
+
                                 _pageCache["LicenseRecordDetailsPage"] = page;
                             }
 
-                            // Initialize with license ID
                             if (page is LicenseRecordDetailsPage detailsPageToInit)
-                            {
                                 detailsPageToInit.Initialize(e.LicenseId.Value);
-                            }
 
-                            // Show the page
                             contentPanel.Controls.Clear();
                             page.Dock = DockStyle.Fill;
                             contentPanel.Controls.Add(page);
@@ -252,6 +269,10 @@ namespace Autosoft_Licensing
 
                     case "GenerateLicensePage":
                         LoadPage("GenerateLicensePage", "Generate License");
+                        break;
+
+                    case "LicenseRecordsPage":
+                        LoadPage("LicenseRecordsPage", "License Records");
                         break;
 
                     default:

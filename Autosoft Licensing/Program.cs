@@ -14,16 +14,6 @@ namespace Autosoft_Licensing
 {
     internal static class Program
     {
-        /// <summary>
-        /// The main entry point for the application.
-        /// Accepts:
-        /// - "--smoke" : non-UI smoke harness
-        /// - "--smoke-ui" : programmatic non-visual UI smoke (existing)
-        /// - "--smoke-ui-visual" : show the MainForm so you can manually inspect and click pages
-        /// - "--smoke-ui-demo" : show MainForm and automatically step through pages (visual demo)
-        ///   add "--smoke-ui-demo-admin" to run demo with admin user set (shows admin items)
-        /// - "--show-login" : show only the LoginPage in a small host so you can verify runtime colors
-        /// </summary>
         [STAThread]
         static void Main(string[] args)
         {
@@ -77,8 +67,7 @@ namespace Autosoft_Licensing
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            // If running the visual test, ensure global DevExpress look-and-feel is disabled so
-            // per-control BackColor values render exactly as set.
+            // If running the visual login test, disable global look-and-feel and host LoginPage
             if (args != null && args.Any(a => string.Equals(a, "--show-login", StringComparison.OrdinalIgnoreCase)))
             {
                 UserLookAndFeel.Default.UseDefaultLookAndFeel = false;
@@ -88,7 +77,7 @@ namespace Autosoft_Licensing
                 return;
             }
 
-            // Visual smoke: open the real MainForm so user can manually click navigation
+            // Visual smoke: open the real MainForm for manual inspection/clicks
             if (args != null && args.Any(a => string.Equals(a, "--smoke-ui-visual", StringComparison.OrdinalIgnoreCase)))
             {
                 var mf = new MainForm();
@@ -102,13 +91,9 @@ namespace Autosoft_Licensing
                         var admin = ServiceRegistry.Database.GetUserByUsername("admin");
                         if (admin != null) mf.SetLoggedInUser(admin);
                     }
-                    catch
-                    {
-                        // ignore: visual smoke should still show even if admin read failed
-                    }
+                    catch { /* ignore */ }
                 }
 
-                // Show form and allow manual inspection/clicks. User closes when done.
                 Application.Run(mf);
                 return;
             }
@@ -118,7 +103,6 @@ namespace Autosoft_Licensing
             {
                 var mf = new MainForm();
 
-                // Optionally set admin user to reveal admin items during demo
                 if (args.Any(a => string.Equals(a, "--smoke-ui-demo-admin", StringComparison.OrdinalIgnoreCase)))
                 {
                     try
@@ -129,19 +113,16 @@ namespace Autosoft_Licensing
                     catch { }
                 }
 
-                // Use a timer to step through elements on the UI thread
                 mf.Shown += (s, e) =>
                 {
                     var elements = mf.GetNavigationElements().ToArray();
                     int idx = 0;
-                    var timer = new Timer { Interval = 800 }; // ms
+                    var timer = new Timer { Interval = 800 };
                     timer.Tick += (ts, te) =>
                     {
                         if (idx >= elements.Length)
                         {
                             timer.Stop();
-                            // Keep window open after demo so user can inspect; close automatically if you prefer:
-                            // mf.Close();
                             return;
                         }
 
@@ -178,63 +159,43 @@ namespace Autosoft_Licensing
                 return;
             }
 
-#if DEBUG
-            // Debug convenience: when launching the EXE from Visual Studio in Debug without args
-            // open a lightweight form hosting the GenerateLicensePage so you can test it directly.
-            // This block runs only in DEBUG builds and only when no command-line args are present.
-            if (args == null || args.Length == 0)
+            // NORMAL INTERACTIVE RUN (args empty): honor App.config appSettings
+            // Use LaunchPage to pick initial page and LaunchAsAdmin to reveal admin-only UI.
+            var launchPage = ConfigurationManager.AppSettings["LaunchPage"] ?? "LicenseRecords";
+            var launchAsAdmin = string.Equals(ConfigurationManager.AppSettings["LaunchAsAdmin"], "true", StringComparison.OrdinalIgnoreCase);
+
+            var mainForm = new MainForm();
+
+            if (launchAsAdmin)
             {
                 try
                 {
-                    var host = new XtraForm
-                    {
-                        Text = "Generate License Visual Test",
-                        StartPosition = FormStartPosition.CenterScreen,
-                        Width = 1100,
-                        Height = 820
-                    };
-
-                    // Prefer explicit look/feel disabling to match other visual test behavior
-                    host.LookAndFeel.UseDefaultLookAndFeel = false;
-                    host.BackColor = System.Drawing.Color.White;
-
-                    var page = new GenerateLicensePage();
-                    page.Dock = DockStyle.Fill;
-
-                    // Best-effort: inject runtime services from ServiceRegistry so page behaves normally in the test host.
-                    try
-                    {
-                        page.Initialize(
-                            ServiceRegistry.ArlReader,
-                            ServiceRegistry.AslGenerator,
-                            ServiceRegistry.Product,
-                            ServiceRegistry.Database,
-                            ServiceRegistry.User);
-                    }
-                    catch
-                    {
-                        // ignore injection errors; page ctor already tries to wire defaults
-                    }
-
-                    host.Controls.Add(page);
-                    Application.Run(host);
-                    return;
+                    var admin = ServiceRegistry.Database.GetUserByUsername("admin");
+                    if (admin != null) mainForm.SetLoggedInUser(admin);
                 }
-                catch
-                {
-                    // fall back to normal interactive run if anything goes wrong here
-                }
+                catch { /* continue without admin if lookup fails */ }
             }
-#endif
 
-            // Normal interactive run
-            Application.Run(new MainForm());
+            // Navigate to the requested initial page
+            switch (launchPage.Trim())
+            {
+                case "GenerateLicense":
+                case "GenerateLicensePage":
+                case "aceGenerateRequest":
+                case "aceGenerateLicense":
+                case "btnNav_GenerateLicense":
+                    mainForm.NavigateToElement("GenerateLicensePage");
+                    break;
+
+                default:
+                    // Default to License Records
+                    mainForm.NavigateToElement("LicenseRecordsPage");
+                    break;
+            }
+
+            Application.Run(mainForm);
         }
 
-        /// <summary>
-        /// Build a small DevExpress XtraForm that hosts the LoginPage control for visual testing.
-        /// This method is only used by the "--show-login" test flag.
-        /// </summary>
         private static XtraForm CreateLoginTestForm()
         {
             var form = new XtraForm
@@ -245,11 +206,9 @@ namespace Autosoft_Licensing
                 Height = 760
             };
 
-            // Create the login page and add to form
             var login = new LoginPage();
             login.Dock = DockStyle.Fill;
 
-            // Ensure the form has white background similar to wireframe
             form.LookAndFeel.UseDefaultLookAndFeel = false;
             form.BackColor = System.Drawing.Color.White;
 

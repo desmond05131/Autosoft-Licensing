@@ -21,6 +21,14 @@ namespace Autosoft_Licensing
 
         private void BuildAccordion()
         {
+            // Idempotent guard: if already built, don't add duplicates
+            if (this.accordion != null && this.contentPanel != null &&
+                this.Controls.Contains(this.accordion) && this.Controls.Contains(this.contentPanel))
+            {
+                UpdateRoleVisibility();
+                return;
+            }
+
             // Create and configure accordion (left)
             this.accordion = new AccordionControl();
             this.accordion.Dock = DockStyle.Left;
