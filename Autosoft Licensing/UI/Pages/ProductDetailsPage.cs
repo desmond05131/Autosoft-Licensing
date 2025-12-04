@@ -408,11 +408,31 @@ namespace Autosoft_Licensing.UI.Pages
                     return;
                 }
 
+                // Enforce ProductID uniqueness on create
+                if (_productId == null)
+                {
+                    try
+                    {
+                        var existing = _dbService.GetProductByProductId(productIdStr);
+                        if (existing != null)
+                        {
+                            ShowError("Product ID already exists. Please choose a unique Product ID.");
+                            return;
+                        }
+                    }
+                    catch
+                    {
+                        // If the lookup fails, fail safe and do not insert duplicates
+                        ShowError("Unable to verify Product ID uniqueness due to a database error.");
+                        return;
+                    }
+                }
+
                 var createdByStr = (txtCreatedBy.Text ?? string.Empty).Trim();
                 var descriptionStr = memDescription.Text ?? string.Empty;
                 var releaseNotesStr = memReleaseNotes.Text ?? string.Empty;
 
-                // Dates: parse TextEdit values defensively, fallback to now
+                // Dates: parse defensively
                 DateTime createdLocal, lastModifiedLocal;
                 if (!DateTime.TryParse(txtDateCreated.Text, out createdLocal))
                     createdLocal = DateTime.Now;
@@ -427,8 +447,8 @@ namespace Autosoft_Licensing.UI.Pages
                     Description = descriptionStr,
                     ReleaseNotes = releaseNotesStr,
                     CreatedBy = string.IsNullOrWhiteSpace(createdByStr) ? TryGetCurrentUserDisplayName() ?? Environment.UserName : createdByStr,
-                    CreatedUtc = ToUtc(createdLocal),
-                    LastModifiedUtc = ToUtc(lastModifiedLocal),
+                    CreatedUtc = _productId == null ? DateTime.UtcNow : ToUtc(createdLocal), // preserve original in edit
+                    LastModifiedUtc = _productId == null ? DateTime.UtcNow : ToUtc(lastModifiedLocal),
                     Modules = new List<Module>()
                 };
 
@@ -438,13 +458,12 @@ namespace Autosoft_Licensing.UI.Pages
                     var code = (row.ModuleCode ?? row.ModuleName ?? string.Empty).Trim();
                     var name = (row.ModuleName ?? string.Empty).Trim();
 
-                    // Module names non-empty (recommended in ManageProductPage rules)
                     if (string.IsNullOrWhiteSpace(code) && string.IsNullOrWhiteSpace(name))
                         continue;
 
                     product.Modules.Add(new Module
                     {
-                        ProductId = product.Id, // DB service ignores on insert and uses new Id
+                        ProductId = product.Id,
                         ModuleCode = string.IsNullOrWhiteSpace(code) ? name : code,
                         Name = string.IsNullOrWhiteSpace(name) ? code : name,
                         Description = row.Description ?? string.Empty,
@@ -455,6 +474,10 @@ namespace Autosoft_Licensing.UI.Pages
                 // Persist
                 if (_productId == null)
                 {
+                    // Normalize timestamps for new product
+                    product.CreatedUtc = DateTime.UtcNow;
+                    product.LastModifiedUtc = product.CreatedUtc;
+
                     var newId = _dbService.InsertProduct(product);
                     _productId = newId;
                     ShowInfo("Product created.", "Success");
@@ -463,7 +486,7 @@ namespace Autosoft_Licensing.UI.Pages
                 else
                 {
                     product.Id = _productId.Value;
-                    // Update last modified timestamp
+                    // Always stamp last modified
                     product.LastModifiedUtc = DateTime.UtcNow;
 
                     _dbService.UpdateProduct(product);

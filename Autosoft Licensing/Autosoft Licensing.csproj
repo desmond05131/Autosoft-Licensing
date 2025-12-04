@@ -243,6 +243,9 @@
     <Compile Include="Services\Interfaces\ILicenseKeyGenerator.cs" />
     <Compile Include="Services\Interfaces\IProductService.cs" />
     <Compile Include="Services\Interfaces\IUserService.cs" />
+    <EmbeddedResource Include="UI\Pages\ProductDetailsPage.resx">
+      <DependentUpon>ProductDetailsPage.cs</DependentUpon>
+    </EmbeddedResource>
     <None Include="TestAssets\sample_invalid.arl" />
     <None Include="TestAssets\sample_valid.arl" />
     <Compile Include="Tests\Helpers\UiTestHost.cs" />
@@ -255,6 +258,7 @@
     <Compile Include="Tools\LicenseKeyGeneratorTests.cs" />
     <Compile Include="Tools\LicensePagesIntegrationTests.cs" />
     <Compile Include="Tools\LicenseRequestServiceTest.cs" />
+    <Compile Include="Tools\ProductPagesIntegrationTests.cs" />
     <Compile Include="Tools\SmokeTestHarness.cs" />
     <Compile Include="UI\HostFactory.cs" />
     <Compile Include="UI\MainForm.cs">

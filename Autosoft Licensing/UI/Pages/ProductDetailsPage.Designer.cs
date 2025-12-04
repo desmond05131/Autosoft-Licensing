@@ -50,43 +50,32 @@ namespace Autosoft_Licensing.UI.Pages
 
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
             this.pnlHeader = new System.Windows.Forms.Panel();
             this.lblHeaderTitle = new System.Windows.Forms.Label();
-
             this.lblProductId = new DevExpress.XtraEditors.LabelControl();
             this.txtProductId = new DevExpress.XtraEditors.TextEdit();
-
             this.lblCreatedBy = new DevExpress.XtraEditors.LabelControl();
             this.txtCreatedBy = new DevExpress.XtraEditors.TextEdit();
-
             this.lblLastModified = new DevExpress.XtraEditors.LabelControl();
             this.txtLastModified = new DevExpress.XtraEditors.TextEdit();
-
             this.lblProductName = new DevExpress.XtraEditors.LabelControl();
             this.txtProductName = new DevExpress.XtraEditors.TextEdit();
-
             this.lblDateCreated = new DevExpress.XtraEditors.LabelControl();
             this.txtDateCreated = new DevExpress.XtraEditors.TextEdit();
-
             this.lblModulesTitle = new DevExpress.XtraEditors.LabelControl();
             this.btnAdd = new DevExpress.XtraEditors.SimpleButton();
             this.btnMinus = new DevExpress.XtraEditors.SimpleButton();
-
             this.grdModules = new DevExpress.XtraGrid.GridControl();
             this.viewModules = new DevExpress.XtraGrid.Views.Grid.GridView();
             this.colModuleName = new DevExpress.XtraGrid.Columns.GridColumn();
             this.colDescription = new DevExpress.XtraGrid.Columns.GridColumn();
-
             this.lblDescription = new DevExpress.XtraEditors.LabelControl();
             this.memDescription = new DevExpress.XtraEditors.MemoEdit();
-
             this.lblReleaseNotes = new DevExpress.XtraEditors.LabelControl();
             this.memReleaseNotes = new DevExpress.XtraEditors.MemoEdit();
-
             this.btnSave = new DevExpress.XtraEditors.SimpleButton();
             this.btnCancel = new DevExpress.XtraEditors.SimpleButton();
-
+            this.pnlHeader.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.txtProductId.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.txtCreatedBy.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.txtLastModified.Properties)).BeginInit();
@@ -96,138 +85,237 @@ namespace Autosoft_Licensing.UI.Pages
             ((System.ComponentModel.ISupportInitialize)(this.viewModules)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.memDescription.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.memReleaseNotes.Properties)).BeginInit();
-
-            // Panel Header
-            this.pnlHeader.Dock = DockStyle.Top;
-            this.pnlHeader.Height = 60;
-            this.pnlHeader.BackColor = Color.FromArgb(253, 243, 211);
+            this.SuspendLayout();
+            // 
+            // pnlHeader
+            // 
+            this.pnlHeader.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(253)))), ((int)(((byte)(243)))), ((int)(((byte)(211)))));
             this.pnlHeader.Controls.Add(this.lblHeaderTitle);
-
-            this.lblHeaderTitle.Text = "Autosoft Licensing";
+            this.pnlHeader.Dock = System.Windows.Forms.DockStyle.Top;
+            this.pnlHeader.Location = new System.Drawing.Point(0, 0);
+            this.pnlHeader.Name = "pnlHeader";
+            this.pnlHeader.Size = new System.Drawing.Size(1089, 60);
+            this.pnlHeader.TabIndex = 0;
+            // 
+            // lblHeaderTitle
+            // 
             this.lblHeaderTitle.AutoSize = true;
-            this.lblHeaderTitle.Font = new Font("Segoe UI", 14F, FontStyle.Regular, GraphicsUnit.Point);
-            this.lblHeaderTitle.Location = new Point(20, 15);
-
-            // Row 1: Product ID, Created By, Last Modified
-            this.lblProductId.Location = new Point(20, 80);
+            this.lblHeaderTitle.Font = new System.Drawing.Font("Segoe UI", 14F);
+            this.lblHeaderTitle.Location = new System.Drawing.Point(20, 15);
+            this.lblHeaderTitle.Name = "lblHeaderTitle";
+            this.lblHeaderTitle.Size = new System.Drawing.Size(167, 25);
+            this.lblHeaderTitle.TabIndex = 0;
+            this.lblHeaderTitle.Text = "Autosoft Licensing";
+            // 
+            // lblProductId
+            // 
+            this.lblProductId.Location = new System.Drawing.Point(20, 80);
+            this.lblProductId.Name = "lblProductId";
+            this.lblProductId.Size = new System.Drawing.Size(58, 13);
+            this.lblProductId.TabIndex = 1;
             this.lblProductId.Text = "Product ID :";
-            this.txtProductId.Location = new Point(120, 76);
-            this.txtProductId.Size = new Size(200, 24);
-
-            this.lblCreatedBy.Location = new Point(340, 80);
+            // 
+            // txtProductId
+            // 
+            this.txtProductId.Location = new System.Drawing.Point(120, 76);
+            this.txtProductId.Name = "txtProductId";
+            this.txtProductId.Size = new System.Drawing.Size(200, 20);
+            this.txtProductId.TabIndex = 2;
+            // 
+            // lblCreatedBy
+            // 
+            this.lblCreatedBy.Location = new System.Drawing.Point(340, 80);
+            this.lblCreatedBy.Name = "lblCreatedBy";
+            this.lblCreatedBy.Size = new System.Drawing.Size(61, 13);
+            this.lblCreatedBy.TabIndex = 3;
             this.lblCreatedBy.Text = "Created By :";
-            this.txtCreatedBy.Location = new Point(430, 76);
-            this.txtCreatedBy.Size = new Size(200, 24);
+            // 
+            // txtCreatedBy
+            // 
+            this.txtCreatedBy.Location = new System.Drawing.Point(430, 76);
+            this.txtCreatedBy.Name = "txtCreatedBy";
             this.txtCreatedBy.Properties.ReadOnly = true;
-
-            this.lblLastModified.Location = new Point(650, 80);
+            this.txtCreatedBy.Size = new System.Drawing.Size(200, 20);
+            this.txtCreatedBy.TabIndex = 4;
+            // 
+            // lblLastModified
+            // 
+            this.lblLastModified.Location = new System.Drawing.Point(650, 80);
+            this.lblLastModified.Name = "lblLastModified";
+            this.lblLastModified.Size = new System.Drawing.Size(96, 13);
+            this.lblLastModified.TabIndex = 5;
             this.lblLastModified.Text = "Last Modified Date :";
-            this.txtLastModified.Location = new Point(780, 76);
-            this.txtLastModified.Size = new Size(200, 24);
+            // 
+            // txtLastModified
+            // 
+            this.txtLastModified.Location = new System.Drawing.Point(780, 76);
+            this.txtLastModified.Name = "txtLastModified";
             this.txtLastModified.Properties.ReadOnly = true;
-
-            // Row 2: Product Name, Date Created
-            this.lblProductName.Location = new Point(20, 120);
+            this.txtLastModified.Size = new System.Drawing.Size(200, 20);
+            this.txtLastModified.TabIndex = 6;
+            // 
+            // lblProductName
+            // 
+            this.lblProductName.Location = new System.Drawing.Point(20, 120);
+            this.lblProductName.Name = "lblProductName";
+            this.lblProductName.Size = new System.Drawing.Size(74, 13);
+            this.lblProductName.TabIndex = 7;
             this.lblProductName.Text = "Product Name :";
-            this.txtProductName.Location = new Point(120, 116);
-            this.txtProductName.Size = new Size(300, 24);
-
-            this.lblDateCreated.Location = new Point(450, 120);
+            // 
+            // txtProductName
+            // 
+            this.txtProductName.Location = new System.Drawing.Point(120, 116);
+            this.txtProductName.Name = "txtProductName";
+            this.txtProductName.Size = new System.Drawing.Size(300, 20);
+            this.txtProductName.TabIndex = 8;
+            // 
+            // lblDateCreated
+            // 
+            this.lblDateCreated.Location = new System.Drawing.Point(450, 120);
+            this.lblDateCreated.Name = "lblDateCreated";
+            this.lblDateCreated.Size = new System.Drawing.Size(72, 13);
+            this.lblDateCreated.TabIndex = 9;
             this.lblDateCreated.Text = "Date Created :";
-            this.txtDateCreated.Location = new Point(540, 116);
-            this.txtDateCreated.Size = new Size(200, 24);
+            // 
+            // txtDateCreated
+            // 
+            this.txtDateCreated.Location = new System.Drawing.Point(540, 116);
+            this.txtDateCreated.Name = "txtDateCreated";
             this.txtDateCreated.Properties.ReadOnly = true;
-
-            // Modules section title and buttons
-            this.lblModulesTitle.Location = new Point(20, 160);
+            this.txtDateCreated.Size = new System.Drawing.Size(200, 20);
+            this.txtDateCreated.TabIndex = 10;
+            // 
+            // lblModulesTitle
+            // 
+            this.lblModulesTitle.Location = new System.Drawing.Point(20, 160);
+            this.lblModulesTitle.Name = "lblModulesTitle";
+            this.lblModulesTitle.Size = new System.Drawing.Size(46, 13);
+            this.lblModulesTitle.TabIndex = 11;
             this.lblModulesTitle.Text = "Modules :";
-
-            this.btnAdd.Location = new Point(120, 156);
-            this.btnAdd.Size = new Size(80, 28);
+            // 
+            // btnAdd
+            // 
+            this.btnAdd.Location = new System.Drawing.Point(120, 156);
+            this.btnAdd.Name = "btnAdd";
+            this.btnAdd.Size = new System.Drawing.Size(80, 28);
+            this.btnAdd.TabIndex = 12;
             this.btnAdd.Text = "Add";
-
-            this.btnMinus.Location = new Point(210, 156);
-            this.btnMinus.Size = new Size(80, 28);
+            // 
+            // btnMinus
+            // 
+            this.btnMinus.Location = new System.Drawing.Point(210, 156);
+            this.btnMinus.Name = "btnMinus";
+            this.btnMinus.Size = new System.Drawing.Size(80, 28);
+            this.btnMinus.TabIndex = 13;
             this.btnMinus.Text = "Minus";
-
-            // GridControl for Modules
-            this.grdModules.Location = new Point(20, 190);
-            this.grdModules.Size = new Size(960, 150);
+            // 
+            // grdModules
+            // 
+            this.grdModules.Location = new System.Drawing.Point(20, 190);
             this.grdModules.MainView = this.viewModules;
-            this.grdModules.ViewCollection.AddRange(new DevExpress.XtraGrid.Views.Base.BaseView[] { this.viewModules });
-
+            this.grdModules.Name = "grdModules";
+            this.grdModules.Size = new System.Drawing.Size(960, 150);
+            this.grdModules.TabIndex = 14;
+            this.grdModules.ViewCollection.AddRange(new DevExpress.XtraGrid.Views.Base.BaseView[] {
+            this.viewModules});
+            // 
+            // viewModules
+            // 
+            this.viewModules.Columns.AddRange(new DevExpress.XtraGrid.Columns.GridColumn[] {
+            this.colModuleName,
+            this.colDescription});
             this.viewModules.GridControl = this.grdModules;
-            this.viewModules.OptionsBehavior.Editable = true;
-
-            // Columns: Module, Description
+            this.viewModules.Name = "viewModules";
+            // 
+            // colModuleName
+            // 
             this.colModuleName.Caption = "Module";
             this.colModuleName.FieldName = "ModuleName";
+            this.colModuleName.Name = "colModuleName";
             this.colModuleName.Visible = true;
             this.colModuleName.VisibleIndex = 0;
-            this.viewModules.Columns.Add(this.colModuleName);
-
+            // 
+            // colDescription
+            // 
             this.colDescription.Caption = "Description";
             this.colDescription.FieldName = "Description";
+            this.colDescription.Name = "colDescription";
             this.colDescription.Visible = true;
             this.colDescription.VisibleIndex = 1;
-            this.viewModules.Columns.Add(this.colDescription);
-
-            // Footer section: Description (left), Release Notes (right)
-            this.lblDescription.Location = new Point(20, 355);
+            // 
+            // lblDescription
+            // 
+            this.lblDescription.Location = new System.Drawing.Point(20, 355);
+            this.lblDescription.Name = "lblDescription";
+            this.lblDescription.Size = new System.Drawing.Size(53, 13);
+            this.lblDescription.TabIndex = 15;
             this.lblDescription.Text = "Description";
-            this.memDescription.Location = new Point(20, 375);
-            this.memDescription.Size = new Size(460, 130);
-
-            this.lblReleaseNotes.Location = new Point(500, 355);
+            // 
+            // memDescription
+            // 
+            this.memDescription.Location = new System.Drawing.Point(20, 375);
+            this.memDescription.Name = "memDescription";
+            this.memDescription.Size = new System.Drawing.Size(460, 130);
+            this.memDescription.TabIndex = 16;
+            // 
+            // lblReleaseNotes
+            // 
+            this.lblReleaseNotes.Location = new System.Drawing.Point(500, 355);
+            this.lblReleaseNotes.Name = "lblReleaseNotes";
+            this.lblReleaseNotes.Size = new System.Drawing.Size(69, 13);
+            this.lblReleaseNotes.TabIndex = 17;
             this.lblReleaseNotes.Text = "Release Notes";
-            this.memReleaseNotes.Location = new Point(500, 375);
-            this.memReleaseNotes.Size = new Size(480, 130);
-
-            // Bottom action bar: Save, Cancel
-            this.btnSave.Location = new Point(820, 520);
-            this.btnSave.Size = new Size(80, 30);
+            // 
+            // memReleaseNotes
+            // 
+            this.memReleaseNotes.Location = new System.Drawing.Point(500, 375);
+            this.memReleaseNotes.Name = "memReleaseNotes";
+            this.memReleaseNotes.Size = new System.Drawing.Size(480, 130);
+            this.memReleaseNotes.TabIndex = 18;
+            // 
+            // btnSave
+            // 
+            this.btnSave.Location = new System.Drawing.Point(820, 520);
+            this.btnSave.Name = "btnSave";
+            this.btnSave.Size = new System.Drawing.Size(80, 30);
+            this.btnSave.TabIndex = 19;
             this.btnSave.Text = "Save";
-
-            this.btnCancel.Location = new Point(905, 520);
-            this.btnCancel.Size = new Size(80, 30);
+            // 
+            // btnCancel
+            // 
+            this.btnCancel.Location = new System.Drawing.Point(905, 520);
+            this.btnCancel.Name = "btnCancel";
+            this.btnCancel.Size = new System.Drawing.Size(80, 30);
+            this.btnCancel.TabIndex = 20;
             this.btnCancel.Text = "Cancel";
-
-            // Add controls to the UserControl
+            // 
+            // ProductDetailsPage
+            // 
             this.Controls.Add(this.pnlHeader);
-
             this.Controls.Add(this.lblProductId);
             this.Controls.Add(this.txtProductId);
-
             this.Controls.Add(this.lblCreatedBy);
             this.Controls.Add(this.txtCreatedBy);
-
             this.Controls.Add(this.lblLastModified);
             this.Controls.Add(this.txtLastModified);
-
             this.Controls.Add(this.lblProductName);
             this.Controls.Add(this.txtProductName);
-
             this.Controls.Add(this.lblDateCreated);
             this.Controls.Add(this.txtDateCreated);
-
             this.Controls.Add(this.lblModulesTitle);
             this.Controls.Add(this.btnAdd);
             this.Controls.Add(this.btnMinus);
-
             this.Controls.Add(this.grdModules);
-
             this.Controls.Add(this.lblDescription);
             this.Controls.Add(this.memDescription);
-
             this.Controls.Add(this.lblReleaseNotes);
             this.Controls.Add(this.memReleaseNotes);
-
             this.Controls.Add(this.btnSave);
             this.Controls.Add(this.btnCancel);
-
-            // Root size
-            this.Size = new Size(1000, 570);
-
+            this.Name = "ProductDetailsPage";
+            this.Size = new System.Drawing.Size(1089, 629);
+            this.pnlHeader.ResumeLayout(false);
+            this.pnlHeader.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.txtProductId.Properties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.txtCreatedBy.Properties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.txtLastModified.Properties)).EndInit();
@@ -237,6 +325,9 @@ namespace Autosoft_Licensing.UI.Pages
             ((System.ComponentModel.ISupportInitialize)(this.viewModules)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.memDescription.Properties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.memReleaseNotes.Properties)).EndInit();
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
         }
     }
 }

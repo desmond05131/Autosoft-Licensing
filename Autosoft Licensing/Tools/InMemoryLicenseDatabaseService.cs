@@ -182,23 +182,80 @@ namespace Autosoft_Licensing.Tools
 
         public int InsertProduct(Product product)
         {
+            if (product == null) throw new ArgumentNullException(nameof(product));
+
             product.Id = _nextProductId++;
             _products.Add(product);
+
+            // Persist child modules (parent-child saving)
+            foreach (var m in product.Modules ?? new List<Module>())
+            {
+                var mod = new Module
+                {
+                    Id = _nextModuleId++,
+                    ProductId = product.Id,
+                    ModuleCode = m.ModuleCode,
+                    Name = m.Name,
+                    Description = m.Description,
+                    IsActive = m.IsActive
+                };
+                _modules.Add(mod);
+            }
+
             return product.Id;
         }
 
         public void UpdateProduct(Product product)
         {
+            if (product == null) throw new ArgumentNullException(nameof(product));
+
             var p = GetProductById(product.Id) ?? GetProductByProductId(product.ProductID);
             if (p == null) throw new InvalidOperationException("Product not found");
+
             p.ProductID = product.ProductID;
             p.Name = product.Name;
+            p.Description = product.Description;
+            p.ReleaseNotes = product.ReleaseNotes;
+            p.CreatedBy = product.CreatedBy;
+            p.CreatedUtc = product.CreatedUtc == default ? p.CreatedUtc : product.CreatedUtc;
+            p.LastModifiedUtc = product.LastModifiedUtc == default ? DateTime.UtcNow : product.LastModifiedUtc;
+
+            // Synchronize modules: remove old then insert current list
+            _modules.RemoveAll(m => m.ProductId == p.Id);
+
+            foreach (var m in product.Modules ?? new List<Module>())
+            {
+                var mod = new Module
+                {
+                    Id = _nextModuleId++,
+                    ProductId = p.Id,
+                    ModuleCode = m.ModuleCode,
+                    Name = m.Name,
+                    Description = m.Description,
+                    IsActive = m.IsActive
+                };
+                _modules.Add(mod);
+            }
         }
 
         public void DeleteProduct(int id)
         {
             var p = GetProductById(id);
-            if (p != null) _products.Remove(p);
+            if (p != null)
+            {
+                _products.Remove(p);
+                // Clean up modules for this product
+                _modules.RemoveAll(m => m.ProductId == id);
+            }
+        }
+
+        public IEnumerable<ModuleDto> GetModulesForProduct(string productId)
+        {
+            var p = _products.FirstOrDefault(x => x.ProductID == productId);
+            if (p == null) return new List<ModuleDto>();
+            return _modules.Where(m => m.ProductId == p.Id)
+                           .Select(m => new ModuleDto { ModuleCode = m.ModuleCode, ModuleName = m.Name, Description = m.Description })
+                           .ToList();
         }
 
         // --- Dealers ---
@@ -228,16 +285,6 @@ namespace Autosoft_Licensing.Tools
         {
             var d = GetDealerById(id);
             if (d != null) _dealers.Remove(d);
-        }
-
-        // --- Modules helper ---
-        public IEnumerable<ModuleDto> GetModulesForProduct(string productId)
-        {
-            var p = _products.FirstOrDefault(x => x.ProductID == productId);
-            if (p == null) return new List<ModuleDto>();
-            return _modules.Where(m => m.ProductId == p.Id)
-                           .Select(m => new ModuleDto { ModuleCode = m.ModuleCode, ModuleName = m.Name })
-                           .ToList();
         }
 
         // --- Misc ---
