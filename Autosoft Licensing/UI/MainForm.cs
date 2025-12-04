@@ -23,25 +23,7 @@ namespace Autosoft_Licensing
         {
             InitializeComponent();
 
-            // REMOVE AFTER MANUAL TESTING
-            try
-            {
-                var adminUser = new Autosoft_Licensing.Models.User
-                {
-                    Id = 9999,
-                    Username = "visual-admin",
-                    DisplayName = "Visual Admin",
-                    Role = "Admin",
-                    Email = "admin@test.local",
-                    PasswordHash = "dummy",
-                    CreatedUtc = DateTime.UtcNow
-                };
-
-                this.SetLoggedInUser(adminUser);
-                // Force-load LicenseRecordsPage
-                LoadPage("LicenseRecordsPage", "License Records");
-            }
-            catch { /* ignore for manual test boot */ }
+   
         }
 
         /// <summary>
