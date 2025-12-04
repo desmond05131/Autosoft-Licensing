@@ -161,6 +161,20 @@ FROM dbo.Products WHERE ProductID = @pid;", conn);
             return ReadProduct(r);
         }
 
+        public Product GetProductByName(string name)
+        {
+            using var conn = _factory.Create();
+            using var cmd = new SqlCommand(@"
+SELECT TOP(1) Id, ProductID, Name, Description, ReleaseNotes, CreatedBy, CreatedUtc, LastModifiedUtc
+FROM dbo.Products
+WHERE Name = @name;", conn);
+            cmd.Parameters.AddWithValue("@name", (object)name ?? DBNull.Value);
+            conn.Open();
+            using var r = cmd.ExecuteReader();
+            if (!r.Read()) return null;
+            return ReadProduct(r);
+        }
+
         public int InsertProduct(Product product)
         {
             using var conn = _factory.Create();

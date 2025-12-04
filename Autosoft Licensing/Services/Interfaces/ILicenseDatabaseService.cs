@@ -33,6 +33,7 @@ namespace Autosoft_Licensing.Services
         IEnumerable<Product> GetProducts();
         Product GetProductById(int id);
         Product GetProductByProductId(string productId);
+        Product GetProductByName(string name);
         int InsertProduct(Product product);
         void UpdateProduct(Product product);
         void DeleteProduct(int id);

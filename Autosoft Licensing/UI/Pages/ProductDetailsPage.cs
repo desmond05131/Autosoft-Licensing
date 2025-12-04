@@ -422,10 +422,33 @@ namespace Autosoft_Licensing.UI.Pages
                     }
                     catch
                     {
-                        // If the lookup fails, fail safe and do not insert duplicates
                         ShowError("Unable to verify Product ID uniqueness due to a database error.");
                         return;
                     }
+                }
+
+                // NEW: Enforce Product Name uniqueness (for both create and edit)
+                try
+                {
+                    var existingByName = _dbService.GetProductByName(productNameStr);
+                    if (existingByName != null)
+                    {
+                        // If creating, any existing name is a conflict.
+                        // If editing, conflict only when found Id differs from current _productId.
+                        var existingId = existingByName.Id;
+                        var currentId = _productId ?? 0;
+                        if (existingId != 0 && existingId != currentId)
+                        {
+                            ShowError("Product Name already exists.");
+                            return;
+                        }
+                    }
+                }
+                catch
+                {
+                    // Fail-safe: if we cannot verify uniqueness, stop to prevent duplicates
+                    ShowError("Unable to verify Product Name uniqueness due to a database error.");
+                    return;
                 }
 
                 var createdByStr = (txtCreatedBy.Text ?? string.Empty).Trim();

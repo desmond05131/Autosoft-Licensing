@@ -45,7 +45,6 @@ namespace Autosoft_Licensing.UI.Pages
     public partial class ManageProductPage : PageBase
     {
         private ILicenseDatabaseService _dbService;
-
         private BindingList<ProductRow> _data = new BindingList<ProductRow>();
 
         // Navigation event - host form can subscribe
@@ -85,6 +84,10 @@ namespace Autosoft_Licensing.UI.Pages
                     btnView.Click += btnView_Click;
                     btnEdit.Click += btnEdit_Click;
                     btnDelete.Click += btnDelete_Click;
+
+                    // NEW: Refresh button wires to RefreshData
+                    if (btnRefresh != null)
+                        btnRefresh.Click += (s, e) => RefreshData();
 
                     var view = grdProducts.MainView as GridView;
                     if (view != null)

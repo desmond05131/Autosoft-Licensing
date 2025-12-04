@@ -174,88 +174,97 @@ namespace Autosoft_Licensing.Tools
         }
 
         // --- Products ---
-        public IEnumerable<Product> GetProducts() => _products.ToList();
+        public Product GetProductByName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return null;
+            return _products.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
+        }
 
-        public Product GetProductById(int id) => _products.FirstOrDefault(p => p.Id == id);
+        public IEnumerable<Product> GetProducts()
+        {
+            return _products.ToList();
+        }
 
-        public Product GetProductByProductId(string productId) => _products.FirstOrDefault(p => p.ProductID == productId);
+        public Product GetProductById(int id)
+        {
+            return _products.FirstOrDefault(p => p.Id == id);
+        }
+
+        public Product GetProductByProductId(string productId)
+        {
+            if (string.IsNullOrWhiteSpace(productId)) return null;
+            return _products.FirstOrDefault(p => string.Equals(p.ProductID, productId, StringComparison.OrdinalIgnoreCase));
+        }
 
         public int InsertProduct(Product product)
         {
             if (product == null) throw new ArgumentNullException(nameof(product));
-
             product.Id = _nextProductId++;
-            _products.Add(product);
-
-            // Persist child modules (parent-child saving)
-            foreach (var m in product.Modules ?? new List<Module>())
+            // clone shallow to avoid external mutation
+            _products.Add(new Product
             {
-                var mod = new Module
+                Id = product.Id,
+                ProductID = product.ProductID,
+                Name = product.Name,
+                Description = product.Description,
+                ReleaseNotes = product.ReleaseNotes,
+                CreatedBy = product.CreatedBy,
+                CreatedUtc = product.CreatedUtc,
+                LastModifiedUtc = product.LastModifiedUtc,
+                Modules = product.Modules != null ? product.Modules.Select(m => new Module
                 {
-                    Id = _nextModuleId++,
                     ProductId = product.Id,
                     ModuleCode = m.ModuleCode,
                     Name = m.Name,
                     Description = m.Description,
                     IsActive = m.IsActive
-                };
-                _modules.Add(mod);
-            }
-
+                }).ToList() : new List<Module>()
+            });
             return product.Id;
         }
 
         public void UpdateProduct(Product product)
         {
             if (product == null) throw new ArgumentNullException(nameof(product));
+            var existing = _products.FirstOrDefault(p => p.Id == product.Id);
+            if (existing == null) return;
 
-            var p = GetProductById(product.Id) ?? GetProductByProductId(product.ProductID);
-            if (p == null) throw new InvalidOperationException("Product not found");
+            existing.ProductID = product.ProductID;
+            existing.Name = product.Name;
+            existing.Description = product.Description;
+            existing.ReleaseNotes = product.ReleaseNotes;
+            existing.CreatedBy = product.CreatedBy;
+            existing.CreatedUtc = product.CreatedUtc;
+            existing.LastModifiedUtc = product.LastModifiedUtc;
 
-            p.ProductID = product.ProductID;
-            p.Name = product.Name;
-            p.Description = product.Description;
-            p.ReleaseNotes = product.ReleaseNotes;
-            p.CreatedBy = product.CreatedBy;
-            p.CreatedUtc = product.CreatedUtc == default ? p.CreatedUtc : product.CreatedUtc;
-            p.LastModifiedUtc = product.LastModifiedUtc == default ? DateTime.UtcNow : product.LastModifiedUtc;
-
-            // Synchronize modules: remove old then insert current list
-            _modules.RemoveAll(m => m.ProductId == p.Id);
-
-            foreach (var m in product.Modules ?? new List<Module>())
+            // replace modules
+            existing.Modules = product.Modules != null ? product.Modules.Select(m => new Module
             {
-                var mod = new Module
-                {
-                    Id = _nextModuleId++,
-                    ProductId = p.Id,
-                    ModuleCode = m.ModuleCode,
-                    Name = m.Name,
-                    Description = m.Description,
-                    IsActive = m.IsActive
-                };
-                _modules.Add(mod);
-            }
+                ProductId = product.Id,
+                ModuleCode = m.ModuleCode,
+                Name = m.Name,
+                Description = m.Description,
+                IsActive = m.IsActive
+            }).ToList() : new List<Module>();
         }
 
         public void DeleteProduct(int id)
         {
-            var p = GetProductById(id);
-            if (p != null)
-            {
-                _products.Remove(p);
-                // Clean up modules for this product
-                _modules.RemoveAll(m => m.ProductId == id);
-            }
+            var existing = _products.FirstOrDefault(p => p.Id == id);
+            if (existing != null)
+                _products.Remove(existing);
         }
 
         public IEnumerable<ModuleDto> GetModulesForProduct(string productId)
         {
-            var p = _products.FirstOrDefault(x => x.ProductID == productId);
-            if (p == null) return new List<ModuleDto>();
-            return _modules.Where(m => m.ProductId == p.Id)
-                           .Select(m => new ModuleDto { ModuleCode = m.ModuleCode, ModuleName = m.Name, Description = m.Description })
-                           .ToList();
+            var product = GetProductByProductId(productId);
+            if (product?.Modules == null) return Enumerable.Empty<ModuleDto>();
+            return product.Modules.Select(m => new ModuleDto
+            {
+                ModuleCode = m.ModuleCode,
+                ModuleName = string.IsNullOrWhiteSpace(m.Name) ? m.ModuleCode : m.Name,
+                Description = m.Description
+            }).ToList();
         }
 
         // --- Dealers ---

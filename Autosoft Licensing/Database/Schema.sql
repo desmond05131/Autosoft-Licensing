@@ -31,9 +31,12 @@ CREATE TABLE Products (
   ReleaseNotes NVARCHAR(MAX) NULL,
   CreatedBy NVARCHAR(100) NULL,
   CreatedUtc DATETIME2 NOT NULL CONSTRAINT DF_Products_CreatedUtc DEFAULT (SYSUTCDATETIME()),
-  LastModifiedUtc DATETIME2 NOT NULL CONSTRAINT DF_Products_LastModifiedUtc DEFAULT (SYSUTCDATETIME())
+  LastModifiedUtc DATETIME2 NOT NULL CONSTRAINT DF_Products_LastModifiedUtc DEFAULT (SYSUTCDATETIME()),
+  IsDeleted BIT NOT NULL CONSTRAINT DF_Products_IsDeleted DEFAULT (0)
 );
 CREATE UNIQUE INDEX UX_Products_ProductID ON Products(ProductID);
+-- Enforce unique product names (excluding NULLs)
+CREATE UNIQUE INDEX UX_Products_Name ON Products(Name) WHERE Name IS NOT NULL;
 
 CREATE TABLE Modules (
   Id INT IDENTITY PRIMARY KEY,

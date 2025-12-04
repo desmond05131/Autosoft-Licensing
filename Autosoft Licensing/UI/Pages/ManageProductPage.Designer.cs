@@ -47,7 +47,10 @@ namespace Autosoft_Licensing.UI.Pages
         private SimpleButton btnEdit;
         private SimpleButton btnDelete;
 
-        // Search (use ButtonEdit to get a magnifier icon button)
+        // Refresh button
+        private SimpleButton btnRefresh;
+
+        // Search
         private ButtonEdit txtSearch;
 
         // Grid
@@ -91,6 +94,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.btnView = new DevExpress.XtraEditors.SimpleButton();
             this.btnEdit = new DevExpress.XtraEditors.SimpleButton();
             this.btnDelete = new DevExpress.XtraEditors.SimpleButton();
+            this.btnRefresh = new DevExpress.XtraEditors.SimpleButton();
             this.txtSearch = new DevExpress.XtraEditors.ButtonEdit();
             this.grdProducts = new DevExpress.XtraGrid.GridControl();
             this.viewProducts = new DevExpress.XtraGrid.Views.Grid.GridView();
@@ -404,6 +408,21 @@ namespace Autosoft_Licensing.UI.Pages
             this.btnDelete.TabIndex = 8;
             this.btnDelete.Text = "Delete";
             // 
+            // btnRefresh
+            // 
+            this.btnRefresh.AllowFocus = false;
+            this.btnRefresh.Appearance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(98)))), ((int)(((byte)(75)))), ((int)(((byte)(255)))));
+            this.btnRefresh.Appearance.ForeColor = System.Drawing.Color.White;
+            this.btnRefresh.Appearance.Options.UseBackColor = true;
+            this.btnRefresh.Appearance.Options.UseForeColor = true;
+            this.btnRefresh.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnRefresh.Location = new System.Drawing.Point(699, 124);
+            this.btnRefresh.LookAndFeel.UseDefaultLookAndFeel = false;
+            this.btnRefresh.Name = "btnRefresh";
+            this.btnRefresh.Size = new System.Drawing.Size(80, 24);
+            this.btnRefresh.TabIndex = 11;
+            this.btnRefresh.Text = "Refresh";
+            // 
             // txtSearch
             // 
             this.txtSearch.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
@@ -497,6 +516,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.Appearance.Options.UseBackColor = true;
             this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.Controls.Add(this.btnRefresh);
             this.Controls.Add(this.grdProducts);
             this.Controls.Add(this.txtSearch);
             this.Controls.Add(this.btnDelete);
