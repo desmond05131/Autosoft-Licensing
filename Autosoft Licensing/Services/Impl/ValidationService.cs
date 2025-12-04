@@ -49,17 +49,11 @@ namespace Autosoft_Licensing.Services
 
         /// <summary>
         /// Build deterministic canonical JSON for the given payload.
-        /// Removes the ChecksumSHA256 property and returns pretty-printed (indented) canonical JSON for display.
-        /// Matches the UI fallback behaviour.
+        /// Returns compact canonical JSON (no indentation) to match checksum computation everywhere.
         /// </summary>
         public string BuildCanonicalJson(LicenseData payload)
         {
-            if (payload == null) return string.Empty;
-            var jObject = JObject.FromObject(payload);
-            jObject.Property("ChecksumSHA256")?.Remove();
-            var canon = CanonicalJsonSerializer.Serialize(jObject);
-            var token = JToken.Parse(canon);
-            return token.ToString(Formatting.Indented);
+            return CanonicalJsonSerializer.Serialize(payload);
         }
     }
 }
