@@ -250,20 +250,23 @@ namespace Autosoft_Licensing.UI.Pages
                     : arl.ProductName;
                 txtProductName.Text = productName ?? string.Empty;
 
-                // Bind modules from product service.
-                // IMPORTANT: ignore any ModuleCodes present in ARL — admin selects modules manually.
+                // NEW: Currency mapping from ARL
+                try
+                {
+                    txtCurrency.Text = arl.CurrencyCode ?? string.Empty;
+                }
+                catch { txtCurrency.Text = string.Empty; }
+
+                // Bind modules (admin selects manually)
                 try
                 {
                     var modules = (_productService != null)
                         ? (_product_service_getmodules_safe(arl.ProductID) ?? Enumerable.Empty<ModuleDto>())
                         : Enumerable.Empty<ModuleDto>();
-
-                    // Pass an empty enabled list so admin must tick modules manually.
                     BindModules(modules, Enumerable.Empty<string>());
                 }
                 catch
                 {
-                    // non-fatal: clear modules
                     BindModules(Enumerable.Empty<ModuleDto>(), Enumerable.Empty<string>());
                 }
 
@@ -399,10 +402,13 @@ namespace Autosoft_Licensing.UI.Pages
                         DealerCode = _currentRequest?.DealerCode,
                         ValidFromUtc = ToUtc(dtIssueDate.DateTime.Date),
                         ValidToUtc = ToUtc(dtExpireDate.DateTime.Date),
-                        ModuleCodes = GetSelectedModuleCodes()
+                        ModuleCodes = GetSelectedModuleCodes(),
+                        // NEW: map currency into payload
+                        LicenseType = rgLicenseType.Properties.Items[rgLicenseType.SelectedIndex].Value?.ToString()
                     };
+                    // Currency is not in AslPayload type previously; ensure we carry via LicenseData in download step.
+                    // We'll hold currency in txtCurrency and remap later.
 
-                    // TODO: call real CreatePayload and get LicenseKey from result
                     txtLicenseKey.Text = _currentPayload.LicenseKey ?? string.Empty;
 
                     btnPreview.Enabled = true;
@@ -435,14 +441,8 @@ namespace Autosoft_Licensing.UI.Pages
                     return;
                 }
 
-                // Refresh payload with current module selections so admin can change selections after generation
-                try
-                {
-                    _currentPayload.ModuleCodes = GetSelectedModuleCodes();
-                }
-                catch { /* non-fatal */ }
+                try { _currentPayload.ModuleCodes = GetSelectedModuleCodes(); } catch { }
 
-                // Map current AslPayload to canonical LicenseData used by PreviewLicenseForm.
                 var data = new LicenseData
                 {
                     CompanyName = _currentPayload.CompanyName,
@@ -452,20 +452,18 @@ namespace Autosoft_Licensing.UI.Pages
                     ValidToUtc = _currentPayload.ValidToUtc,
                     LicenseKey = _currentPayload.LicenseKey ?? string.Empty,
                     ModuleCodes = _currentPayload.ModuleCodes?.ToList() ?? new List<string>(),
-                    CurrencyCode = null
+                    // NEW: include currency in preview data
+                    CurrencyCode = txtCurrency.Text ?? null
                 };
 
-                // Map license type if available; default to Subscription
                 if (!string.IsNullOrWhiteSpace(_currentPayload.LicenseType) && Enum.TryParse<LicenseType>(_currentPayload.LicenseType, true, out var parsed))
                     data.LicenseType = parsed;
                 else
                     data.LicenseType = LicenseType.Subscription;
 
-                // Show Preview modal
                 using (var preview = new PreviewLicenseForm())
                 {
                     preview.Initialize(data);
-                    // ShowDialog without owner is acceptable for modal preview.
                     preview.ShowDialog();
                 }
             }
@@ -485,14 +483,8 @@ namespace Autosoft_Licensing.UI.Pages
                     return;
                 }
 
-                // Refresh payload with current module selections before packaging ASL
-                try
-                {
-                    _currentPayload.ModuleCodes = GetSelectedModuleCodes();
-                }
-                catch { /* non-fatal */ }
+                try { _currentPayload.ModuleCodes = GetSelectedModuleCodes(); } catch { }
 
-                // Re-check duplicates (defensive)
                 var company = txtCompanyName.Text?.Trim();
                 var product = txtProductId.Text?.Trim();
                 var issueUtc = ToUtc(dtIssueDate.DateTime.Date);
@@ -513,13 +505,13 @@ namespace Autosoft_Licensing.UI.Pages
 
                 if (sfd.ShowDialog() != DialogResult.OK) return;
 
-                // Create and save the ASL using the UI-friendly AslGenerator (passes through to LicenseService + FileService).
-                // Provide CryptoConstants key/iv from config (Program.Main validates these exist).
+                string base64Asl = null;
+
                 try
                 {
                     if (_asl_service_check() == null) throw new InvalidOperationException("ASL generator not initialized.");
 
-                    // Map current payload to canonical LicenseData expected by the ASL generator.
+                    // Map payload to LicenseData expected by generator, including CurrencyCode and LicenseType.
                     var licenseData = new LicenseData
                     {
                         CompanyName = _currentPayload.CompanyName,
@@ -529,22 +521,31 @@ namespace Autosoft_Licensing.UI.Pages
                         ValidToUtc = _currentPayload.ValidToUtc,
                         LicenseKey = _currentPayload.LicenseKey ?? string.Empty,
                         ModuleCodes = _currentPayload.ModuleCodes?.ToList() ?? new List<string>(),
-                        CurrencyCode = null
+                        CurrencyCode = string.IsNullOrWhiteSpace(txtCurrency.Text) ? null : txtCurrency.Text
                     };
 
-                    // Parse license type if present; default to Subscription
                     if (!string.IsNullOrWhiteSpace(_currentPayload.LicenseType) && Enum.TryParse<LicenseType>(_currentPayload.LicenseType, true, out var lt2))
                         licenseData.LicenseType = lt2;
                     else
                         licenseData.LicenseType = LicenseType.Subscription;
 
-                    // Use configured CryptoConstants for key/iv (Program.Main validates these)
-                    _aslService.CreateAndSaveAsl(licenseData, sfd.FileName, CryptoConstants.AesKey, CryptoConstants.AesIV, ensureLicenseKey: true);
+                    // CRITICAL FIX: create Base64 string first, then write it, then persist in DB.
+                    base64Asl = _aslService.CreateAsl(licenseData, CryptoConstants.AesKey, CryptoConstants.AesIV, ensureLicenseKey: true);
+
+                    // Write the Base64 to disk using FileService to ensure exact same content as stored
+                    try
+                    {
+                        ServiceRegistry.File?.WriteFileBase64(sfd.FileName, base64Asl);
+                    }
+                    catch
+                    {
+                        // If FileService not available, fallback to local write
+                        System.IO.File.WriteAllText(sfd.FileName, base64Asl ?? string.Empty, new System.Text.UTF8Encoding(false));
+                    }
                 }
-                catch (ArgumentNullException) { throw; } // let higher catch handle generic message
+                catch (ArgumentNullException) { throw; }
                 catch (ValidationException vx)
                 {
-                    // Validation exceptions should surface exact messages (e.g., license data invalid)
                     ShowError(vx.Message);
                     return;
                 }
@@ -554,7 +555,7 @@ namespace Autosoft_Licensing.UI.Pages
                     return;
                 }
 
-                // Insert metadata to DB (non-blocking)
+                // Insert metadata to DB (non-blocking). Include Remarks and RawAslBase64.
                 try
                 {
                     if (_dbService != null)
@@ -569,15 +570,21 @@ namespace Autosoft_Licensing.UI.Pages
                             ValidToUtc = _currentPayload.ValidToUtc,
                             LicenseType = Enum.TryParse<LicenseType>(_currentPayload.LicenseType, true, out var lt3) ? lt3 : LicenseType.Subscription,
                             ImportedOnUtc = ServiceRegistry.Clock.UtcNow,
-                            RawAslBase64 = null,
-                            ModuleCodes = _currentPayload.ModuleCodes?.ToList() ?? new List<string>()
+                            // NEW: capture exact Base64 ASL written above
+                            RawAslBase64 = base64Asl,
+                            // NEW: map remarks from memo
+                            Remarks = memRemark?.Text,
+                            // Persist selected modules
+                            ModuleCodes = _currentPayload.ModuleCodes?.ToList() ?? new List<string>(),
+                            // CurrencyCode stored if your schema supports it (already part of LicenseMetadata)
+                            CurrencyCode = string.IsNullOrWhiteSpace(txtCurrency.Text) ? null : txtCurrency.Text
                         };
                         _dbService.InsertLicense(meta);
                     }
                 }
                 catch
                 {
-                    // non-blocking: show success for file write but warn DB insert failed quietly
+                    // non-blocking
                 }
 
                 ShowInfo("License generated successfully.", "Success");
@@ -588,7 +595,6 @@ namespace Autosoft_Licensing.UI.Pages
             }
         }
 
-        // Helper wrappers to centralize null checks for services/fields used above
         private IAslGeneratorService _asl_service_check()
         {
             return _aslService;
@@ -606,7 +612,6 @@ namespace Autosoft_Licensing.UI.Pages
         {
             try
             {
-                // Use a BindingList of mutable ModuleRow so checkboxes are editable.
                 var list = productModules?
                     .Select(m => new ModuleRow
                     {
@@ -619,12 +624,10 @@ namespace Autosoft_Licensing.UI.Pages
                 var binding = new BindingList<ModuleRow>(list);
                 grdModules.DataSource = binding;
 
-                // Ensure checkbox column uses repository and is editable
                 colEnabled.FieldName = "Enabled";
                 colModuleName.FieldName = "ModuleName";
                 colModuleName.OptionsColumn.AllowEdit = false;
 
-                // Grid view tweaks to allow inline editing of the Enabled checkbox
                 try
                 {
                     var gv = grdModules.MainView as GridView;
@@ -634,24 +637,20 @@ namespace Autosoft_Licensing.UI.Pages
                         gv.OptionsCustomization.AllowColumnMoving = false;
                         gv.OptionsView.ShowIndicator = false;
 
-                        // Ensure Enabled column exists and is editable
                         var enabledCol = gv.Columns.ColumnByFieldName("Enabled");
                         if (enabledCol != null)
                         {
                             enabledCol.OptionsColumn.AllowEdit = true;
-                            // Setup check-edit repository item
                             try
                             {
-                                // Try reuse existing repository items: create a new one and assign
                                 var chk = new RepositoryItemCheckEdit();
                                 chk.NullStyle = DevExpress.XtraEditors.Controls.StyleIndeterminate.Unchecked;
                                 grdModules.RepositoryItems.Add(chk);
                                 enabledCol.ColumnEdit = chk;
                             }
-                            catch { /* ignore */ }
+                            catch { }
                         }
 
-                        // Best-effort: ensure ModuleName column is read-only and shows text
                         var nameCol = gv.Columns.ColumnByFieldName("ModuleName");
                         if (nameCol != null)
                         {
@@ -662,7 +661,7 @@ namespace Autosoft_Licensing.UI.Pages
                         gv.RefreshData();
                     }
                 }
-                catch { /* non-fatal */ }
+                catch { }
             }
             catch
             {
@@ -682,7 +681,6 @@ namespace Autosoft_Licensing.UI.Pages
                     var row = view.GetRow(i);
                     if (row == null) continue;
 
-                    // Prefer strongly-typed ModuleRow when available (fast, safe)
                     if (row is ModuleRow mr)
                     {
                         if (mr.Enabled && !string.IsNullOrEmpty(mr.ModuleCode))
@@ -690,7 +688,6 @@ namespace Autosoft_Licensing.UI.Pages
                         continue;
                     }
 
-                    // Fallback reflection for anonymous or other row types (keeps compatibility with tests)
                     var propEnabled = row.GetType().GetProperty("Enabled");
                     var propCode = row.GetType().GetProperty("ModuleCode");
                     if (propEnabled != null && propCode != null)

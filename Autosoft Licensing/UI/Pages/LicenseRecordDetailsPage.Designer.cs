@@ -38,6 +38,10 @@ namespace Autosoft_Licensing.UI.Pages
         private LabelControl lblGeneratedBy;
         private TextEdit txtGeneratedBy;
 
+        // NEW: Currency
+        private LabelControl lblCurrency;
+        private TextEdit txtCurrency;
+
         // Checksum controls
         private LabelControl lblChecksum;
         private TextEdit txtChecksum;
@@ -86,6 +90,8 @@ namespace Autosoft_Licensing.UI.Pages
             this.txtStatus = new DevExpress.XtraEditors.TextEdit();
             this.lblGeneratedBy = new DevExpress.XtraEditors.LabelControl();
             this.txtGeneratedBy = new DevExpress.XtraEditors.TextEdit();
+            this.lblCurrency = new DevExpress.XtraEditors.LabelControl();
+            this.txtCurrency = new DevExpress.XtraEditors.TextEdit();
             this.lblChecksum = new DevExpress.XtraEditors.LabelControl();
             this.txtChecksum = new DevExpress.XtraEditors.TextEdit();
             this.btnCopyChecksum = new DevExpress.XtraEditors.SimpleButton();
@@ -111,6 +117,7 @@ namespace Autosoft_Licensing.UI.Pages
             ((System.ComponentModel.ISupportInitialize)(this.txtLicenseType.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.txtStatus.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.txtGeneratedBy.Properties)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.txtCurrency.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.txtChecksum.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.grdModules)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.viewModules)).BeginInit();
@@ -128,7 +135,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.headerPanel.LookAndFeel.Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat;
             this.headerPanel.LookAndFeel.UseDefaultLookAndFeel = false;
             this.headerPanel.Name = "headerPanel";
-            this.headerPanel.Size = new System.Drawing.Size(1036, 60);
+            this.headerPanel.Size = new System.Drawing.Size(1168, 60);
             this.headerPanel.TabIndex = 0;
             // 
             // lblHeaderTitle
@@ -284,66 +291,82 @@ namespace Autosoft_Licensing.UI.Pages
             this.txtGeneratedBy.Size = new System.Drawing.Size(150, 20);
             this.txtGeneratedBy.TabIndex = 16;
             // 
+            // lblCurrency
+            // 
+            this.lblCurrency.Location = new System.Drawing.Point(34, 188);
+            this.lblCurrency.Name = "lblCurrency";
+            this.lblCurrency.Size = new System.Drawing.Size(51, 13);
+            this.lblCurrency.TabIndex = 17;
+            this.lblCurrency.Text = "Currency :";
+            // 
+            // txtCurrency
+            // 
+            this.txtCurrency.Location = new System.Drawing.Point(150, 186);
+            this.txtCurrency.Name = "txtCurrency";
+            this.txtCurrency.Properties.ReadOnly = true;
+            this.txtCurrency.Size = new System.Drawing.Size(120, 20);
+            this.txtCurrency.TabIndex = 18;
+            // 
             // lblChecksum
             // 
-            this.lblChecksum.Location = new System.Drawing.Point(34, 188);
+            this.lblChecksum.Location = new System.Drawing.Point(34, 224);
             this.lblChecksum.Name = "lblChecksum";
             this.lblChecksum.Size = new System.Drawing.Size(108, 13);
-            this.lblChecksum.TabIndex = 17;
+            this.lblChecksum.TabIndex = 19;
             this.lblChecksum.Text = "Checksum (SHA-256) :";
             // 
             // txtChecksum
             // 
-            this.txtChecksum.Location = new System.Drawing.Point(150, 186);
+            this.txtChecksum.Location = new System.Drawing.Point(150, 222);
             this.txtChecksum.Name = "txtChecksum";
             this.txtChecksum.Properties.ReadOnly = true;
             this.txtChecksum.Size = new System.Drawing.Size(240, 20);
-            this.txtChecksum.TabIndex = 18;
+            this.txtChecksum.TabIndex = 20;
             // 
             // btnCopyChecksum
             // 
-            this.btnCopyChecksum.Location = new System.Drawing.Point(396, 184);
+            this.btnCopyChecksum.Location = new System.Drawing.Point(396, 220);
             this.btnCopyChecksum.Name = "btnCopyChecksum";
             this.btnCopyChecksum.Size = new System.Drawing.Size(60, 24);
-            this.btnCopyChecksum.TabIndex = 19;
+            this.btnCopyChecksum.TabIndex = 21;
             this.btnCopyChecksum.Text = "Copy";
             // 
             // btnVerifyChecksum
             // 
-            this.btnVerifyChecksum.Location = new System.Drawing.Point(462, 184);
+            this.btnVerifyChecksum.Location = new System.Drawing.Point(462, 220);
             this.btnVerifyChecksum.Name = "btnVerifyChecksum";
             this.btnVerifyChecksum.Size = new System.Drawing.Size(60, 24);
-            this.btnVerifyChecksum.TabIndex = 20;
+            this.btnVerifyChecksum.TabIndex = 22;
             this.btnVerifyChecksum.Text = "Verify";
             // 
             // lblChecksumStatus
             // 
             this.lblChecksumStatus.Appearance.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
             this.lblChecksumStatus.Appearance.Options.UseFont = true;
-            this.lblChecksumStatus.Location = new System.Drawing.Point(528, 190);
+            this.lblChecksumStatus.Location = new System.Drawing.Point(528, 226);
             this.lblChecksumStatus.Name = "lblChecksumStatus";
             this.lblChecksumStatus.Size = new System.Drawing.Size(0, 15);
-            this.lblChecksumStatus.TabIndex = 21;
+            this.lblChecksumStatus.TabIndex = 23;
             // 
             // lblModules
             // 
             this.lblModules.Appearance.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
             this.lblModules.Appearance.Options.UseFont = true;
-            this.lblModules.Location = new System.Drawing.Point(34, 230);
+            this.lblModules.Location = new System.Drawing.Point(34, 260);
             this.lblModules.Name = "lblModules";
             this.lblModules.Size = new System.Drawing.Size(47, 17);
-            this.lblModules.TabIndex = 22;
+            this.lblModules.TabIndex = 24;
             this.lblModules.Text = "Module";
             // 
             // grdModules
             // 
             this.grdModules.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.grdModules.Location = new System.Drawing.Point(34, 255);
+            this.grdModules.Location = new System.Drawing.Point(34, 285);
             this.grdModules.MainView = this.viewModules;
             this.grdModules.Name = "grdModules";
-            this.grdModules.Size = new System.Drawing.Size(968, 200);
-            this.grdModules.TabIndex = 23;
+            this.grdModules.Size = new System.Drawing.Size(1100, 200);
+            this.grdModules.TabIndex = 25;
             this.grdModules.ViewCollection.AddRange(new DevExpress.XtraGrid.Views.Base.BaseView[] {
             this.viewModules});
             // 
@@ -378,10 +401,10 @@ namespace Autosoft_Licensing.UI.Pages
             // 
             // lblRemark
             // 
-            this.lblRemark.Location = new System.Drawing.Point(34, 475);
+            this.lblRemark.Location = new System.Drawing.Point(34, 505);
             this.lblRemark.Name = "lblRemark";
             this.lblRemark.Size = new System.Drawing.Size(43, 13);
-            this.lblRemark.TabIndex = 24;
+            this.lblRemark.TabIndex = 26;
             this.lblRemark.Text = "Remark :";
             // 
             // memRemark
@@ -389,11 +412,11 @@ namespace Autosoft_Licensing.UI.Pages
             this.memRemark.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.memRemark.Location = new System.Drawing.Point(34, 495);
+            this.memRemark.Location = new System.Drawing.Point(34, 525);
             this.memRemark.Name = "memRemark";
             this.memRemark.Properties.ReadOnly = true;
-            this.memRemark.Size = new System.Drawing.Size(968, 5);
-            this.memRemark.TabIndex = 25;
+            this.memRemark.Size = new System.Drawing.Size(1100, 57);
+            this.memRemark.TabIndex = 27;
             // 
             // btnBack
             // 
@@ -404,11 +427,11 @@ namespace Autosoft_Licensing.UI.Pages
             this.btnBack.Appearance.Options.UseBackColor = true;
             this.btnBack.Appearance.Options.UseFont = true;
             this.btnBack.Appearance.Options.UseForeColor = true;
-            this.btnBack.Location = new System.Drawing.Point(902, 520);
+            this.btnBack.Location = new System.Drawing.Point(1034, 602);
             this.btnBack.LookAndFeel.UseDefaultLookAndFeel = false;
             this.btnBack.Name = "btnBack";
             this.btnBack.Size = new System.Drawing.Size(100, 36);
-            this.btnBack.TabIndex = 26;
+            this.btnBack.TabIndex = 28;
             this.btnBack.Text = "Back";
             // 
             // LicenseRecordDetailsPage
@@ -427,6 +450,8 @@ namespace Autosoft_Licensing.UI.Pages
             this.Controls.Add(this.btnCopyChecksum);
             this.Controls.Add(this.txtChecksum);
             this.Controls.Add(this.lblChecksum);
+            this.Controls.Add(this.txtCurrency);
+            this.Controls.Add(this.lblCurrency);
             this.Controls.Add(this.txtGeneratedBy);
             this.Controls.Add(this.lblGeneratedBy);
             this.Controls.Add(this.txtStatus);
@@ -445,7 +470,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.Controls.Add(this.lblCompanyName);
             this.Controls.Add(this.headerPanel);
             this.Name = "LicenseRecordDetailsPage";
-            this.Size = new System.Drawing.Size(1036, 575);
+            this.Size = new System.Drawing.Size(1168, 652);
             ((System.ComponentModel.ISupportInitialize)(this.headerPanel)).EndInit();
             this.headerPanel.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.txtCompanyName.Properties)).EndInit();
@@ -458,6 +483,7 @@ namespace Autosoft_Licensing.UI.Pages
             ((System.ComponentModel.ISupportInitialize)(this.txtLicenseType.Properties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.txtStatus.Properties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.txtGeneratedBy.Properties)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.txtCurrency.Properties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.txtChecksum.Properties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.grdModules)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.viewModules)).EndInit();

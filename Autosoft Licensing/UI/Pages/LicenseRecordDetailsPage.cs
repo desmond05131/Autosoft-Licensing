@@ -139,9 +139,11 @@ namespace Autosoft_Licensing.UI.Pages
                 catch { }
                 txtGeneratedBy.Text = generatedBy;
 
-                // Remark (use empty if null)
-                // TODO: Add Remark column to Licenses table if not present
-                memRemark.Text = string.Empty; // Placeholder until Remark field is added to LicenseMetadata
+                // Currency (new binding)
+                txtCurrency.Text = _currentLicense.CurrencyCode ?? string.Empty;
+
+                // Remark (bind to stored remarks)
+                memRemark.Text = _currentLicense.Remarks ?? string.Empty;
 
                 // Extract and display checksum from RawAslBase64
                 txtChecksum.Text = string.Empty;
@@ -425,7 +427,7 @@ namespace Autosoft_Licensing.UI.Pages
                     lblChecksumStatus.Text = "✗ Invalid";
                     lblChecksumStatus.Appearance.ForeColor = Color.Red;
                     ShowError("Invalid or tampered license file.");
-                    
+
                     System.Diagnostics.Debug.WriteLine($"Checksum mismatch:\nStored:   {storedChecksum}\nComputed: {computedChecksum}");
                 }
             }
