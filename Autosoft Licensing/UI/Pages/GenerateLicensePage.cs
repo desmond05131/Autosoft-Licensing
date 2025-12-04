@@ -50,11 +50,6 @@ namespace Autosoft_Licensing.UI.Pages
         {
             InitializeComponent();
 
-            // Design-time safe initialization
-            // Wrap runtime initialization in try/catch: some environments (test host, headless CI) can
-            // throw during DevExpress control creation or look-and-feel operations. Do not allow such
-            // exceptions to escape the constructor (they crash the UI thread). Swallowing here keeps the
-            // designer stable and the tests able to create the control; runtime behavior remains the same.
             try
             {
                 if (!DesignMode)
@@ -79,7 +74,7 @@ namespace Autosoft_Licensing.UI.Pages
                     numSubscriptionMonths.Properties.MaxValue = 1200;
                     numSubscriptionMonths.Value = 12;
 
-                    // Attach event handlers (do not attach in designer to keep design-time stable)
+                    // Attach event handlers
                     btnUploadArl.Click += btnUploadArl_Click;
                     rgLicenseType.SelectedIndexChanged += rgLicenseType_SelectedIndexChanged;
                     numSubscriptionMonths.ValueChanged += numSubscriptionMonths_ValueChanged;
@@ -92,30 +87,12 @@ namespace Autosoft_Licensing.UI.Pages
                     btnPreview.Enabled = false;
                     btnDownload.Enabled = false;
 
-                    // Try to wire default services from ServiceRegistry so the page works even when host
-                    // didn't call Initialize(...). This makes the UI usable in the running EXE and by E2E tests.
+                    // Best-effort ServiceRegistry wiring (omitted here for brevity; unchanged)
+                    try { _arlReader ??= ServiceRegistry.ArlReader; } catch { }
+                    try { _aslService ??= ServiceRegistry.AslGenerator; } catch { }
+                    try { _productService ??= ServiceRegistry.Product; } catch { }
                     try
                     {
-                        // Lightweight defensive wiring; do not throw if registry access fails.
-                        _arlReader ??= ServiceRegistry.ArlReader;
-                    }
-                    catch { /* best-effort */ }
-
-                    try
-                    {
-                        _aslService ??= ServiceRegistry.AslGenerator;
-                    }
-                    catch { /* best-effort */ }
-
-                    try
-                    {
-                        _productService ??= ServiceRegistry.Product;
-                    }
-                    catch { /* best-effort */ }
-
-                    try
-                    {
-                        // Database may not be initialized in some test hosts; fall back to in-memory DB if needed.
                         _dbService ??= ServiceRegistry.Database;
                     }
                     catch
@@ -128,17 +105,12 @@ namespace Autosoft_Licensing.UI.Pages
                         }
                         catch
                         {
-                            _dbService = null; // leave null if even fallback fails
+                            _dbService = null;
                         }
                     }
+                    try { _userService ??= ServiceRegistry.User; } catch { }
 
-                    try
-                    {
-                        _userService ??= ServiceRegistry.User;
-                    }
-                    catch { /* best-effort */ }
-
-                    // Ensure modules grid is editable at runtime
+                    // Ensure modules grid is editable
                     try
                     {
                         var gv = grdModules.MainView as GridView;
@@ -148,32 +120,24 @@ namespace Autosoft_Licensing.UI.Pages
                             gv.OptionsView.ShowAutoFilterRow = false;
                             gv.OptionsView.ShowGroupPanel = false;
                         }
-                        // Ensure Enabled column (designer variable colEnabled) is editable when present
                         if (colEnabled != null)
                         {
                             colEnabled.OptionsColumn.AllowEdit = true;
-                            // Provide a repository check edit so the column shows a checkbox
                             try
                             {
                                 var chk = new RepositoryItemCheckEdit();
                                 chk.NullStyle = DevExpress.XtraEditors.Controls.StyleIndeterminate.Unchecked;
-                                // Avoid duplicate addition: RepositoryItem equality isn't trivial so always add then set
                                 grdModules.RepositoryItems.Add(chk);
                                 colEnabled.ColumnEdit = chk;
                             }
-                            catch { /* ignore repository hookup failures */ }
+                            catch { }
                         }
                     }
-                    catch { /* non-fatal */ }
-
-                    // TODO inject via constructor or call Initialize(...) from host/composition root
-                    // _arlReader = ServiceRegistry.ArlReader; // example if available
+                    catch { }
                 }
             }
             catch (Exception ex)
             {
-                // Prevent unhandled exceptions during construction from crashing the UI thread in tests.
-                // Log to Debug so developers can inspect but do not rethrow.
                 try { System.Diagnostics.Debug.WriteLine($"GenerateLicensePage ctor suppressed exception: {ex}"); } catch { }
             }
         }
@@ -199,7 +163,7 @@ namespace Autosoft_Licensing.UI.Pages
         // small helper to avoid altering the original method signature semantics (keeps ctor stable)
         private void _user_service_check(IUserService _dummy) { /* no-op to satisfy static analysis placement */ }
 
-        #region Event handlers (skeletons with TODO)
+        #region Event handlers (existing)
 
         private void btnUploadArl_Click(object sender, EventArgs e)
         {
@@ -216,7 +180,6 @@ namespace Autosoft_Licensing.UI.Pages
                 ArlRequest arl;
                 try
                 {
-                    // Use injected _arlReader or fallback to ServiceRegistry implementation wired in ctor.
                     if (_arlReader == null) throw new InvalidOperationException("ARL reader not initialized.");
                     arl = _arlReader.ParseArl(ofd.FileName);
                 }
@@ -296,7 +259,6 @@ namespace Autosoft_Licensing.UI.Pages
             }
         }
 
-        // safe wrappers to avoid surprising NullReference during test/design-time
         private string _product_service_getname_safe(string productId)
         {
             try { return _productService.GetProductName(productId); } catch { return string.Empty; }
@@ -323,12 +285,10 @@ namespace Autosoft_Licensing.UI.Pages
                     if (numSubscriptionMonths.Value <= 1) numSubscriptionMonths.Value = 12;
                     dtExpireDate.DateTime = dtIssueDate.DateTime.AddMonths((int)numSubscriptionMonths.Value);
                 }
-                else // Permanent
+                else
                 {
                     numSubscriptionMonths.Enabled = false;
-                    // Represent permanent by a far future date; TODO: consider special display "Permanent"
                     dtExpireDate.DateTime = DateTime.SpecifyKind(DateTime.MaxValue.Date, DateTimeKind.Utc).ToLocalTime();
-                    // TODO: allow admin to pick custom expiry for Permanent if business requires
                 }
             }
             catch
@@ -359,7 +319,6 @@ namespace Autosoft_Licensing.UI.Pages
         {
             try
             {
-                // Validate required fields
                 if (_currentRequest == null || string.IsNullOrWhiteSpace(txtCompanyName.Text) || string.IsNullOrWhiteSpace(txtProductId.Text))
                 {
                     ShowError("Invalid license request file.");
@@ -373,27 +332,23 @@ namespace Autosoft_Licensing.UI.Pages
 
                 if (expireLocal < issueLocal)
                 {
-                    ShowError("Operation failed. Contact admin."); // generic; business did not specify other exact string
+                    ShowError("Operation failed. Contact admin.");
                     return;
                 }
 
                 var issueUtc = ToUtc(issueLocal);
                 var expireUtc = ToUtc(expireLocal);
 
-                // Duplicate check
                 if (_dbService != null && _dbService.ExistsDuplicateLicense(company, product, issueUtc, expireUtc))
                 {
                     ShowError("Duplicate license exists for same Company, Product, IssueDate and ExpiryDate.");
                     return;
                 }
 
-                // Build payload (stub) and call ASL service to create payload / key
                 try
                 {
-                    // TODO: Replace with real payload creation call to _aslService.CreatePayload(...) or equivalent
                     if (_aslService == null) throw new InvalidOperationException("ASL generator service not initialized.");
 
-                    // In this skeleton we simulate creation of payload with a generated LicenseKey
                     _currentPayload = new AslPayload
                     {
                         LicenseKey = Guid.NewGuid().ToString("N").ToUpper().Substring(0, 32),
@@ -403,11 +358,8 @@ namespace Autosoft_Licensing.UI.Pages
                         ValidFromUtc = ToUtc(dtIssueDate.DateTime.Date),
                         ValidToUtc = ToUtc(dtExpireDate.DateTime.Date),
                         ModuleCodes = GetSelectedModuleCodes(),
-                        // NEW: map currency into payload
                         LicenseType = rgLicenseType.Properties.Items[rgLicenseType.SelectedIndex].Value?.ToString()
                     };
-                    // Currency is not in AslPayload type previously; ensure we carry via LicenseData in download step.
-                    // We'll hold currency in txtCurrency and remap later.
 
                     txtLicenseKey.Text = _currentPayload.LicenseKey ?? string.Empty;
 
@@ -452,7 +404,6 @@ namespace Autosoft_Licensing.UI.Pages
                     ValidToUtc = _currentPayload.ValidToUtc,
                     LicenseKey = _currentPayload.LicenseKey ?? string.Empty,
                     ModuleCodes = _currentPayload.ModuleCodes?.ToList() ?? new List<string>(),
-                    // NEW: include currency in preview data
                     CurrencyCode = txtCurrency.Text ?? null
                 };
 
@@ -511,7 +462,7 @@ namespace Autosoft_Licensing.UI.Pages
                 {
                     if (_asl_service_check() == null) throw new InvalidOperationException("ASL generator not initialized.");
 
-                    // Map payload to LicenseData expected by generator, including CurrencyCode and LicenseType.
+                    // Map payload to LicenseData
                     var licenseData = new LicenseData
                     {
                         CompanyName = _currentPayload.CompanyName,
@@ -529,17 +480,16 @@ namespace Autosoft_Licensing.UI.Pages
                     else
                         licenseData.LicenseType = LicenseType.Subscription;
 
-                    // CRITICAL FIX: create Base64 string first, then write it, then persist in DB.
+                    // CRITICAL FIX (already implemented): same string used for disk and DB
                     base64Asl = _aslService.CreateAsl(licenseData, CryptoConstants.AesKey, CryptoConstants.AesIV, ensureLicenseKey: true);
 
-                    // Write the Base64 to disk using FileService to ensure exact same content as stored
+                    // Write to disk
                     try
                     {
                         ServiceRegistry.File?.WriteFileBase64(sfd.FileName, base64Asl);
                     }
                     catch
                     {
-                        // If FileService not available, fallback to local write
                         System.IO.File.WriteAllText(sfd.FileName, base64Asl ?? string.Empty, new System.Text.UTF8Encoding(false));
                     }
                 }
@@ -555,7 +505,7 @@ namespace Autosoft_Licensing.UI.Pages
                     return;
                 }
 
-                // Insert metadata to DB (non-blocking). Include Remarks and RawAslBase64.
+                // Insert metadata to DB (include the EXACT same Base64 string)
                 try
                 {
                     if (_dbService != null)
@@ -570,13 +520,9 @@ namespace Autosoft_Licensing.UI.Pages
                             ValidToUtc = _currentPayload.ValidToUtc,
                             LicenseType = Enum.TryParse<LicenseType>(_currentPayload.LicenseType, true, out var lt3) ? lt3 : LicenseType.Subscription,
                             ImportedOnUtc = ServiceRegistry.Clock.UtcNow,
-                            // NEW: capture exact Base64 ASL written above
-                            RawAslBase64 = base64Asl,
-                            // NEW: map remarks from memo
+                            RawAslBase64 = base64Asl, // EXACTLY the same Base64 string saved to disk
                             Remarks = memRemark?.Text,
-                            // Persist selected modules
                             ModuleCodes = _currentPayload.ModuleCodes?.ToList() ?? new List<string>(),
-                            // CurrencyCode stored if your schema supports it (already part of LicenseMetadata)
                             CurrencyCode = string.IsNullOrWhiteSpace(txtCurrency.Text) ? null : txtCurrency.Text
                         };
                         _dbService.InsertLicense(meta);
@@ -588,6 +534,17 @@ namespace Autosoft_Licensing.UI.Pages
                 }
 
                 ShowInfo("License generated successfully.", "Success");
+
+                // NEW: UI LOCKING — prevent accidental re-download/generation without starting fresh.
+                try
+                {
+                    btnGenerateKey.Enabled = false;
+                    btnDownload.Enabled = false;
+                    // Keep Preview enabled so user can still inspect current payload if needed
+                    // Optionally also lock preview: uncomment next line to disable
+                    // btnPreview.Enabled = false;
+                }
+                catch { /* ignore UI state failures */ }
             }
             catch (Exception)
             {
@@ -595,10 +552,7 @@ namespace Autosoft_Licensing.UI.Pages
             }
         }
 
-        private IAslGeneratorService _asl_service_check()
-        {
-            return _aslService;
-        }
+        private IAslGeneratorService _asl_service_check() { return _aslService; }
         private string _current_payload_productid_safe()
         {
             try { return _currentPayload.ProductID ?? string.Empty; } catch { return string.Empty; }

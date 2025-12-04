@@ -426,7 +426,9 @@ namespace Autosoft_Licensing.UI.Pages
                 {
                     lblChecksumStatus.Text = "✗ Invalid";
                     lblChecksumStatus.Appearance.ForeColor = Color.Red;
-                    ShowError("Invalid or tampered license file.");
+
+                    // Updated: show detailed mismatch information to the admin
+                    ShowError($"Checksum Mismatch!\n\nStored in JSON: {storedChecksum}\nRe-computed: {computedChecksum}\n\nThis indicates the DB record differs from the original payload.");
 
                     System.Diagnostics.Debug.WriteLine($"Checksum mismatch:\nStored:   {storedChecksum}\nComputed: {computedChecksum}");
                 }

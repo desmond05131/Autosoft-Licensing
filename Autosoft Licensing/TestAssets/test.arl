@@ -1,0 +1,10 @@
+{
+  "CompanyName": "Test SDN BHD",
+  "RequestedPeriodMonths": 36,
+  "DealerCode": "DEALER-001",
+  "ProductID": "PROD-001",
+  "LicenseType": "Subscription",
+  "LicenseKey": "REQ-001",
+  "CurrencyCode": "MYR",
+  "RequestDateUtc": "2025-12-01T00:00:00Z"
+}
