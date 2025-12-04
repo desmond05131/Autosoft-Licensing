@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using Autosoft_Licensing.Models.Enums;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using Autosoft_Licensing.Models.Enums;
 
 namespace Autosoft_Licensing.Models
 {
@@ -32,11 +32,12 @@ namespace Autosoft_Licensing.Models
         public DateTime ValidToUtc { get; set; }
 
         [Required, MinLength(1)]
-        public string LicenseKey { get; set; }
+        public string LicenseKey { get; set; }  
 
         // Activated modules (ModuleCode list)
         public List<string> ModuleCodes { get; set; } = new List<string>();
 
+        // Tamper-proof checksum (hex lowercase)
         [Required, MinLength(1)]
         public string ChecksumSHA256 { get; set; }
     }

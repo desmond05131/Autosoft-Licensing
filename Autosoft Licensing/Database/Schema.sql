@@ -32,7 +32,7 @@ CREATE UNIQUE INDEX UX_Products_ProductID ON Products(ProductID);
 
 CREATE TABLE Modules (
   Id INT IDENTITY PRIMARY KEY,
-  ProductId INT NOT NULL,
+  ProductId INT NOT NULL,              -- FK to Products.Id (surrogate key)
   ModuleCode NVARCHAR(100) NOT NULL,
   Name NVARCHAR(200) NULL,
   Description NVARCHAR(4000) NULL,
@@ -58,7 +58,7 @@ CREATE TABLE LicenseRequests (
   CompanyName NVARCHAR(255) NOT NULL,
   ProductID NVARCHAR(100) NOT NULL,  -- references Products.ProductID logically
   DealerCode NVARCHAR(50) NOT NULL,
-  LicenseType NVARCHAR(20) NOT NULL, -- Demo|Paid
+  LicenseType NVARCHAR(20) NOT NULL, -- Demo|Paid (ARL uses "Paid", but we map to enum internally)
   RequestedPeriodMonths INT NOT NULL,
   LicenseKey NVARCHAR(200) NOT NULL,
   CurrencyCode NVARCHAR(10) NULL,
@@ -88,17 +88,17 @@ CREATE TABLE Licenses (
   ProductID NVARCHAR(100) NOT NULL,
   DealerCode NVARCHAR(50) NOT NULL,
   LicenseKey NVARCHAR(200) NOT NULL,
-  LicenseType NVARCHAR(20) NOT NULL,  -- Demo|Paid
+  LicenseType NVARCHAR(20) NOT NULL,  -- Demo|Subscription|Permanent (maps to enum)
   ValidFromUtc DATETIME2 NOT NULL,
   ValidToUtc DATETIME2 NOT NULL,
   CurrencyCode NVARCHAR(10) NULL,
-  Status NVARCHAR(20) NOT NULL,       -- Valid|Expired|Invalid
+  Status NVARCHAR(20) NOT NULL,       -- Valid|Expired|Invalid|Deleted
   ImportedOnUtc DATETIME2 NOT NULL CONSTRAINT DF_Licenses_ImportedOnUtc DEFAULT (SYSUTCDATETIME()),
   ImportedByUserId INT NULL,
   RawAslBase64 NVARCHAR(MAX) NULL,
 
-  CONSTRAINT CK_Licenses_LicenseType CHECK (LicenseType IN ('Demo','Paid')),
-  CONSTRAINT CK_Licenses_Status CHECK (Status IN ('Valid','Expired','Invalid')),
+  CONSTRAINT CK_Licenses_LicenseType CHECK (LicenseType IN ('Demo','Subscription','Permanent')),
+  CONSTRAINT CK_Licenses_Status CHECK (Status IN ('Valid','Expired','Invalid','Deleted')),
   CONSTRAINT FK_Licenses_User FOREIGN KEY (ImportedByUserId) REFERENCES Users(Id)
 );
 

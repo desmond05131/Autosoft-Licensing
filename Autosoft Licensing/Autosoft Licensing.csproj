@@ -298,8 +298,21 @@
     <Compile Include="UI\Pages\GenericPage.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="UI\Pages\LicenseRecordsDetailsPage.cs" />
-    <Compile Include="UI\Pages\LicenseRecordsPage.cs" />
+    <Compile Include="UI\Pages\LicenseRecordDetailsPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UI\Pages\LicenseRecordDetailsPage.Designer.cs">
+      <DependentUpon>LicenseRecordDetailsPage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UI\Pages\LicenseRecordDetailsPage.Navigation.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UI\Pages\LicenseRecordsPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UI\Pages\LicenseRecordsPage.Designer.cs">
+      <DependentUpon>LicenseRecordsPage.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\Pages\LoginPage.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -344,6 +357,12 @@
     </Compile>
     <EmbeddedResource Include="UI\Pages\GenerateLicensePage.resx">
       <DependentUpon>GenerateLicensePage.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\Pages\LicenseRecordDetailsPage.resx">
+      <DependentUpon>LicenseRecordDetailsPage.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\Pages\LicenseRecordsPage.resx">
+      <DependentUpon>LicenseRecordsPage.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\Pages\LoginPage.resx">
       <DependentUpon>LoginPage.cs</DependentUpon>

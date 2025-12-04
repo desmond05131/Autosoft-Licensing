@@ -32,6 +32,7 @@ namespace Autosoft_Licensing.Services.Impl
         {
             try
             {
+                // Pass-through now returns ModuleDto with Description populated by the DB service
                 var modules = _database.GetModulesForProduct(productId);
                 return modules ?? new List<ModuleDto>();
             }

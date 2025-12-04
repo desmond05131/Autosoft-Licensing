@@ -154,11 +154,31 @@ namespace Autosoft_Licensing
                     // Also accept alternative automation-friendly name if used by tests/automation.
                     case "btnNav_GenerateLicense":
                     case "aceGenerateLicense":
+                    case "GenerateLicensePage":
                         page = new GenerateLicensePage();
                         break;
 
-                    // other pages can be wired here when implemented:
-                    // case "aceLicenseList": page = new LicenseRecordsPage(); break;
+                    // License Records page
+                    case "aceLicenseList":
+                    case "btnNav_LicenseRecords":
+                    case "LicenseRecordsPage":
+                        page = new LicenseRecordsPage();
+                        // Wire navigation event
+                        if (page is LicenseRecordsPage recordsPage)
+                        {
+                            recordsPage.NavigateRequested += OnPageNavigationRequested;
+                        }
+                        break;
+
+                    // License Details page
+                    case "LicenseRecordDetailsPage":
+                        page = new LicenseRecordDetailsPage();
+                        // Wire back navigation
+                        if (page is LicenseRecordDetailsPage detailsPage)
+                        {
+                            detailsPage.NavigateRequested += OnDetailsPageNavigationRequested;
+                        }
+                        break;
 
                     default:
                         page = new GenericPage(elementText ?? elementName);
@@ -182,6 +202,89 @@ namespace Autosoft_Licensing
                 if (!_suppressMessageBoxes)
                 {
                     XtraMessageBox.Show("Failed to initialize page: " + ex.Message, "Page error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Handle navigation requests from child pages.
+        /// </summary>
+        private void OnPageNavigationRequested(object sender, LicenseRecordsPage.NavigateEventArgs e)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(e.TargetPage))
+                    return;
+
+                // Handle different target pages
+                switch (e.TargetPage)
+                {
+                    case "LicenseRecordDetailsPage":
+                        if (e.LicenseId.HasValue)
+                        {
+                            // Load or get cached details page
+                            if (!_pageCache.TryGetValue("LicenseRecordDetailsPage", out var page))
+                            {
+                                page = new LicenseRecordDetailsPage();
+                                
+                                // FIXED: Wire back navigation event for newly created page
+                                if (page is LicenseRecordDetailsPage detailsPage)
+                                {
+                                    detailsPage.NavigateRequested += OnDetailsPageNavigationRequested;
+                                }
+                                
+                                _pageCache["LicenseRecordDetailsPage"] = page;
+                            }
+
+                            // Initialize with license ID
+                            if (page is LicenseRecordDetailsPage detailsPageToInit)
+                            {
+                                detailsPageToInit.Initialize(e.LicenseId.Value);
+                            }
+
+                            // Show the page
+                            contentPanel.Controls.Clear();
+                            page.Dock = DockStyle.Fill;
+                            contentPanel.Controls.Add(page);
+                            page.InitializeForRole(LoggedInUser);
+                        }
+                        break;
+
+                    case "GenerateLicensePage":
+                        LoadPage("GenerateLicensePage", "Generate License");
+                        break;
+
+                    default:
+                        LoadPage(e.TargetPage, e.TargetPage);
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                if (!_suppressMessageBoxes)
+                {
+                    XtraMessageBox.Show($"Navigation failed: {ex.Message}", "Navigation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Handle navigation from details page (primarily back navigation).
+        /// </summary>
+        private void OnDetailsPageNavigationRequested(object sender, LicenseRecordDetailsPage.NavigateEventArgs e)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(e.TargetPage))
+                    return;
+
+                LoadPage(e.TargetPage, e.TargetPage);
+            }
+            catch (Exception ex)
+            {
+                if (!_suppressMessageBoxes)
+                {
+                    XtraMessageBox.Show($"Navigation failed: {ex.Message}", "Navigation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }
