@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace Autosoft_Licensing.Models
@@ -11,5 +13,13 @@ namespace Autosoft_Licensing.Models
 
         [MaxLength(200)]
         public string Name { get; set; }
+
+        public string Description { get; set; }
+        public string ReleaseNotes { get; set; }
+        public string CreatedBy { get; set; }
+        public DateTime CreatedUtc { get; set; }
+        public DateTime LastModifiedUtc { get; set; }
+
+        public List<Module> Modules { get; set; } = new List<Module>();
     }
 }

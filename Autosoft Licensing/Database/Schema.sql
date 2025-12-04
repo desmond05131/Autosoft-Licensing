@@ -26,7 +26,12 @@ CREATE UNIQUE INDEX UX_Users_Username ON Users(Username);
 CREATE TABLE Products (
   Id INT IDENTITY PRIMARY KEY,
   ProductID NVARCHAR(100) NOT NULL,    -- business key shown in UI
-  Name NVARCHAR(200) NULL
+  Name NVARCHAR(200) NULL,
+  Description NVARCHAR(MAX) NULL,
+  ReleaseNotes NVARCHAR(MAX) NULL,
+  CreatedBy NVARCHAR(100) NULL,
+  CreatedUtc DATETIME2 NOT NULL CONSTRAINT DF_Products_CreatedUtc DEFAULT (SYSUTCDATETIME()),
+  LastModifiedUtc DATETIME2 NOT NULL CONSTRAINT DF_Products_LastModifiedUtc DEFAULT (SYSUTCDATETIME())
 );
 CREATE UNIQUE INDEX UX_Products_ProductID ON Products(ProductID);
 

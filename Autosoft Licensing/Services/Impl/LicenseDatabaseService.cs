@@ -126,7 +126,7 @@ WHERE Id = @Id;", conn);
             var list = new List<Product>();
             using var conn = _factory.Create();
             using var cmd = new SqlCommand(@"
-SELECT Id, ProductID, Name
+SELECT Id, ProductID, Name, Description, ReleaseNotes, CreatedBy, CreatedUtc, LastModifiedUtc
 FROM dbo.Products
 ORDER BY ProductID;", conn);
             conn.Open();
@@ -139,7 +139,7 @@ ORDER BY ProductID;", conn);
         {
             using var conn = _factory.Create();
             using var cmd = new SqlCommand(@"
-SELECT TOP(1) Id, ProductID, Name
+SELECT TOP(1) Id, ProductID, Name, Description, ReleaseNotes, CreatedBy, CreatedUtc, LastModifiedUtc
 FROM dbo.Products WHERE Id = @id;", conn);
             cmd.Parameters.AddWithValue("@id", id);
             conn.Open();
@@ -152,7 +152,7 @@ FROM dbo.Products WHERE Id = @id;", conn);
         {
             using var conn = _factory.Create();
             using var cmd = new SqlCommand(@"
-SELECT TOP(1) Id, ProductID, Name
+SELECT TOP(1) Id, ProductID, Name, Description, ReleaseNotes, CreatedBy, CreatedUtc, LastModifiedUtc
 FROM dbo.Products WHERE ProductID = @pid;", conn);
             cmd.Parameters.AddWithValue("@pid", productId ?? (object)DBNull.Value);
             conn.Open();
@@ -164,29 +164,104 @@ FROM dbo.Products WHERE ProductID = @pid;", conn);
         public int InsertProduct(Product product)
         {
             using var conn = _factory.Create();
-            using var cmd = new SqlCommand(@"
-INSERT INTO dbo.Products (ProductID, Name)
-VALUES (@ProductID, @Name);
-SELECT CAST(SCOPE_IDENTITY() AS INT);", conn);
-            cmd.Parameters.AddWithValue("@ProductID", product.ProductID);
-            cmd.Parameters.AddWithValue("@Name", product.Name);
             conn.Open();
-            return (int)cmd.ExecuteScalar();
+            using var tx = conn.BeginTransaction();
+            try
+            {
+                int newId;
+                using (var cmd = new SqlCommand(@"
+INSERT INTO dbo.Products (ProductID, Name, Description, ReleaseNotes, CreatedBy, CreatedUtc, LastModifiedUtc)
+VALUES (@ProductID, @Name, @Description, @ReleaseNotes, @CreatedBy, @CreatedUtc, @LastModifiedUtc);
+SELECT CAST(SCOPE_IDENTITY() AS INT);", conn, tx))
+                {
+                    cmd.Parameters.AddWithValue("@ProductID", product.ProductID);
+                    cmd.Parameters.AddWithValue("@Name", (object)product.Name ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Description", (object)product.Description ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@ReleaseNotes", (object)product.ReleaseNotes ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@CreatedBy", (object)product.CreatedBy ?? DBNull.Value);
+                    var createdUtc = product.CreatedUtc == default ? DateTime.UtcNow : product.CreatedUtc;
+                    var modifiedUtc = product.LastModifiedUtc == default ? createdUtc : product.LastModifiedUtc;
+                    cmd.Parameters.AddWithValue("@CreatedUtc", createdUtc);
+                    cmd.Parameters.AddWithValue("@LastModifiedUtc", modifiedUtc);
+                    newId = (int)cmd.ExecuteScalar();
+                }
+
+                // Insert modules for the new product
+                foreach (var m in product.Modules ?? new List<Module>())
+                {
+                    using var ins = new SqlCommand(@"
+INSERT INTO dbo.Modules (ProductId, ModuleCode, Name, Description, IsActive)
+VALUES (@ProductId, @ModuleCode, @Name, @Description, @IsActive);", conn, tx);
+                    ins.Parameters.AddWithValue("@ProductId", newId);
+                    ins.Parameters.AddWithValue("@ModuleCode", m.ModuleCode);
+                    ins.Parameters.AddWithValue("@Name", (object)m.Name ?? DBNull.Value);
+                    ins.Parameters.AddWithValue("@Description", (object)m.Description ?? DBNull.Value);
+                    ins.Parameters.AddWithValue("@IsActive", m.IsActive);
+                    ins.ExecuteNonQuery();
+                }
+
+                tx.Commit();
+                return newId;
+            }
+            catch
+            {
+                tx.Rollback();
+                throw;
+            }
         }
 
         public void UpdateProduct(Product product)
         {
             using var conn = _factory.Create();
-            using var cmd = new SqlCommand(@"
+            conn.Open();
+            using var tx = conn.BeginTransaction();
+            try
+            {
+                using (var cmd = new SqlCommand(@"
 UPDATE dbo.Products
 SET ProductID = @ProductID,
-    Name = @Name
-WHERE Id = @Id;", conn);
-            cmd.Parameters.AddWithValue("@Id", product.Id);
-            cmd.Parameters.AddWithValue("@ProductID", product.ProductID);
-            cmd.Parameters.AddWithValue("@Name", product.Name);
-            conn.Open();
-            cmd.ExecuteNonQuery();
+    Name = @Name,
+    Description = @Description,
+    ReleaseNotes = @ReleaseNotes,
+    LastModifiedUtc = @LastModifiedUtc
+WHERE Id = @Id;", conn, tx))
+                {
+                    cmd.Parameters.AddWithValue("@Id", product.Id);
+                    cmd.Parameters.AddWithValue("@ProductID", product.ProductID);
+                    cmd.Parameters.AddWithValue("@Name", (object)product.Name ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Description", (object)product.Description ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@ReleaseNotes", (object)product.ReleaseNotes ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@LastModifiedUtc", product.LastModifiedUtc == default ? DateTime.UtcNow : product.LastModifiedUtc);
+                    cmd.ExecuteNonQuery();
+                }
+
+                // Synchronize modules: delete all then insert current list
+                using (var del = new SqlCommand("DELETE FROM dbo.Modules WHERE ProductId = @pid;", conn, tx))
+                {
+                    del.Parameters.AddWithValue("@pid", product.Id);
+                    del.ExecuteNonQuery();
+                }
+
+                foreach (var m in product.Modules ?? new List<Module>())
+                {
+                    using var ins = new SqlCommand(@"
+INSERT INTO dbo.Modules (ProductId, ModuleCode, Name, Description, IsActive)
+VALUES (@ProductId, @ModuleCode, @Name, @Description, @IsActive);", conn, tx);
+                    ins.Parameters.AddWithValue("@ProductId", product.Id);
+                    ins.Parameters.AddWithValue("@ModuleCode", m.ModuleCode);
+                    ins.Parameters.AddWithValue("@Name", (object)m.Name ?? DBNull.Value);
+                    ins.Parameters.AddWithValue("@Description", (object)m.Description ?? DBNull.Value);
+                    ins.Parameters.AddWithValue("@IsActive", m.IsActive);
+                    ins.ExecuteNonQuery();
+                }
+
+                tx.Commit();
+            }
+            catch
+            {
+                tx.Rollback();
+                throw;
+            }
         }
 
         public void DeleteProduct(int id)
@@ -202,7 +277,13 @@ WHERE Id = @Id;", conn);
         {
             Id = r.GetInt32(0),
             ProductID = r.GetString(1),
-            Name = r.IsDBNull(2) ? null : r.GetString(2)
+            Name = r.IsDBNull(2) ? null : r.GetString(2),
+            Description = r.IsDBNull(3) ? null : r.GetString(3),
+            ReleaseNotes = r.IsDBNull(4) ? null : r.GetString(4),
+            CreatedBy = r.IsDBNull(5) ? null : r.GetString(5),
+            CreatedUtc = r.IsDBNull(6) ? default : r.GetDateTime(6),
+            LastModifiedUtc = r.IsDBNull(7) ? default : r.GetDateTime(7),
+            Modules = new List<Module>() // not populated here; UI can fetch separately if needed
         };
 
         // ---------- Dealers ----------
@@ -625,11 +706,6 @@ ORDER BY m.ModuleCode;", conn);
             return list;
         }
 
-        /// <summary>
-        /// ExistsDuplicateLicense: exact-match check per spec.
-        /// Returns true if a license record already exists with the same CompanyName, ProductID, ValidFromUtc and ValidToUtc.
-        /// Uses parameterized SQL and fails safely (returns false) on any DB error.
-        /// </summary>
         public bool ExistsDuplicateLicense(string companyName, string productId, DateTime validFromUtc, DateTime validToUtc)
         {
             try
