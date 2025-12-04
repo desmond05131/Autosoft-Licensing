@@ -324,7 +324,12 @@
       <DependentUpon>LoginPage.cs</DependentUpon>
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="UI\Pages\ManageProductPage.cs" />
+    <Compile Include="UI\Pages\ManageProductPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UI\Pages\ManageProductPage.Designer.cs">
+      <DependentUpon>ManageProductPage.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\Pages\ManageUserPage.cs" />
     <Compile Include="UI\Pages\PageBase.cs">
       <SubType>UserControl</SubType>
@@ -337,7 +342,12 @@
     <Compile Include="UI\Pages\PreviewLicenseForm.Designer.cs">
       <DependentUpon>PreviewLicenseForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="UI\Pages\ProductDetailsPage.cs" />
+    <Compile Include="UI\Pages\ProductDetailsPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UI\Pages\ProductDetailsPage.Designer.cs">
+      <DependentUpon>ProductDetailsPage.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\Pages\UserDetailsPage.cs" />
     <Compile Include="Utils\CanonicalJson.cs" />
     <Compile Include="Utils\CanonicalJsonSerializer.cs" />
@@ -367,6 +377,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="UI\Pages\LoginPage.resx">
       <DependentUpon>LoginPage.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UI\Pages\ManageProductPage.resx">
+      <DependentUpon>ManageProductPage.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UI\Pages\PreviewLicenseForm.resx">
       <DependentUpon>PreviewLicenseForm.cs</DependentUpon>
