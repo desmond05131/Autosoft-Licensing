@@ -313,7 +313,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.Controls.Add(this.btnSave);
             this.Controls.Add(this.btnCancel);
             this.Name = "ProductDetailsPage";
-            this.Size = new System.Drawing.Size(1089, 629);
+            this.Size = new System.Drawing.Size(1089, 452);
             this.pnlHeader.ResumeLayout(false);
             this.pnlHeader.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.txtProductId.Properties)).EndInit();

@@ -50,6 +50,10 @@ namespace Autosoft_Licensing
             AccordionControlElement aceImportActivate = new AccordionControlElement { Text = "Import / Activate", Style = ElementStyle.Item, Name = "aceImportActivate" };
             AccordionControlElement aceLicenseList = new AccordionControlElement { Text = "License List", Style = ElementStyle.Item, Name = "aceLicenseList" };
             AccordionControlElement aceLicenseDetails = new AccordionControlElement { Text = "License Details", Style = ElementStyle.Item, Name = "aceLicenseDetails" };
+
+            // NEW: Manage Product element (inserted before User Management)
+            AccordionControlElement aceManageProduct = new AccordionControlElement { Text = "Manage Product", Style = ElementStyle.Item, Name = "aceManageProduct" };
+
             AccordionControlElement aceUserManagement = new AccordionControlElement { Text = "User Management", Style = ElementStyle.Item, Name = "aceUserManagement" };
             AccordionControlElement aceSettingsSecurity = new AccordionControlElement { Text = "Settings / Security", Style = ElementStyle.Item, Name = "aceSettingsSecurity" };
 
@@ -61,6 +65,8 @@ namespace Autosoft_Licensing
                 aceImportActivate,
                 aceLicenseList,
                 aceLicenseDetails,
+                // Insert new Manage Product before User Management
+                aceManageProduct,
                 aceUserManagement,
                 aceSettingsSecurity
             });
