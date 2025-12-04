@@ -253,6 +253,7 @@
     <Compile Include="Tools\GenerateLicensePageLogicTests.cs" />
     <Compile Include="Tools\InMemoryLicenseDatabaseService.cs" />
     <Compile Include="Tools\LicenseKeyGeneratorTests.cs" />
+    <Compile Include="Tools\LicensePagesIntegrationTests.cs" />
     <Compile Include="Tools\LicenseRequestServiceTest.cs" />
     <Compile Include="Tools\SmokeTestHarness.cs" />
     <Compile Include="UI\HostFactory.cs" />
