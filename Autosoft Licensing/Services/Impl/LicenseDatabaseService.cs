@@ -404,9 +404,9 @@ ORDER BY RequestDateUtc DESC, Id DESC;", conn))
                 int id;
                 using (var cmd = new SqlCommand(@"
 INSERT INTO dbo.Licenses
-(CompanyName, ProductID, DealerCode, LicenseKey, LicenseType, ValidFromUtc, ValidToUtc, CurrencyCode, Status, ImportedOnUtc, ImportedByUserId, RawAslBase64)
+(CompanyName, ProductID, DealerCode, LicenseKey, LicenseType, ValidFromUtc, ValidToUtc, CurrencyCode, Status, ImportedOnUtc, ImportedByUserId, RawAslBase64, Remarks)
 VALUES
-(@CompanyName, @ProductID, @DealerCode, @LicenseKey, @LicenseType, @ValidFromUtc, @ValidToUtc, @CurrencyCode, @Status, @ImportedOnUtc, @ImportedByUserId, @RawAslBase64);
+(@CompanyName, @ProductID, @DealerCode, @LicenseKey, @LicenseType, @ValidFromUtc, @ValidToUtc, @CurrencyCode, @Status, @ImportedOnUtc, @ImportedByUserId, @RawAslBase64, @Remarks);
 SELECT CAST(SCOPE_IDENTITY() AS INT);", conn, tx))
                 {
                     cmd.Parameters.AddWithValue("@CompanyName", meta.CompanyName);
@@ -421,6 +421,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT);", conn, tx))
                     cmd.Parameters.AddWithValue("@ImportedOnUtc", meta.ImportedOnUtc);
                     cmd.Parameters.AddWithValue("@ImportedByUserId", (object)meta.ImportedByUserId ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@RawAslBase64", (object)meta.RawAslBase64 ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Remarks", (object)meta.Remarks ?? DBNull.Value);
                     id = (int)cmd.ExecuteScalar();
                 }
 
@@ -442,7 +443,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT);", conn, tx))
 
             LicenseMetadata meta = null;
             using (var cmd = new SqlCommand(@"
-SELECT Id, CompanyName, ProductID, DealerCode, LicenseKey, LicenseType, ValidFromUtc, ValidToUtc, CurrencyCode, Status, ImportedOnUtc, ImportedByUserId, RawAslBase64
+SELECT Id, CompanyName, ProductID, DealerCode, LicenseKey, LicenseType, ValidFromUtc, ValidToUtc, CurrencyCode, Status, ImportedOnUtc, ImportedByUserId, RawAslBase64, Remarks
 FROM dbo.Licenses WHERE Id = @id;", conn))
             {
                 cmd.Parameters.AddWithValue("@id", id);
@@ -463,7 +464,7 @@ FROM dbo.Licenses WHERE Id = @id;", conn))
 
             LicenseMetadata meta = null;
             using (var cmd = new SqlCommand(@"
-SELECT TOP(1) Id, CompanyName, ProductID, DealerCode, LicenseKey, LicenseType, ValidFromUtc, ValidToUtc, CurrencyCode, Status, ImportedOnUtc, ImportedByUserId, RawAslBase64
+SELECT TOP(1) Id, CompanyName, ProductID, DealerCode, LicenseKey, LicenseType, ValidFromUtc, ValidToUtc, CurrencyCode, Status, ImportedOnUtc, ImportedByUserId, RawAslBase64, Remarks
 FROM dbo.Licenses
 WHERE ProductID = @pid AND CompanyName = @c
 ORDER BY ImportedOnUtc DESC, Id DESC;", conn))
@@ -486,7 +487,7 @@ ORDER BY ImportedOnUtc DESC, Id DESC;", conn))
             using var conn = _factory.Create();
             conn.Open();
             using (var cmd = new SqlCommand(@"
-SELECT Id, CompanyName, ProductID, DealerCode, LicenseKey, LicenseType, ValidFromUtc, ValidToUtc, CurrencyCode, Status, ImportedOnUtc, ImportedByUserId, RawAslBase64
+SELECT Id, CompanyName, ProductID, DealerCode, LicenseKey, LicenseType, ValidFromUtc, ValidToUtc, CurrencyCode, Status, ImportedOnUtc, ImportedByUserId, RawAslBase64, Remarks
 FROM dbo.Licenses
 WHERE (@pid IS NULL OR PRODUCTID = @pid)
 ORDER BY ImportedOnUtc DESC, Id DESC;", conn))
@@ -598,7 +599,7 @@ VALUES (@lid, @mid);", conn, tx);
             {
                 using var conn = _factory.Create();
                 using var cmd = new SqlCommand(@"
-SELECT m.ModuleCode, m.Name
+SELECT m.ModuleCode, m.Name, m.Description
 FROM dbo.Modules m
 JOIN dbo.Products p ON p.Id = m.ProductId
 WHERE p.ProductID = @pid
@@ -611,7 +612,8 @@ ORDER BY m.ModuleCode;", conn);
                     list.Add(new ModuleDto
                     {
                         ModuleCode = r.GetString(0),
-                        ModuleName = r.IsDBNull(1) ? null : r.GetString(1)
+                        ModuleName = r.IsDBNull(1) ? null : r.GetString(1),
+                        Description = r.IsDBNull(2) ? null : r.GetString(2)
                     });
                 }
             }
@@ -726,6 +728,7 @@ ORDER BY ValidToUtc DESC, Id DESC;", conn);
             ImportedOnUtc = r.GetDateTime(10),
             ImportedByUserId = r.IsDBNull(11) ? (int?)null : r.GetInt32(11),
             RawAslBase64 = r.IsDBNull(12) ? null : r.GetString(12),
+            Remarks = r.IsDBNull(13) ? null : r.GetString(13),
             ModuleCodes = new List<string>()
         };
 

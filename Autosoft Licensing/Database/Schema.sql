@@ -96,6 +96,7 @@ CREATE TABLE Licenses (
   ImportedOnUtc DATETIME2 NOT NULL CONSTRAINT DF_Licenses_ImportedOnUtc DEFAULT (SYSUTCDATETIME()),
   ImportedByUserId INT NULL,
   RawAslBase64 NVARCHAR(MAX) NULL,
+  Remarks NVARCHAR(MAX) NULL,
 
   CONSTRAINT CK_Licenses_LicenseType CHECK (LicenseType IN ('Demo','Subscription','Permanent')),
   CONSTRAINT CK_Licenses_Status CHECK (Status IN ('Valid','Expired','Invalid','Deleted')),

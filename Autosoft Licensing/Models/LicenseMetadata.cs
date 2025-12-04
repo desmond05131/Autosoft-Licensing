@@ -20,6 +20,7 @@ namespace Autosoft_Licensing.Models
         public DateTime ImportedOnUtc { get; set; }
         public int? ImportedByUserId { get; set; }
         public string RawAslBase64 { get; set; }
+        public string Remarks { get; set; }
 
         // Stored activated module codes
         public List<string> ModuleCodes { get; set; } = new List<string>();
