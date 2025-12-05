@@ -340,7 +340,9 @@
     <Compile Include="UI\Pages\ManageProductPage.Designer.cs">
       <DependentUpon>ManageProductPage.cs</DependentUpon>
     </Compile>
-    <Compile Include="UI\Pages\ManageUserPage.cs" />
+    <Compile Include="UI\Pages\ManageUserPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Include="UI\Pages\ManageUserPage.Designer.cs">
       <DependentUpon>ManageUserPage.cs</DependentUpon>
     </Compile>

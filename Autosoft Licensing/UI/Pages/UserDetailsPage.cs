@@ -1,326 +1,387 @@
+/*
+PAGE: UserDetailsPage.cs
+ROLE: Dealer Admin
+PURPOSE:
+  Create or edit a single user account and assign access rights for Dealer app capabilities.
+
+KEY UI ELEMENTS:
+  - TextBox: Username (readonly for edit), DisplayName
+  - Password and Confirm Password fields (for create or change)
+  - Checkbox list: Access rights (Generate License, License record, Manage Product, Manage User)
+  - Buttons: Save, Cancel
+
+BACKEND SERVICE CALLS:
+  - On load (edit): ServiceRegistry.Database.GetUserById(id) or ServiceRegistry.Database.GetUserByUsername(username)
+  - On Save: ServiceRegistry.Database.InsertUser(user) or ServiceRegistry.Database.UpdateUser(user)
+
+VALIDATION & RULES:
+  - Require non-empty username and displayname
+  - Password required for new users; for updates optional unless changing password
+  - Only Admin can assign ManageUser right
+  - Prevent deleting or demoting the default Admin (this logic enforced in ManageUserPage Delete; here just prevent editing default admin to remove all admin roles)
+
+ACCESS CONTROL:
+  - Only users with ManageUser permission can use/save this form
+
+UX NOTES:
+  - If password fields left blank on edit, keep existing password
+  - Show message on success (UI transient toast)
+
+ACCEPTANCE CRITERIA:
+  - New users created in DB and appear on ManageUserPage
+  - Edits persist and role changes reflected in app permissions
+
+COPILOT PROMPTS:
+  - "// Implement SaveUser -> validate fields, optionally hash password, and call ServiceRegistry.Database.InsertUser(user) for new users or ServiceRegistry.Database.UpdateUser(user) for updates."
+*/
 using System;
-using System.Drawing;
-using System.Windows.Forms;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
+using System.Text;
+using DevExpress.Utils;
 using DevExpress.XtraEditors;
+using DevExpress.XtraGrid.Views.Grid;
 using Autosoft_Licensing.Models;
 using Autosoft_Licensing.Services;
-using System.Text;
 
 namespace Autosoft_Licensing.UI.Pages
 {
+    /*
+    PAGE: UserDetailsPage.cs
+    ROLE: Dealer Admin
+    PURPOSE:
+      Create or edit a single user account and assign access rights for Dealer app capabilities.
+    */
+
     public partial class UserDetailsPage : PageBase
     {
-        private ILicenseDatabaseService _db;
+        private ILicenseDatabaseService _dbService;
+        private IEncryptionService _encryptionService;
+
+        private BindingList<PermissionRow> _rows = new BindingList<PermissionRow>();
         private int? _userId;
-        private User _loadedUser;
+        private User _existingUser;
+        private User _currentUser; // host can set via InitializeForRole
 
-        // Navigation back event - host can subscribe (same pattern as ProductDetailsPage)
-        public event EventHandler<NavigateBackEventArgs> NavigateBackRequested;
+        // Host can listen and navigate back to ManageUserPage after save
+        public event EventHandler NavigateBackRequested;
 
-        public class NavigateBackEventArgs : EventArgs
+        internal class PermissionRow
         {
-            public bool Saved { get; set; }
-            public int? UserId { get; set; }
+            public string Key { get; set; }
+            public string Description { get; set; }
+            public bool IsChecked { get; set; }
         }
 
         public UserDetailsPage()
         {
             InitializeComponent();
-
             try
             {
                 if (!DesignMode)
                 {
-                    try { _db ??= ServiceRegistry.Database; } catch { }
-
-                    btnSave.Click += btnSave_Click;
-                    btnCancel.Click += btnCancel_Click;
-
-                    // Styling consistent with other pages
-                    pnlHeader.BackColor = Color.FromArgb(253, 243, 211);
-                    this.BackColor = Color.White;
-
-                    Color purple = Color.FromArgb(98, 75, 255);
-                    foreach (var b in new[] { btnSave, btnCancel })
+                    // grid visual defaults
+                    var view = grdPermissions.MainView as GridView;
+                    if (view != null)
                     {
-                        b.Appearance.BackColor = purple;
-                        b.Appearance.ForeColor = Color.White;
-                        b.Appearance.Options.UseBackColor = true;
-                        b.Appearance.Options.UseForeColor = true;
+                        view.OptionsView.ShowGroupPanel = false;
+                        view.OptionsSelection.EnableAppearanceFocusedCell = false;
+                        view.FocusRectStyle = DrawFocusRectStyle.RowFocus;
                     }
-
-                    foreach (var te in new[] { txtUsername, txtPassword, txtEmail, txtDisplayName, txtRole })
-                    {
-                        try
-                        {
-                            te.Properties.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.Simple;
-                        }
-                        catch { /* ignore */ }
-                    }
-
-                    // default create mode if host forgets to call
-                    Initialize(null);
                 }
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"UserDetailsPage ctor error: {ex}");
-            }
-        }
-
-        public void Initialize(int? userId, ILicenseDatabaseService db = null)
-        {
-            try
-            {
-                _db = db ?? _db ?? ServiceRegistry.Database;
-            }
-            catch { /* ignore */ }
-
-            _userId = userId;
-            _loadedUser = null;
-
-            // Reset UI
-            txtUsername.Text = string.Empty;
-            txtPassword.Text = string.Empty;
-            txtEmail.Text = string.Empty;
-            txtDisplayName.Text = string.Empty;
-            txtRole.Text = string.Empty;
-
-            chkIsActive.Checked = true; // default active
-            chkGenerate.Checked = false;
-            chkRecords.Checked = false;
-            chkProduct.Checked = false;
-            chkUsers.Checked = false;
-
-            EnableAllInputs(true);
-
-            if (_userId == null)
-            {
-                lblHeader.Text = "Create User";
-            }
-            else
-            {
-                lblHeader.Text = "Edit User";
-                LoadUser(_userId.Value);
-            }
+            catch { /* ignore design-time issues */ }
         }
 
         public override void InitializeForRole(User user)
         {
-            // Future role-aware enable/disable if needed.
+            _currentUser = user;
+            // Only users with ManageUser permission (or Admin role) can save/modify.
+            var canManage = user != null && (user.CanManageUsers || string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase));
+            btnSave.Enabled = canManage;
+
+            // If cannot manage, also make grid read-only.
+            try
+            {
+                var view = grdPermissions.MainView as GridView;
+                if (view != null) view.OptionsBehavior.Editable = canManage;
+            }
+            catch { }
         }
 
-        private void LoadUser(int id)
+        // Overload with explicit DI
+        public void Initialize(ILicenseDatabaseService db, IEncryptionService encryption, int? userId)
+        {
+            _dbService = db ?? throw new ArgumentNullException(nameof(db));
+            _encryptionService = encryption ?? throw new ArgumentNullException(nameof(encryption));
+            Initialize(userId);
+        }
+
+        // Default: resolve from ServiceRegistry
+        public void Initialize(int? userId)
         {
             try
             {
-                if (_db == null)
+                _dbService ??= ServiceRegistry.Database;
+            }
+            catch { /* allow tests to inject later */ }
+
+            try
+            {
+                _encryptionService ??= ServiceRegistry.Encryption;
+            }
+            catch { /* allow tests to inject later */ }
+
+            _userId = userId;
+
+            BuildPermissionRows();
+            BindPermissionGrid();
+
+            if (userId.HasValue)
+                LoadExisting(userId.Value);
+            else
+                PrepareNew();
+        }
+
+        private void BuildPermissionRows()
+        {
+            _rows = new BindingList<PermissionRow>(new List<PermissionRow>
+            {
+                new PermissionRow { Key = "GEN",  Description = "Generate License", IsChecked = false },
+                new PermissionRow { Key = "REC",  Description = "License record",   IsChecked = false },
+                new PermissionRow { Key = "PROD", Description = "Manage Product",   IsChecked = false },
+                new PermissionRow { Key = "USER", Description = "Manage User",      IsChecked = false }
+            });
+        }
+
+        private void BindPermissionGrid()
+        {
+            grdPermissions.DataSource = _rows;
+            try { (grdPermissions.MainView as GridView)?.BestFitColumns(); } catch { }
+        }
+
+        private void PrepareNew()
+        {
+            try
+            {
+                _existingUser = null;
+                txtUsername.ReadOnly = false;
+                txtUsername.Text = string.Empty;
+                txtDisplayName.Text = string.Empty;
+                txtPassword.Text = string.Empty;
+                chkIsActive.Checked = true;
+                foreach (var r in _rows) r.IsChecked = false;
+                grdPermissions.RefreshDataSource();
+                btnSave.Enabled = btnSave.Enabled && true; // keep role gating
+            }
+            catch { /* ignore */ }
+        }
+
+        private void LoadExisting(int id)
+        {
+            try
+            {
+                if (_dbService == null)
                 {
                     ShowError("Database service not initialized.");
                     return;
                 }
 
-                var u = _db.GetUserById(id);
-                if (u == null)
+                _existingUser = _dbService.GetUserById(id);
+                if (_existingUser == null)
                 {
                     ShowError("User not found.");
                     return;
                 }
 
-                _loadedUser = u;
+                txtUsername.Text = _existingUser.Username ?? string.Empty;
+                txtDisplayName.Text = _existingUser.DisplayName ?? string.Empty;
+                txtPassword.Text = string.Empty; // do not show hash
+                chkIsActive.Checked = _existingUser.IsActive;
 
-                txtUsername.Text = u.Username ?? string.Empty;
-                txtDisplayName.Text = u.DisplayName ?? string.Empty;
-                txtRole.Text = u.Role ?? string.Empty;
-                txtEmail.Text = u.Email ?? string.Empty;
-                txtPassword.Text = string.Empty; // do not show existing password
+                MapUserToPermissions(_existingUser);
 
-                chkIsActive.Checked = u.IsActive;
-                chkGenerate.Checked = u.CanGenerateLicense;
-                chkRecords.Checked = u.CanViewRecords;
-                chkProduct.Checked = u.CanManageProduct;
-                chkUsers.Checked = u.CanManageUsers;
-
-                if (!string.IsNullOrWhiteSpace(u.Username) &&
-                    u.Username.Equals("admin", StringComparison.OrdinalIgnoreCase))
+                // If default admin, lock everything and force all permissions true.
+                if (string.Equals(_existingUser.Username, "admin", StringComparison.OrdinalIgnoreCase))
                 {
-                    chkIsActive.Checked = true;
+                    foreach (var r in _rows) r.IsChecked = true;
+                    grdPermissions.RefreshDataSource();
 
-                    chkGenerate.Checked = true;
-                    chkRecords.Checked = true;
-                    chkProduct.Checked = true;
-                    chkUsers.Checked = true;
+                    txtUsername.ReadOnly = true;
+                    txtDisplayName.ReadOnly = true;
+                    txtPassword.Enabled = false;
 
-                    txtUsername.Properties.ReadOnly = true;
-                    chkIsActive.Enabled = false;
-                    chkGenerate.Enabled = false;
-                    chkRecords.Enabled = false;
-                    chkProduct.Enabled = false;
-                    chkUsers.Enabled = false;
+                    var view = grdPermissions.MainView as GridView;
+                    if (view != null) view.OptionsBehavior.Editable = false;
+
+                    btnSave.Enabled = false;
                 }
                 else
                 {
-                    EnableAllInputs(true);
+                    txtUsername.ReadOnly = true; // username immutable on edit
+                    txtDisplayName.ReadOnly = false;
+                    txtPassword.Enabled = true;
+
+                    // Role gating may further restrict editability (handled in InitializeForRole)
+                    var view = grdPermissions.MainView as GridView;
+                    if (view != null) view.OptionsBehavior.Editable = btnSave.Enabled;
                 }
+
+                try { (grdPermissions.MainView as GridView)?.BestFitColumns(); } catch { }
             }
             catch (Exception ex)
             {
-                ShowError("Failed to load user details.");
-                System.Diagnostics.Debug.WriteLine($"UserDetailsPage.LoadUser error: {ex}");
+                System.Diagnostics.Debug.WriteLine($"UserDetailsPage.LoadExisting error: {ex}");
+                ShowError("Failed to load user.");
             }
         }
 
-        private void EnableAllInputs(bool enabled)
+        private void MapUserToPermissions(User u)
         {
-            try
-            {
-                txtUsername.Properties.ReadOnly = !enabled;
-                txtPassword.Properties.ReadOnly = !enabled;
-                txtDisplayName.Properties.ReadOnly = !enabled;
-                txtRole.Properties.ReadOnly = !enabled;
-                txtEmail.Properties.ReadOnly = !enabled;
+            SetPerm("GEN", u.CanGenerateLicense);
+            SetPerm("REC", u.CanViewRecords);
+            SetPerm("PROD", u.CanManageProduct);
+            SetPerm("USER", u.CanManageUsers);
+        }
 
-                chkIsActive.Enabled = enabled;
-                chkGenerate.Enabled = enabled;
-                chkRecords.Enabled = enabled;
-                chkProduct.Enabled = enabled;
-                chkUsers.Enabled = enabled;
-            }
-            catch { /* ignore */ }
+        private void SetPerm(string key, bool value)
+        {
+            var row = _rows.FirstOrDefault(x => string.Equals(x.Key, key, StringComparison.OrdinalIgnoreCase));
+            if (row != null) row.IsChecked = value;
+        }
+
+        private bool GetPerm(string key)
+        {
+            var row = _rows.FirstOrDefault(x => string.Equals(x.Key, key, StringComparison.OrdinalIgnoreCase));
+            return row != null && row.IsChecked;
         }
 
         private void btnSave_Click(object sender, EventArgs e)
         {
+            SaveUser();
+        }
+
+        // Prevent editing Manage User checkbox if current user is not allowed (unless editing self-admin lock handled separately).
+        private void viewPermissions_ShowingEditor(object sender, CancelEventArgs e)
+        {
             try
             {
-                if (_db == null)
+                var view = sender as GridView;
+                if (view == null || view.FocusedColumn == null) return;
+
+                if (!string.Equals(view.FocusedColumn.FieldName, "IsChecked", StringComparison.OrdinalIgnoreCase))
+                    return;
+
+                var row = view.GetFocusedRow() as PermissionRow;
+                if (row == null) return;
+
+                bool isManageUserRow = string.Equals(row.Key, "USER", StringComparison.OrdinalIgnoreCase);
+                bool currentCanAssignManageUser = _currentUser != null &&
+                    (_currentUser.CanManageUsers || string.Equals(_currentUser.Role, "Admin", StringComparison.OrdinalIgnoreCase));
+
+                if (isManageUserRow && !currentCanAssignManageUser)
+                    e.Cancel = true;
+
+                // Also block all edits if default admin user is being edited (handled earlier), defensive here.
+                if (_existingUser != null && string.Equals(_existingUser.Username, "admin", StringComparison.OrdinalIgnoreCase))
+                    e.Cancel = true;
+            }
+            catch { /* ignore */ }
+        }
+
+        private void SaveUser()
+        {
+            try
+            {
+                if (_dbService == null || _encryptionService == null)
                 {
-                    ShowError("Database service not initialized.");
+                    ShowError("Service not initialized.");
                     return;
                 }
 
                 var username = (txtUsername.Text ?? string.Empty).Trim();
                 var displayName = (txtDisplayName.Text ?? string.Empty).Trim();
-                var role = (txtRole.Text ?? string.Empty).Trim(); // "Admin" or "Support"
-                var email = (txtEmail.Text ?? string.Empty).Trim();
                 var password = txtPassword.Text ?? string.Empty;
+                var isActive = chkIsActive.Checked;
 
                 if (string.IsNullOrWhiteSpace(username))
                 {
                     ShowError("Username is required.");
                     return;
                 }
-
-                string passwordHashToPersist = null;
-                bool isCreate = _userId == null;
-
-                if (isCreate)
+                if (string.IsNullOrWhiteSpace(displayName))
                 {
-                    if (string.IsNullOrEmpty(password))
+                    ShowError("Display Name is required.");
+                    return;
+                }
+
+                // Enforce that only Admin can assign ManageUser right
+                bool currentCanAssignManageUser = _currentUser != null &&
+                    (_currentUser.CanManageUsers || string.Equals(_currentUser.Role, "Admin", StringComparison.OrdinalIgnoreCase));
+                if (!currentCanAssignManageUser)
+                {
+                    // Force ManageUser row to false if editor not allowed to set it.
+                    SetPerm("USER", _existingUser != null ? _existingUser.CanManageUsers : false);
+                }
+
+                var isNew = !_userId.HasValue || _existingUser == null;
+
+                // Password hashing rules
+                string passwordHash;
+                if (isNew)
+                {
+                    if (string.IsNullOrWhiteSpace(password))
                     {
-                        ShowError("Password is required for new users.");
+                        ShowError("Password is required for a new user.");
                         return;
                     }
-                    try
-                    {
-                        var bytes = Encoding.UTF8.GetBytes(password);
-                        passwordHashToPersist = ServiceRegistry.Encryption?.ComputeSha256Hex(bytes);
-                    }
-                    catch
-                    {
-                        ShowError("Failed to hash password.");
-                        return;
-                    }
+                    passwordHash = _encryptionService.ComputeSha256Hex(Encoding.UTF8.GetBytes(password));
                 }
                 else
                 {
-                    if (!string.IsNullOrEmpty(password))
-                    {
-                        try
-                        {
-                            var bytes = Encoding.UTF8.GetBytes(password);
-                            passwordHashToPersist = ServiceRegistry.Encryption?.ComputeSha256Hex(bytes);
-                        }
-                        catch
-                        {
-                            ShowError("Failed to hash password.");
-                            return;
-                        }
-                    }
+                    if (!string.IsNullOrWhiteSpace(password))
+                        passwordHash = _encryptionService.ComputeSha256Hex(Encoding.UTF8.GetBytes(password));
+                    else
+                        passwordHash = _existingUser.PasswordHash; // keep existing
                 }
 
-                bool isAdminUserName = username.Equals("admin", StringComparison.OrdinalIgnoreCase);
+                // Build user object
+                var user = isNew ? new User() : new User { Id = _existingUser.Id };
 
-                var user = new User
+                user.Username = username;
+                user.DisplayName = string.IsNullOrWhiteSpace(displayName) ? username : displayName;
+                user.Email = _existingUser != null ? _existingUser.Email : null;
+                user.PasswordHash = passwordHash;
+                user.IsActive = isActive;
+
+                // Map permissions from grid
+                user.CanGenerateLicense = GetPerm("GEN");
+                user.CanViewRecords = GetPerm("REC");
+                user.CanManageProduct = GetPerm("PROD");
+                user.CanManageUsers = GetPerm("USER");
+
+                // Legacy simple role mapping: Admin when ManageUsers is true; otherwise Support.
+                user.Role = user.CanManageUsers ? "Admin" : "Support";
+
+                if (isNew)
                 {
-                    Id = _userId ?? 0,
-                    Username = username,
-                    DisplayName = string.IsNullOrWhiteSpace(displayName) ? username : displayName,
-                    Role = string.IsNullOrWhiteSpace(role) ? "Support" : role,
-                    Email = email,
-                    PasswordHash = isCreate ? (passwordHashToPersist ?? string.Empty)
-                                            : (_loadedUser?.PasswordHash ?? string.Empty),
-                    CreatedUtc = isCreate ? DateTime.UtcNow : (_loadedUser?.CreatedUtc ?? DateTime.UtcNow),
-
-                    IsActive = isAdminUserName ? true : chkIsActive.Checked,
-                    CanGenerateLicense = isAdminUserName ? true : chkGenerate.Checked,
-                    CanViewRecords = isAdminUserName ? true : chkRecords.Checked,
-                    CanManageProduct = isAdminUserName ? true : chkProduct.Checked,
-                    CanManageUsers = isAdminUserName ? true : chkUsers.Checked
-                };
-
-                if (!isCreate && !string.IsNullOrEmpty(passwordHashToPersist))
-                {
-                    user.PasswordHash = passwordHashToPersist;
-                }
-
-                if (isCreate)
-                {
-                    var newId = _db.InsertUser(user);
+                    user.CreatedUtc = DateTime.UtcNow;
+                    var newId = _dbService.InsertUser(user);
                     _userId = newId;
-                    ShowInfo("User created.", "Success");
-                    NavigateBack(true, newId);
                 }
                 else
                 {
-                    user.Id = _userId.Value;
-                    _db.UpdateUser(user);
-                    ShowInfo("User updated.", "Success");
-                    NavigateBack(true, user.Id);
+                    _dbService.UpdateUser(user);
                 }
+
+                ShowInfo("User saved.", "Success");
+                NavigateBackRequested?.Invoke(this, EventArgs.Empty);
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"UserDetailsPage.SaveUser error: {ex}");
                 ShowError("Failed to save user.");
-                System.Diagnostics.Debug.WriteLine($"UserDetailsPage.btnSave_Click error: {ex}");
-            }
-        }
-
-        private void btnCancel_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                NavigateBack(false, _userId);
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"UserDetailsPage.btnCancel_Click error: {ex}");
-            }
-        }
-
-        private void NavigateBack(bool saved, int? id)
-        {
-            try
-            {
-                NavigateBackRequested?.Invoke(this, new NavigateBackEventArgs
-                {
-                    Saved = saved,
-                    UserId = id
-                });
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"UserDetailsPage.NavigateBack error: {ex}");
             }
         }
     }
