@@ -24,7 +24,37 @@ namespace Autosoft_Licensing
         {
             InitializeComponent();
 
-   
+            // REMOVE AFTER MANUAL TESTING:
+            // Force-load Manage User page with a dummy super admin to verify navigation and permissions quickly.
+            try
+            {
+                var dummyAdmin = new User
+                {
+                    Id = 0,
+                    Username = "super_admin",
+                    DisplayName = "Super Administrator (Dummy)",
+                    Role = "Admin",
+                    PasswordHash = string.Empty,
+                    CreatedUtc = DateTime.UtcNow,
+                    IsActive = true,
+                    CanGenerateLicense = true,
+                    CanViewRecords = true,
+                    CanManageProduct = true,
+                    CanManageUsers = true
+                };
+
+                SetLoggedInUser(dummyAdmin);
+
+                // Ensure runtime UI exists
+                BuildAccordion();
+
+                // Navigate directly to Manage User
+                LoadPage("aceUserManagement", "User Management");
+            }
+            catch
+            {
+                // swallow to avoid impacting normal startup if runtime UI not yet available
+            }
         }
 
         public void SetLoggedInUser(User user)
@@ -280,18 +310,34 @@ namespace Autosoft_Licensing
         {
             try
             {
-                var isAdmin = LoggedInUser != null && string.Equals(LoggedInUser.Role, "Admin", StringComparison.OrdinalIgnoreCase);
-
-                // Fine-grained permissions: Admin grants all, otherwise use user flags
-                bool canGenerate = LoggedInUser != null && (LoggedInUser.CanGenerateLicense || isAdmin);
-                bool canViewRecords = LoggedInUser != null && (LoggedInUser.CanViewRecords || isAdmin);
-                bool canManageProduct = LoggedInUser != null && (LoggedInUser.CanManageProduct || isAdmin);
-                bool canManageUsers = LoggedInUser != null && (LoggedInUser.CanManageUsers || isAdmin);
-
                 if (accordion == null) return;
 
                 var navGroup = (accordion.Elements.Count > 0) ? accordion.Elements[0] : null;
                 if (navGroup == null) return;
+
+                // Switch to granular permissions: hide all when no user
+                if (LoggedInUser == null)
+                {
+                    foreach (var el in navGroup.Elements)
+                    {
+                        if (el == null || string.IsNullOrEmpty(el.Name)) continue;
+                        if (el.Name.Equals("aceGenerateRequest", StringComparison.OrdinalIgnoreCase) ||
+                            el.Name.Equals("aceLicenseList", StringComparison.OrdinalIgnoreCase) ||
+                            el.Name.Equals("aceManageProduct", StringComparison.OrdinalIgnoreCase) ||
+                            el.Name.Equals("aceUserManagement", StringComparison.OrdinalIgnoreCase) ||
+                            el.Name.Equals("aceSettingsSecurity", StringComparison.OrdinalIgnoreCase))
+                        {
+                            el.Visible = false;
+                        }
+                    }
+                    return;
+                }
+
+                // Granular user flags
+                bool canGenerate = LoggedInUser.CanGenerateLicense;
+                bool canViewRecords = LoggedInUser.CanViewRecords;
+                bool canManageProduct = LoggedInUser.CanManageProduct;
+                bool canManageUsers = LoggedInUser.CanManageUsers;
 
                 foreach (var el in navGroup.Elements)
                 {
@@ -306,7 +352,7 @@ namespace Autosoft_Licensing
                     else if (el.Name.Equals("aceUserManagement", StringComparison.OrdinalIgnoreCase))
                         el.Visible = canManageUsers;
                     else if (el.Name.Equals("aceSettingsSecurity", StringComparison.OrdinalIgnoreCase))
-                        el.Visible = isAdmin; // keep security/settings admin-only
+                        el.Visible = false; // keep hidden unless explicitly needed; footer label can still show "Admin" text if used elsewhere
                     // All other elements unchanged
                 }
             }
