@@ -61,15 +61,7 @@ namespace Autosoft_Licensing.UI.Pages
 
         private BindingList<UserRow> _data = new BindingList<UserRow>();
 
-        // Navigation event for host
-        public event EventHandler<NavigateEventArgs> NavigateRequested;
-
-        public class NavigateEventArgs : EventArgs
-        {
-            public string TargetPage { get; set; }
-            public int? UserId { get; set; }
-            public string Mode { get; set; } // "Create", "View", "Edit"
-        }
+        // REMOVED: Shadowing navigation event and args; use PageBase.NavigateRequested with unified NavigateEventArgs
 
         public ManageUserPage()
         {
@@ -284,17 +276,11 @@ namespace Autosoft_Licensing.UI.Pages
         {
             try
             {
-                NavigateRequested?.Invoke(this, new NavigateEventArgs
-                {
-                    TargetPage = targetPage,
-                    UserId = userId,
-                    Mode = mode
-                });
+             FireNavigate(targetPage);
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"ManageUserPage.Navigate error: {ex}");
-                ShowError($"Failed to navigate to {targetPage}.");
             }
         }
     }

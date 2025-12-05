@@ -166,6 +166,20 @@ namespace Autosoft_Licensing.UI.Pages
             }
         }
 
+        // NEW: Overload to raise navigation with an optional record identifier
+        protected void FireNavigate(string target, int? recordId)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(target)) return;
+                NavigateRequested?.Invoke(this, new NavigateEventArgs { TargetPage = target, RecordId = recordId });
+            }
+            catch
+            {
+                // ignore
+            }
+        }
+
         // NEW: Helper to bind click to container and its children so labels/icons within panels respond to clicks.
         protected void BindNavigationEvent(Control control, string targetPage)
         {

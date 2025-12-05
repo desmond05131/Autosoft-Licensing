@@ -47,16 +47,6 @@ namespace Autosoft_Licensing.UI.Pages
         private ILicenseDatabaseService _dbService;
         private BindingList<ProductRow> _data = new BindingList<ProductRow>();
 
-        // Navigation event - host form can subscribe
-        public event EventHandler<NavigateEventArgs> NavigateRequested;
-
-        public class NavigateEventArgs : EventArgs
-        {
-            public string TargetPage { get; set; }
-            public int? ProductId { get; set; }
-            public string Mode { get; set; } // "Create", "View", "Edit"
-        }
-
         // Internal row model for grid binding
         private class ProductRow
         {
@@ -114,7 +104,6 @@ namespace Autosoft_Licensing.UI.Pages
                     if (chkShowDeleted != null)
                         chkShowDeleted.CheckedChanged += (s, e) => RefreshData();
 
-                    // Initial load
                     // Initial load
                     RefreshData();
 
@@ -340,21 +329,16 @@ namespace Autosoft_Licensing.UI.Pages
             }
         }
 
+        // UPDATED: Use base class navigation event and map ProductId -> RecordId
         private void Navigate(string targetPage, int? productId, string mode)
         {
             try
             {
-                NavigateRequested?.Invoke(this, new NavigateEventArgs
-                {
-                    TargetPage = targetPage,
-                    ProductId = productId,
-                    Mode = mode
-                });
+                FireNavigate(targetPage, productId);
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"ManageProductPage.Navigate error: {ex}");
-                ShowError($"Failed to navigate to {targetPage}.");
             }
         }
     }
