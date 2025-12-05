@@ -165,11 +165,30 @@ namespace Autosoft_Licensing.UI.Pages
                 // ignore
             }
         }
+
+        // NEW: Helper to bind click to container and its children so labels/icons within panels respond to clicks.
+        protected void BindNavigationEvent(Control control, string targetPage)
+        {
+            if (control == null || string.IsNullOrWhiteSpace(targetPage)) return;
+
+            EventHandler handler = (s, e) => FireNavigate(targetPage);
+
+            // Bind to the container
+            control.Click += handler;
+
+            // Bind to immediate children (1 level; usually sufficient)
+            foreach (Control child in control.Controls)
+            {
+                child.Click += handler;
+            }
+        }
     }
 
     // Unified NavigateEventArgs for page-to-shell navigation
     public class NavigateEventArgs : EventArgs
     {
         public string TargetPage { get; set; }
+        // NEW: unified optional record identifier used by details pages (User/Product/License)
+        public int? RecordId { get; set; }
     }
 }

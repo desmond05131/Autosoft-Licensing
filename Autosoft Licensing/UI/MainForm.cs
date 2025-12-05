@@ -225,6 +225,7 @@ namespace Autosoft_Licensing
                 if (e == null || string.IsNullOrEmpty(e.TargetPage))
                     return;
 
+                // Handle Logout
                 if (string.Equals(e.TargetPage, "Logout", StringComparison.OrdinalIgnoreCase))
                 {
                     _currentUser = null;
@@ -234,6 +235,49 @@ namespace Autosoft_Licensing
                     return;
                 }
 
+                // Handle Product Details
+                if (string.Equals(e.TargetPage, "ProductDetailsPage", StringComparison.OrdinalIgnoreCase))
+                {
+                    var details = new ProductDetailsPage();
+                    try
+                    {
+                        // Initialize with the unified RecordId
+                        details.Initialize(e.RecordId);
+
+                        // Wire back navigation to ManageProductPage
+                        details.NavigateBackRequested += (s, args) => LoadPage("ManageProductPage", "ManageProductPage");
+
+                        // Role-based setup
+                        details.InitializeForRole(_currentUser);
+                    }
+                    catch { /* best-effort */ }
+
+                    ShowPage(details);
+                    return;
+                }
+
+                // Handle User Details
+                if (string.Equals(e.TargetPage, "UserDetailsPage", StringComparison.OrdinalIgnoreCase))
+                {
+                    var details = new UserDetailsPage();
+                    try
+                    {
+                        // Initialize with the unified RecordId
+                        details.Initialize(e.RecordId);
+
+                        // Wire back navigation to ManageUserPage
+                        details.NavigateBackRequested += (s, args) => LoadPage("ManageUserPage", "ManageUserPage");
+
+                        // Role-based setup
+                        details.InitializeForRole(_currentUser);
+                    }
+                    catch { /* best-effort */ }
+
+                    ShowPage(details);
+                    return;
+                }
+
+                // Default: Load standard menu pages by name
                 LoadPage(e.TargetPage, e.TargetPage);
             }
             catch (Exception ex)

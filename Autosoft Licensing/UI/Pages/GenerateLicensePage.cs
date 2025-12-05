@@ -52,12 +52,13 @@ namespace Autosoft_Licensing.UI.Pages
             try
             {
                 // Navigation buttons -> FireNavigate
-                if (btnNav_GenerateLicense != null) btnNav_GenerateLicense.Click += (s, e) => FireNavigate("GenerateLicensePage");
-                if (btnNav_LicenseRecords != null) btnNav_LicenseRecords.Click += (s, e) => FireNavigate("LicenseRecordsPage");
-                if (btnNav_ManageProduct != null) btnNav_ManageProduct.Click += (s, e) => FireNavigate("ManageProductPage");
-                if (btnNav_ManageUser != null) btnNav_ManageUser.Click += (s, e) => FireNavigate("ManageUserPage");
-                if (btnNavLogoutText != null) btnNavLogoutText.Click += (s, e) => FireNavigate("Logout");
-                if (pnlNavLogout != null) pnlNavLogout.Click += (s, e) => FireNavigate("Logout");
+                // REPLACED: use BindNavigationEvent to ensure clicks on child label/icon also trigger navigation.
+                if (btnNav_GenerateLicense != null) BindNavigationEvent(btnNav_GenerateLicense, "GenerateLicensePage");
+                if (btnNav_LicenseRecords != null) BindNavigationEvent(btnNav_LicenseRecords, "LicenseRecordsPage");
+                if (btnNav_ManageProduct != null) BindNavigationEvent(btnNav_ManageProduct, "ManageProductPage");
+                if (btnNav_ManageUser != null) BindNavigationEvent(btnNav_ManageUser, "ManageUserPage");
+                if (btnNavLogoutText != null) BindNavigationEvent(btnNavLogoutText, "Logout");
+                if (pnlNavLogout != null) BindNavigationEvent(pnlNavLogout, "Logout");
             }
             catch { /* best-effort, avoid exceptions in ctor */ }
 
