@@ -315,21 +315,17 @@ namespace Autosoft_Licensing.UI.Pages
         // NEW: Row styling for deleted products
         private void GridView_RowStyle(object sender, DevExpress.XtraGrid.Views.Grid.RowStyleEventArgs e)
         {
-            try
+            var view = sender as GridView;
+            if (view == null || e.RowHandle < 0) return;
+
+            var row = view.GetRow(e.RowHandle) as ProductRow;
+            if (row == null) return;
+
+            if (row.IsDeleted)
             {
-                var view = sender as GridView;
-                if (view == null || e.RowHandle < 0) return;
-
-                var row = view.GetRow(e.RowHandle) as ProductRow;
-                if (row == null) return;
-
-                if (row.IsDeleted)
-                {
-                    e.Appearance.BackColor = Color.LightCoral;
-                    e.Appearance.ForeColor = Color.DarkRed;
-                }
+                e.Appearance.BackColor = Color.LightCoral;
+                e.Appearance.ForeColor = Color.DarkRed;
             }
-            catch { /* ignore styling errors */ }
         }
 
         private void Navigate(string targetPage, int? productId, string mode)

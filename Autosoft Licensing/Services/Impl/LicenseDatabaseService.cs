@@ -128,8 +128,7 @@ WHERE Id = @Id;", conn);
             using var cmd = new SqlCommand(@"
 SELECT Id, ProductID, Name, Description, ReleaseNotes, CreatedBy, CreatedUtc, LastModifiedUtc, IsDeleted
 FROM dbo.Products
-WHERE IsDeleted = 0
-ORDER BY ProductID;", conn);
+ORDER BY ProductID;", conn); // REMOVED: WHERE IsDeleted = 0
             conn.Open();
             using var r = cmd.ExecuteReader();
             while (r.Read()) list.Add(ReadProduct(r));
