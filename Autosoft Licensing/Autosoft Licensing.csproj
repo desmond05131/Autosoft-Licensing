@@ -266,6 +266,7 @@
     <Compile Include="Tools\LicenseRequestServiceTest.cs" />
     <Compile Include="Tools\ProductPagesIntegrationTests.cs" />
     <Compile Include="Tools\SmokeTestHarness.cs" />
+    <Compile Include="Tools\UserPagesIntegrationTests.cs" />
     <Compile Include="UI\HostFactory.cs" />
     <Compile Include="UI\MainForm.cs">
       <SubType>Form</SubType>
