@@ -312,7 +312,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.btnSave.Appearance.ForeColor = System.Drawing.Color.White;
             this.btnSave.Appearance.Options.UseBackColor = true;
             this.btnSave.Appearance.Options.UseForeColor = true;
-            this.btnSave.Location = new System.Drawing.Point(1799, 920);
+            this.btnSave.Location = new System.Drawing.Point(910, 500);
             this.btnSave.Name = "btnSave";
             this.btnSave.Size = new System.Drawing.Size(80, 30);
             this.btnSave.TabIndex = 15;
@@ -321,7 +321,7 @@ namespace Autosoft_Licensing.UI.Pages
             // btnCancel
             // 
             this.btnCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnCancel.Location = new System.Drawing.Point(1709, 920);
+            this.btnCancel.Location = new System.Drawing.Point(820, 500);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(80, 30);
             this.btnCancel.TabIndex = 16;
@@ -332,7 +332,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.Controls.Add(this.contentPanel);
             this.Controls.Add(this.headerPanel);
             this.Name = "UserDetailsPage";
-            this.Size = new System.Drawing.Size(1089, 580);
+            this.Size = new System.Drawing.Size(1000, 550); // Base size so anchors position correctly
             ((System.ComponentModel.ISupportInitialize)(this.headerPanel)).EndInit();
             this.headerPanel.ResumeLayout(false);
             this.headerPanel.PerformLayout();
