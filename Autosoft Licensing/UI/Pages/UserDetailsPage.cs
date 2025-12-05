@@ -94,6 +94,26 @@ namespace Autosoft_Licensing.UI.Pages
             catch { /* ignore design-time issues */ }
         }
 
+        private void EnforceDefaultAdminLock()
+        {
+            try
+            {
+                if (_existingUser != null && string.Equals(_existingUser.Username, "admin", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Keep everything locked and Save disabled for the default admin record.
+                    btnSave.Enabled = false;
+
+                    txtUsername.ReadOnly = true;
+                    txtDisplayName.ReadOnly = true;
+                    txtPassword.Enabled = false;
+
+                    var view = grdPermissions.MainView as GridView;
+                    if (view != null) view.OptionsBehavior.Editable = false;
+                }
+            }
+            catch { /* ignore */ }
+        }
+
         public override void InitializeForRole(User user)
         {
             _currentUser = user;
@@ -101,13 +121,29 @@ namespace Autosoft_Licensing.UI.Pages
             var canManage = user != null && (user.CanManageUsers || string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase));
             btnSave.Enabled = canManage;
 
-            // If cannot manage, also make grid read-only.
+            // If cannot manage, make form read-only for clarity.
             try
             {
-                var view = grdPermissions.MainView as GridView;
-                if (view != null) view.OptionsBehavior.Editable = canManage;
+                if (!canManage)
+                {
+                    txtUsername.ReadOnly = true;
+                    txtDisplayName.ReadOnly = true;
+                    txtPassword.Enabled = false;
+
+                    var view = grdPermissions.MainView as GridView;
+                    if (view != null) view.OptionsBehavior.Editable = false;
+                }
+                else
+                {
+                    // Respect edit-mode rules (LoadExisting sets default admin to read-only and disables Save).
+                    var view = grdPermissions.MainView as GridView;
+                    if (view != null) view.OptionsBehavior.Editable = true;
+                }
+
+                // Ensure default admin stays locked even if InitializeForRole runs after LoadExisting
+                EnforceDefaultAdminLock();
             }
-            catch { }
+            catch { /* ignore */ }
         }
 
         // Overload with explicit DI
@@ -201,6 +237,7 @@ namespace Autosoft_Licensing.UI.Pages
                 chkIsActive.Checked = _existingUser.IsActive;
 
                 MapUserToPermissions(_existingUser);
+                grdPermissions.RefreshDataSource(); // ensure grid reflects mapped permissions
 
                 // If default admin, lock everything and force all permissions true.
                 if (string.Equals(_existingUser.Username, "admin", StringComparison.OrdinalIgnoreCase))
@@ -316,16 +353,26 @@ namespace Autosoft_Licensing.UI.Pages
                     return;
                 }
 
-                // Enforce that only Admin can assign ManageUser right
+                var isNew = !_userId.HasValue || _existingUser == null;
+
+                // Unique username on create
+                if (isNew)
+                {
+                    var existingByUsername = _dbService.GetUserByUsername(username);
+                    if (existingByUsername != null)
+                    {
+                        ShowError("Username already exists.");
+                        return;
+                    }
+                }
+
+                // Only Admin can assign ManageUser right
                 bool currentCanAssignManageUser = _currentUser != null &&
                     (_currentUser.CanManageUsers || string.Equals(_currentUser.Role, "Admin", StringComparison.OrdinalIgnoreCase));
                 if (!currentCanAssignManageUser)
                 {
-                    // Force ManageUser row to false if editor not allowed to set it.
                     SetPerm("USER", _existingUser != null ? _existingUser.CanManageUsers : false);
                 }
-
-                var isNew = !_userId.HasValue || _existingUser == null;
 
                 // Password hashing rules
                 string passwordHash;
@@ -348,7 +395,6 @@ namespace Autosoft_Licensing.UI.Pages
 
                 // Build user object
                 var user = isNew ? new User() : new User { Id = _existingUser.Id };
-
                 user.Username = username;
                 user.DisplayName = string.IsNullOrWhiteSpace(displayName) ? username : displayName;
                 user.Email = _existingUser != null ? _existingUser.Email : null;
@@ -361,8 +407,20 @@ namespace Autosoft_Licensing.UI.Pages
                 user.CanManageProduct = GetPerm("PROD");
                 user.CanManageUsers = GetPerm("USER");
 
-                // Legacy simple role mapping: Admin when ManageUsers is true; otherwise Support.
+                // Role mapping
                 user.Role = user.CanManageUsers ? "Admin" : "Support";
+
+                // Guard: at least one Admin must remain (covers self or others)
+                if (!isNew && _existingUser != null && _existingUser.CanManageUsers && !user.CanManageUsers)
+                {
+                    var anyOtherAdmin = (_dbService.GetUsers() ?? Enumerable.Empty<User>())
+                        .Any(u => u.Id != _existingUser.Id && (u.CanManageUsers || string.Equals(u.Role, "Admin", StringComparison.OrdinalIgnoreCase)));
+                    if (!anyOtherAdmin)
+                    {
+                        ShowError("At least one Admin must remain. Assign another Admin before removing Admin rights.");
+                        return;
+                    }
+                }
 
                 if (isNew)
                 {
