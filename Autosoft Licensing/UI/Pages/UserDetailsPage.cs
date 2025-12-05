@@ -47,13 +47,6 @@ using Autosoft_Licensing.Services;
 
 namespace Autosoft_Licensing.UI.Pages
 {
-    /*
-    PAGE: UserDetailsPage.cs
-    ROLE: Dealer Admin
-    PURPOSE:
-      Create or edit a single user account and assign access rights for Dealer app capabilities.
-    */
-
     public partial class UserDetailsPage : PageBase
     {
         private ILicenseDatabaseService _dbService;
@@ -92,6 +85,20 @@ namespace Autosoft_Licensing.UI.Pages
                 }
             }
             catch { /* ignore design-time issues */ }
+
+            // NEW: Wire Cancel navigation
+            try
+            {
+                if (btnCancel != null)
+                {
+                    btnCancel.Click += (s, e) =>
+                    {
+                        // Navigate back to ManageUserPage (host wires this event in MainForm)
+                        NavigateBackRequested?.Invoke(this, EventArgs.Empty);
+                    };
+                }
+            }
+            catch { /* ignore */ }
         }
 
         private void EnforceDefaultAdminLock()
@@ -120,6 +127,9 @@ namespace Autosoft_Licensing.UI.Pages
             // Only users with ManageUser permission (or Admin role) can save/modify.
             var canManage = user != null && (user.CanManageUsers || string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase));
             btnSave.Enabled = canManage;
+
+            // NEW: Cancel is always enabled to allow leaving without saving
+            try { if (btnCancel != null) btnCancel.Enabled = true; } catch { /* ignore */ }
 
             // If cannot manage, make form read-only for clarity.
             try

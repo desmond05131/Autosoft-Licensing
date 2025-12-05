@@ -35,6 +35,7 @@ namespace Autosoft_Licensing.UI.Pages
         private DevExpress.XtraEditors.Repository.RepositoryItemCheckEdit repositoryCheckPermission;
 
         private SimpleButton btnSave;
+        private SimpleButton btnCancel; // NEW
 
         protected override void Dispose(bool disposing)
         {
@@ -62,6 +63,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.colChecked = new DevExpress.XtraGrid.Columns.GridColumn();
             this.repositoryCheckPermission = new DevExpress.XtraEditors.Repository.RepositoryItemCheckEdit();
             this.btnSave = new DevExpress.XtraEditors.SimpleButton();
+            this.btnCancel = new DevExpress.XtraEditors.SimpleButton();
             ((System.ComponentModel.ISupportInitialize)(this.headerPanel)).BeginInit();
             this.headerPanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.contentPanel)).BeginInit();
@@ -86,7 +88,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.headerPanel.LookAndFeel.Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat;
             this.headerPanel.LookAndFeel.UseDefaultLookAndFeel = false;
             this.headerPanel.Name = "headerPanel";
-            this.headerPanel.Size = new System.Drawing.Size(1109, 60);
+            this.headerPanel.Size = new System.Drawing.Size(1089, 60);
             this.headerPanel.TabIndex = 0;
             // 
             // lblHeaderTitle
@@ -115,10 +117,11 @@ namespace Autosoft_Licensing.UI.Pages
             this.contentPanel.Controls.Add(this.lblAccessRight);
             this.contentPanel.Controls.Add(this.grdPermissions);
             this.contentPanel.Controls.Add(this.btnSave);
+            this.contentPanel.Controls.Add(this.btnCancel);
             this.contentPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.contentPanel.Location = new System.Drawing.Point(0, 60);
             this.contentPanel.Name = "contentPanel";
-            this.contentPanel.Size = new System.Drawing.Size(1109, 418);
+            this.contentPanel.Size = new System.Drawing.Size(1089, 532);
             this.contentPanel.TabIndex = 1;
             // 
             // lblUsername
@@ -259,12 +262,27 @@ namespace Autosoft_Licensing.UI.Pages
             this.btnSave.Appearance.Options.UseBackColor = true;
             this.btnSave.Appearance.Options.UseFont = true;
             this.btnSave.Appearance.Options.UseForeColor = true;
-            this.btnSave.Location = new System.Drawing.Point(1009, 398);
+            this.btnSave.Location = new System.Drawing.Point(989, 512);
             this.btnSave.Name = "btnSave";
             this.btnSave.Size = new System.Drawing.Size(80, 30);
             this.btnSave.TabIndex = 9;
             this.btnSave.Text = "Save";
             this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
+            // 
+            // btnCancel
+            // 
+            this.btnCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnCancel.Appearance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            this.btnCancel.Appearance.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+            this.btnCancel.Appearance.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
+            this.btnCancel.Appearance.Options.UseBackColor = true;
+            this.btnCancel.Appearance.Options.UseFont = true;
+            this.btnCancel.Appearance.Options.UseForeColor = true;
+            this.btnCancel.Location = new System.Drawing.Point(899, 512);
+            this.btnCancel.Name = "btnCancel";
+            this.btnCancel.Size = new System.Drawing.Size(80, 30);
+            this.btnCancel.TabIndex = 10;
+            this.btnCancel.Text = "Cancel";
             // 
             // UserDetailsPage
             // 
@@ -275,7 +293,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.Controls.Add(this.contentPanel);
             this.Controls.Add(this.headerPanel);
             this.Name = "UserDetailsPage";
-            this.Size = new System.Drawing.Size(1109, 478);
+            this.Size = new System.Drawing.Size(1089, 592);
             ((System.ComponentModel.ISupportInitialize)(this.headerPanel)).EndInit();
             this.headerPanel.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.contentPanel)).EndInit();

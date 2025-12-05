@@ -74,7 +74,7 @@ namespace Autosoft_Licensing.UI.Pages
         private void TopStrip_Paint(object sender, PaintEventArgs e)
         {
             // thin bluish-gray strip - wireframe color #CADCE6 (202,220,230)
-            using (var b = new SolidBrush(Color.FromArgb(158,173,186)))
+            using (var b = new SolidBrush(Color.FromArgb(255, 243, 217)))
             {
                 e.Graphics.FillRectangle(b, ((Control)sender).ClientRectangle);
             }

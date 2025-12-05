@@ -28,6 +28,7 @@ using System.Windows.Forms;
 using DevExpress.XtraEditors;
 using Autosoft_Licensing.Models;
 using Autosoft_Licensing.Services;
+using System.Drawing; // ADDED for Point
 
 namespace Autosoft_Licensing.UI.Pages
 {
@@ -48,6 +49,10 @@ namespace Autosoft_Licensing.UI.Pages
 
             InitializeComponent();
 
+            // Ensure center panel won't stretch — required for proper centering on resize
+            if (panelCenter != null)
+                panelCenter.Anchor = AnchorStyles.None;
+
             // Initial state
             lblError.Visible = false;
 
@@ -67,6 +72,20 @@ namespace Autosoft_Licensing.UI.Pages
         {
             _db = db ?? throw new ArgumentNullException(nameof(db));
             _crypto = crypto ?? throw new ArgumentNullException(nameof(crypto));
+        }
+
+        // Center the login panel dynamically whenever the control resizes
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize(e);
+
+            if (panelCenter != null)
+            {
+                panelCenter.Location = new Point(
+                    (this.Width - panelCenter.Width) / 2,
+                    (this.Height - panelCenter.Height) / 2
+                );
+            }
         }
 
         private void btnLogin_Click(object sender, EventArgs e)
