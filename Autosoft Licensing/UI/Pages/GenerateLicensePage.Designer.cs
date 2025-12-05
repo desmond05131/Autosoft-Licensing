@@ -755,7 +755,7 @@ namespace Autosoft_Licensing.UI.Pages
             // txtLicenseKey
             // 
             this.txtLicenseKey.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-            this.txtLicenseKey.Location = new System.Drawing.Point(100, 536);
+            this.txtLicenseKey.Location = new System.Drawing.Point(100, 525);
             this.txtLicenseKey.Name = "txtLicenseKey";
             this.txtLicenseKey.Properties.ReadOnly = true;
             this.txtLicenseKey.Size = new System.Drawing.Size(201, 20);
