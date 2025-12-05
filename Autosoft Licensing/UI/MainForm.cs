@@ -169,6 +169,17 @@ namespace Autosoft_Licensing
                         }
                         break;
 
+                    // NEW: Manage User navigation
+                    case "aceUserManagement":
+                    case "ManageUserPage":
+                        page = new ManageUserPage();
+                        if (page is ManageUserPage muPage)
+                        {
+                            muPage.Initialize(ServiceRegistry.Database);
+                            muPage.NavigateRequested += OnUserNavigationRequested;
+                        }
+                        break;
+
                     default:
                         page = new GenericPage(elementText ?? elementName);
                         break;
@@ -271,6 +282,12 @@ namespace Autosoft_Licensing
             {
                 var isAdmin = LoggedInUser != null && string.Equals(LoggedInUser.Role, "Admin", StringComparison.OrdinalIgnoreCase);
 
+                // Fine-grained permissions: Admin grants all, otherwise use user flags
+                bool canGenerate = LoggedInUser != null && (LoggedInUser.CanGenerateLicense || isAdmin);
+                bool canViewRecords = LoggedInUser != null && (LoggedInUser.CanViewRecords || isAdmin);
+                bool canManageProduct = LoggedInUser != null && (LoggedInUser.CanManageProduct || isAdmin);
+                bool canManageUsers = LoggedInUser != null && (LoggedInUser.CanManageUsers || isAdmin);
+
                 if (accordion == null) return;
 
                 var navGroup = (accordion.Elements.Count > 0) ? accordion.Elements[0] : null;
@@ -278,8 +295,19 @@ namespace Autosoft_Licensing
 
                 foreach (var el in navGroup.Elements)
                 {
-                    if (el.Name == "aceUserManagement" || el.Name == "aceSettingsSecurity")
-                        el.Visible = isAdmin;
+                    if (el == null || string.IsNullOrEmpty(el.Name)) continue;
+
+                    if (el.Name.Equals("aceGenerateRequest", StringComparison.OrdinalIgnoreCase))
+                        el.Visible = canGenerate;
+                    else if (el.Name.Equals("aceLicenseList", StringComparison.OrdinalIgnoreCase))
+                        el.Visible = canViewRecords;
+                    else if (el.Name.Equals("aceManageProduct", StringComparison.OrdinalIgnoreCase))
+                        el.Visible = canManageProduct;
+                    else if (el.Name.Equals("aceUserManagement", StringComparison.OrdinalIgnoreCase))
+                        el.Visible = canManageUsers;
+                    else if (el.Name.Equals("aceSettingsSecurity", StringComparison.OrdinalIgnoreCase))
+                        el.Visible = isAdmin; // keep security/settings admin-only
+                    // All other elements unchanged
                 }
             }
             catch
@@ -462,6 +490,45 @@ namespace Autosoft_Licensing
                 if (e != null && e.Saved && !_suppressMessageBoxes)
                 {
                     XtraMessageBox.Show("Product saved successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                if (!_suppressMessageBoxes)
+                {
+                    XtraMessageBox.Show($"Navigation failed: {ex.Message}", "Navigation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        // NEW: Handle navigation events from ManageUserPage
+        private void OnUserNavigationRequested(object sender, ManageUserPage.NavigateEventArgs e)
+        {
+            try
+            {
+                if (e == null || string.IsNullOrEmpty(e.TargetPage))
+                    return;
+
+                if (string.Equals(e.TargetPage, "UserDetailsPage", StringComparison.OrdinalIgnoreCase))
+                {
+                    var detailsPage = new UserDetailsPage();
+
+                    // Initialize with optional user id (null => create mode).
+                    // Signature available: Initialize(int? userId) [resolves services], or DI overload.
+                    detailsPage.Initialize(e.UserId);
+
+                    // When details page requests navigating back, reload the Manage User page (refresh list)
+                    detailsPage.NavigateBackRequested += (s, args2) =>
+                    {
+                        LoadPage("aceUserManagement", "User Management");
+                    };
+
+                    ShowPage(detailsPage);
+                    detailsPage.InitializeForRole(LoggedInUser);
+                }
+                else
+                {
+                    LoadPage(e.TargetPage, e.TargetPage);
                 }
             }
             catch (Exception ex)
