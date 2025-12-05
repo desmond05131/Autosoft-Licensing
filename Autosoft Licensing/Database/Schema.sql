@@ -130,3 +130,22 @@ IF COL_LENGTH('dbo.Products', 'IsDeleted') IS NULL
 BEGIN
     ALTER TABLE dbo.Products ADD IsDeleted bit NOT NULL CONSTRAINT DF_Products_IsDeleted DEFAULT(0);
 END
+
+-- Users table granular permissions upgrade
+-- Adds IsActive and fine-grained permission flags.
+-- Existing rows default to enabled (IsActive=1) and no permissions (except admin to be set in Seed.sql).
+
+IF COL_LENGTH('dbo.Users', 'IsActive') IS NULL
+ALTER TABLE dbo.Users ADD [IsActive] BIT NOT NULL CONSTRAINT DF_Users_IsActive DEFAULT(1) WITH VALUES;
+
+IF COL_LENGTH('dbo.Users', 'CanGenerateLicense') IS NULL
+ALTER TABLE dbo.Users ADD [CanGenerateLicense] BIT NOT NULL CONSTRAINT DF_Users_CanGenerateLicense DEFAULT(0) WITH VALUES;
+
+IF COL_LENGTH('dbo.Users', 'CanViewRecords') IS NULL
+ALTER TABLE dbo.Users ADD [CanViewRecords] BIT NOT NULL CONSTRAINT DF_Users_CanViewRecords DEFAULT(0) WITH VALUES;
+
+IF COL_LENGTH('dbo.Users', 'CanManageProduct') IS NULL
+ALTER TABLE dbo.Users ADD [CanManageProduct] BIT NOT NULL CONSTRAINT DF_Users_CanManageProduct DEFAULT(0) WITH VALUES;
+
+IF COL_LENGTH('dbo.Users', 'CanManageUsers') IS NULL
+ALTER TABLE dbo.Users ADD [CanManageUsers] BIT NOT NULL CONSTRAINT DF_Users_CanManageUsers DEFAULT(0) WITH VALUES;

@@ -23,5 +23,12 @@ namespace Autosoft_Licensing.Models
         public string PasswordHash { get; set; }
 
         public DateTime CreatedUtc { get; set; }
+
+        // New granular permissions and status
+        public bool IsActive { get; set; }
+        public bool CanGenerateLicense { get; set; }
+        public bool CanViewRecords { get; set; }
+        public bool CanManageProduct { get; set; }
+        public bool CanManageUsers { get; set; }
     }
 }

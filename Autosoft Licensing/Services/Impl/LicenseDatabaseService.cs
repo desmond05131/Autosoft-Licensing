@@ -22,7 +22,9 @@ namespace Autosoft_Licensing.Services
         {
             using var conn = _factory.Create();
             using var cmd = new SqlCommand(@"
-SELECT TOP(1) Id, Username, DisplayName, Role, Email, PasswordHash, CreatedUtc
+SELECT TOP(1)
+    Id, Username, DisplayName, Role, Email, PasswordHash, CreatedUtc,
+    IsActive, CanGenerateLicense, CanViewRecords, CanManageProduct, CanManageUsers
 FROM dbo.Users WHERE Username = @u;", conn);
             cmd.Parameters.AddWithValue("@u", username ?? (object)DBNull.Value);
             conn.Open();
@@ -35,7 +37,9 @@ FROM dbo.Users WHERE Username = @u;", conn);
         {
             using var conn = _factory.Create();
             using var cmd = new SqlCommand(@"
-SELECT TOP(1) Id, Username, DisplayName, Role, Email, PasswordHash, CreatedUtc
+SELECT TOP(1)
+    Id, Username, DisplayName, Role, Email, PasswordHash, CreatedUtc,
+    IsActive, CanGenerateLicense, CanViewRecords, CanManageProduct, CanManageUsers
 FROM dbo.Users WHERE Id = @id;", conn);
             cmd.Parameters.AddWithValue("@id", id);
             conn.Open();
@@ -50,7 +54,9 @@ FROM dbo.Users WHERE Id = @id;", conn);
             var list = new List<User>();
             using var conn = _factory.Create();
             using var cmd = new SqlCommand(@"
-SELECT Id, Username, DisplayName, Role, Email, PasswordHash, CreatedUtc
+SELECT
+    Id, Username, DisplayName, Role, Email, PasswordHash, CreatedUtc,
+    IsActive, CanGenerateLicense, CanViewRecords, CanManageProduct, CanManageUsers
 FROM dbo.Users
 ORDER BY Username;", conn);
             conn.Open();
@@ -64,8 +70,12 @@ ORDER BY Username;", conn);
         {
             using var conn = _factory.Create();
             using var cmd = new SqlCommand(@"
-INSERT INTO dbo.Users (Username, DisplayName, Role, Email, PasswordHash, CreatedUtc)
-VALUES (@Username, @DisplayName, @Role, @Email, @PasswordHash, @CreatedUtc);
+INSERT INTO dbo.Users
+(Username, DisplayName, Role, Email, PasswordHash, CreatedUtc,
+ IsActive, CanGenerateLicense, CanViewRecords, CanManageProduct, CanManageUsers)
+VALUES
+(@Username, @DisplayName, @Role, @Email, @PasswordHash, @CreatedUtc,
+ @IsActive, @CanGenerateLicense, @CanViewRecords, @CanManageProduct, @CanManageUsers);
 SELECT CAST(SCOPE_IDENTITY() AS INT);", conn);
             cmd.Parameters.AddWithValue("@Username", user.Username);
             cmd.Parameters.AddWithValue("@DisplayName", user.DisplayName);
@@ -73,6 +83,13 @@ SELECT CAST(SCOPE_IDENTITY() AS INT);", conn);
             cmd.Parameters.AddWithValue("@Email", (object)user.Email ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@PasswordHash", user.PasswordHash);
             cmd.Parameters.AddWithValue("@CreatedUtc", user.CreatedUtc == default ? DateTime.UtcNow : user.CreatedUtc);
+
+            cmd.Parameters.AddWithValue("@IsActive", user.IsActive);
+            cmd.Parameters.AddWithValue("@CanGenerateLicense", user.CanGenerateLicense);
+            cmd.Parameters.AddWithValue("@CanViewRecords", user.CanViewRecords);
+            cmd.Parameters.AddWithValue("@CanManageProduct", user.CanManageProduct);
+            cmd.Parameters.AddWithValue("@CanManageUsers", user.CanManageUsers);
+
             conn.Open();
             return (int)cmd.ExecuteScalar();
         }
@@ -87,7 +104,12 @@ SET Username = @Username,
     DisplayName = @DisplayName,
     Role = @Role,
     Email = @Email,
-    PasswordHash = @PasswordHash
+    PasswordHash = @PasswordHash,
+    IsActive = @IsActive,
+    CanGenerateLicense = @CanGenerateLicense,
+    CanViewRecords = @CanViewRecords,
+    CanManageProduct = @CanManageProduct,
+    CanManageUsers = @CanManageUsers
 WHERE Id = @Id;", conn);
             cmd.Parameters.AddWithValue("@Id", user.Id);
             cmd.Parameters.AddWithValue("@Username", user.Username);
@@ -95,6 +117,13 @@ WHERE Id = @Id;", conn);
             cmd.Parameters.AddWithValue("@Role", user.Role);
             cmd.Parameters.AddWithValue("@Email", (object)user.Email ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@PasswordHash", user.PasswordHash);
+
+            cmd.Parameters.AddWithValue("@IsActive", user.IsActive);
+            cmd.Parameters.AddWithValue("@CanGenerateLicense", user.CanGenerateLicense);
+            cmd.Parameters.AddWithValue("@CanViewRecords", user.CanViewRecords);
+            cmd.Parameters.AddWithValue("@CanManageProduct", user.CanManageProduct);
+            cmd.Parameters.AddWithValue("@CanManageUsers", user.CanManageUsers);
+
             conn.Open();
             cmd.ExecuteNonQuery();
         }
@@ -117,7 +146,12 @@ WHERE Id = @Id;", conn);
             Role = r.GetString(3),
             Email = r.IsDBNull(4) ? null : r.GetString(4),
             PasswordHash = r.GetString(5),
-            CreatedUtc = r.GetDateTime(6)
+            CreatedUtc = r.GetDateTime(6),
+            IsActive = !r.IsDBNull(7) && r.GetBoolean(7),
+            CanGenerateLicense = !r.IsDBNull(8) && r.GetBoolean(8),
+            CanViewRecords = !r.IsDBNull(9) && r.GetBoolean(9),
+            CanManageProduct = !r.IsDBNull(10) && r.GetBoolean(10),
+            CanManageUsers = !r.IsDBNull(11) && r.GetBoolean(11)
         };
 
         // ---------- Products ----------
