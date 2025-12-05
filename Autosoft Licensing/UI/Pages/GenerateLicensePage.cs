@@ -51,7 +51,7 @@ namespace Autosoft_Licensing.UI.Pages
             InitializeComponent();
             try
             {
-                // Wire top nav
+                // Navigation buttons -> FireNavigate
                 if (btnNav_GenerateLicense != null) btnNav_GenerateLicense.Click += (s, e) => FireNavigate("GenerateLicensePage");
                 if (btnNav_LicenseRecords != null) btnNav_LicenseRecords.Click += (s, e) => FireNavigate("LicenseRecordsPage");
                 if (btnNav_ManageProduct != null) btnNav_ManageProduct.Click += (s, e) => FireNavigate("ManageProductPage");
@@ -59,7 +59,7 @@ namespace Autosoft_Licensing.UI.Pages
                 if (btnNavLogoutText != null) btnNavLogoutText.Click += (s, e) => FireNavigate("Logout");
                 if (pnlNavLogout != null) pnlNavLogout.Click += (s, e) => FireNavigate("Logout");
             }
-            catch { }
+            catch { /* best-effort, avoid exceptions in ctor */ }
 
             try
             {
@@ -675,6 +675,25 @@ namespace Autosoft_Licensing.UI.Pages
         private void grpModules_Paint(object sender, PaintEventArgs e)
         {
 
+        }
+
+        public override void InitializeForRole(User user)
+        {
+            try
+            {
+                if (user == null) return;
+
+                // Role-based visibility (requested replacement)
+                if (btnNav_GenerateLicense != null) btnNav_GenerateLicense.Visible = user.CanGenerateLicense;
+                if (btnNav_LicenseRecords != null) btnNav_LicenseRecords.Visible = user.CanViewRecords;
+                if (btnNav_ManageProduct != null) btnNav_ManageProduct.Visible = user.CanManageProduct;
+                if (btnNav_ManageUser != null) btnNav_ManageUser.Visible = user.CanManageUsers;
+                if (btnNavLogoutText != null) btnNavLogoutText.Visible = true;
+
+                // Optionally keep action buttons enabled based on page rules (no change requested here)
+                // e.g., btnGenerateKey.Enabled = user.CanGenerateLicense;
+            }
+            catch { /* ignore */ }
         }
     }
 }

@@ -161,7 +161,7 @@ namespace Autosoft_Licensing
 
             // NORMAL INTERACTIVE RUN (args empty): honor App.config appSettings
             // Use LaunchPage to pick initial page and LaunchAsAdmin to reveal admin-only UI.
-            var launchPage = ConfigurationManager.AppSettings["LaunchPage"] ?? "LicenseRecords";
+            var launchPage = ConfigurationManager.AppSettings["LaunchPage"] ?? "Login";
             var launchAsAdmin = string.Equals(ConfigurationManager.AppSettings["LaunchAsAdmin"], "true", StringComparison.OrdinalIgnoreCase);
 
             var mainForm = new MainForm();
@@ -176,22 +176,13 @@ namespace Autosoft_Licensing
                 catch { /* continue without admin if lookup fails */ }
             }
 
-            // Navigate to the requested initial page
-            switch (launchPage.Trim())
+            // Only bypass login if explicitly requested via args or specific debug config
+            if (launchAsAdmin && !string.IsNullOrEmpty(launchPage) && !string.Equals(launchPage.Trim(), "Login", StringComparison.OrdinalIgnoreCase))
             {
-                case "GenerateLicense":
-                case "GenerateLicensePage":
-                case "aceGenerateRequest":
-                case "aceGenerateLicense":
-                case "btnNav_GenerateLicense":
-                    mainForm.NavigateToElement("GenerateLicensePage");
-                    break;
-
-                default:
-                    // Default to License Records
-                    mainForm.NavigateToElement("LicenseRecordsPage");
-                    break;
+                // Attempt to resolve the public navigation method (we will add this to MainForm next)
+                mainForm.NavigateToPage(launchPage.Trim());
             }
+            // Else: do nothing. MainForm constructor already called ShowLogin(), so it stays there.
 
             Application.Run(mainForm);
         }

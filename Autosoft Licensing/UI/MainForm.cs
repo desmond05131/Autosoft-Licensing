@@ -40,6 +40,15 @@ namespace Autosoft_Licensing
             UpdateRoleVisibility();
         }
 
+        // NEW: Public navigation method for external callers (e.g., Program.cs)
+        public void NavigateToPage(string pageName)
+        {
+            if (string.IsNullOrWhiteSpace(pageName))
+                return;
+
+            LoadPage(pageName, pageName);
+        }
+
         private void ShowLogin()
         {
             try
@@ -128,6 +137,7 @@ namespace Autosoft_Licensing
                         var p = new GenerateLicensePage();
                         try
                         {
+                            // Verified: Initialize with ArlReader, AslGenerator, Product, Database, User
                             p.Initialize(
                                 ServiceRegistry.ArlReader,
                                 ServiceRegistry.AslGenerator,
@@ -185,7 +195,7 @@ namespace Autosoft_Licensing
                         break;
                 }
 
-                // Use the custom NavigateEventArgs from pages (fully qualified to avoid ambiguity)
+                // Verified: subscribe using Autosoft_Licensing.UI.Pages.NavigateEventArgs
                 page.NavigateRequested += new EventHandler<Autosoft_Licensing.UI.Pages.NavigateEventArgs>(OnPageNavigate);
 
                 _pageCache[key] = page;
@@ -208,7 +218,6 @@ namespace Autosoft_Licensing
             }
         }
 
-        // Match the delegate type: Autosoft_Licensing.UI.Pages.NavigateEventArgs
         private void OnPageNavigate(object sender, Autosoft_Licensing.UI.Pages.NavigateEventArgs e)
         {
             try
