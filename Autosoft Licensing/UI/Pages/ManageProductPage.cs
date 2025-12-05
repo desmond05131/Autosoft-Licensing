@@ -66,6 +66,7 @@ namespace Autosoft_Licensing.UI.Pages
             public string CreatedBy { get; set; }
             public DateTime DateCreated { get; set; }
             public DateTime LastModified { get; set; }
+            public bool IsDeleted { get; set; } // NEW
         }
 
         public ManageProductPage()
@@ -93,6 +94,8 @@ namespace Autosoft_Licensing.UI.Pages
                     if (view != null)
                     {
                         view.DoubleClick += Grid_DoubleClick;
+                        // NEW: row styling
+                        view.RowStyle += GridView_RowStyle;
                     }
 
                     // Search interactions
@@ -106,6 +109,10 @@ namespace Autosoft_Licensing.UI.Pages
                             RefreshData();
                         }
                     };
+
+                    // NEW: Show Deleted checkbox toggle
+                    if (chkShowDeleted != null)
+                        chkShowDeleted.CheckedChanged += (s, e) => RefreshData();
 
                     // Initial load
                     RefreshData();
@@ -161,11 +168,13 @@ namespace Autosoft_Licensing.UI.Pages
                     ProductName = p.Name ?? string.Empty,
                     CreatedBy = p.CreatedBy ?? string.Empty,
                     DateCreated = ToLocal(p.CreatedUtc),
-                    LastModified = ToLocal(p.LastModifiedUtc == default ? p.CreatedUtc : p.LastModifiedUtc)
+                    LastModified = ToLocal(p.LastModifiedUtc == default ? p.CreatedUtc : p.LastModifiedUtc),
+                    IsDeleted = p.IsDeleted // NEW
                 });
 
                 var query = rows;
 
+                // Search filter
                 var term = (txtSearch?.Text ?? string.Empty).Trim();
                 if (!string.IsNullOrEmpty(term))
                 {
@@ -173,6 +182,12 @@ namespace Autosoft_Licensing.UI.Pages
                         (!string.IsNullOrEmpty(r.ProductID) && r.ProductID.IndexOf(term, StringComparison.OrdinalIgnoreCase) >= 0) ||
                         (!string.IsNullOrEmpty(r.ProductName) && r.ProductName.IndexOf(term, StringComparison.OrdinalIgnoreCase) >= 0) ||
                         (!string.IsNullOrEmpty(r.CreatedBy) && r.CreatedBy.IndexOf(term, StringComparison.OrdinalIgnoreCase) >= 0));
+                }
+
+                // NEW: Deleted filter
+                if (!(chkShowDeleted?.Checked ?? false))
+                {
+                    query = query.Where(r => !r.IsDeleted);
                 }
 
                 _data = new BindingList<ProductRow>(query.ToList());
@@ -295,6 +310,26 @@ namespace Autosoft_Licensing.UI.Pages
                 ShowError("Failed to delete product.");
                 System.Diagnostics.Debug.WriteLine($"btnDelete_Click error: {ex}");
             }
+        }
+
+        // NEW: Row styling for deleted products
+        private void GridView_RowStyle(object sender, DevExpress.XtraGrid.Views.Grid.RowStyleEventArgs e)
+        {
+            try
+            {
+                var view = sender as GridView;
+                if (view == null || e.RowHandle < 0) return;
+
+                var row = view.GetRow(e.RowHandle) as ProductRow;
+                if (row == null) return;
+
+                if (row.IsDeleted)
+                {
+                    e.Appearance.BackColor = Color.LightCoral;
+                    e.Appearance.ForeColor = Color.DarkRed;
+                }
+            }
+            catch { /* ignore styling errors */ }
         }
 
         private void Navigate(string targetPage, int? productId, string mode)

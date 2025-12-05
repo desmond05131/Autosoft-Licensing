@@ -126,8 +126,9 @@ WHERE Id = @Id;", conn);
             var list = new List<Product>();
             using var conn = _factory.Create();
             using var cmd = new SqlCommand(@"
-SELECT Id, ProductID, Name, Description, ReleaseNotes, CreatedBy, CreatedUtc, LastModifiedUtc
+SELECT Id, ProductID, Name, Description, ReleaseNotes, CreatedBy, CreatedUtc, LastModifiedUtc, IsDeleted
 FROM dbo.Products
+WHERE IsDeleted = 0
 ORDER BY ProductID;", conn);
             conn.Open();
             using var r = cmd.ExecuteReader();
@@ -139,7 +140,7 @@ ORDER BY ProductID;", conn);
         {
             using var conn = _factory.Create();
             using var cmd = new SqlCommand(@"
-SELECT TOP(1) Id, ProductID, Name, Description, ReleaseNotes, CreatedBy, CreatedUtc, LastModifiedUtc
+SELECT TOP(1) Id, ProductID, Name, Description, ReleaseNotes, CreatedBy, CreatedUtc, LastModifiedUtc, IsDeleted
 FROM dbo.Products WHERE Id = @id;", conn);
             cmd.Parameters.AddWithValue("@id", id);
             conn.Open();
@@ -152,7 +153,7 @@ FROM dbo.Products WHERE Id = @id;", conn);
         {
             using var conn = _factory.Create();
             using var cmd = new SqlCommand(@"
-SELECT TOP(1) Id, ProductID, Name, Description, ReleaseNotes, CreatedBy, CreatedUtc, LastModifiedUtc
+SELECT TOP(1) Id, ProductID, Name, Description, ReleaseNotes, CreatedBy, CreatedUtc, LastModifiedUtc, IsDeleted
 FROM dbo.Products WHERE ProductID = @pid;", conn);
             cmd.Parameters.AddWithValue("@pid", productId ?? (object)DBNull.Value);
             conn.Open();
@@ -165,9 +166,9 @@ FROM dbo.Products WHERE ProductID = @pid;", conn);
         {
             using var conn = _factory.Create();
             using var cmd = new SqlCommand(@"
-SELECT TOP(1) Id, ProductID, Name, Description, ReleaseNotes, CreatedBy, CreatedUtc, LastModifiedUtc
+SELECT TOP(1) Id, ProductID, Name, Description, ReleaseNotes, CreatedBy, CreatedUtc, LastModifiedUtc, IsDeleted
 FROM dbo.Products
-WHERE Name = @name;", conn);
+WHERE Name = @name AND IsDeleted = 0;", conn);
             cmd.Parameters.AddWithValue("@name", (object)name ?? DBNull.Value);
             conn.Open();
             using var r = cmd.ExecuteReader();
@@ -281,7 +282,7 @@ VALUES (@ProductId, @ModuleCode, @Name, @Description, @IsActive);", conn, tx);
         public void DeleteProduct(int id)
         {
             using var conn = _factory.Create();
-            using var cmd = new SqlCommand("DELETE FROM dbo.Products WHERE Id = @Id;", conn);
+            using var cmd = new SqlCommand("UPDATE dbo.Products SET IsDeleted = 1 WHERE Id = @Id;", conn);
             cmd.Parameters.AddWithValue("@Id", id);
             conn.Open();
             cmd.ExecuteNonQuery();
@@ -297,6 +298,7 @@ VALUES (@ProductId, @ModuleCode, @Name, @Description, @IsActive);", conn, tx);
             CreatedBy = r.IsDBNull(5) ? null : r.GetString(5),
             CreatedUtc = r.IsDBNull(6) ? default : r.GetDateTime(6),
             LastModifiedUtc = r.IsDBNull(7) ? default : r.GetDateTime(7),
+            IsDeleted = !r.IsDBNull(8) && r.GetBoolean(8),
             Modules = new List<Module>() // not populated here; UI can fetch separately if needed
         };
 

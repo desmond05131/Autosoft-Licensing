@@ -53,6 +53,9 @@ namespace Autosoft_Licensing.UI.Pages
         // Search
         private ButtonEdit txtSearch;
 
+        // NEW: Show Deleted checkbox
+        private CheckEdit chkShowDeleted;
+
         // Grid
         private GridControl grdProducts;
         private GridView viewProducts;
@@ -96,6 +99,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.btnDelete = new DevExpress.XtraEditors.SimpleButton();
             this.btnRefresh = new DevExpress.XtraEditors.SimpleButton();
             this.txtSearch = new DevExpress.XtraEditors.ButtonEdit();
+            this.chkShowDeleted = new DevExpress.XtraEditors.CheckEdit();
             this.grdProducts = new DevExpress.XtraGrid.GridControl();
             this.viewProducts = new DevExpress.XtraGrid.Views.Grid.GridView();
             this.colProductId = new DevExpress.XtraGrid.Columns.GridColumn();
@@ -124,6 +128,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.pnlNavLogout.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.picNav_Logout.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.txtSearch.Properties)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.chkShowDeleted.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.grdProducts)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.viewProducts)).BeginInit();
             this.SuspendLayout();
@@ -434,6 +439,15 @@ namespace Autosoft_Licensing.UI.Pages
             this.txtSearch.Size = new System.Drawing.Size(288, 20);
             this.txtSearch.TabIndex = 9;
             // 
+            // chkShowDeleted
+            // 
+            this.chkShowDeleted.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.chkShowDeleted.Location = new System.Drawing.Point(582, 126);
+            this.chkShowDeleted.Name = "chkShowDeleted";
+            this.chkShowDeleted.Properties.Caption = "Show deleted products";
+            this.chkShowDeleted.Size = new System.Drawing.Size(111, 19);
+            this.chkShowDeleted.TabIndex = 12;
+            // 
             // grdProducts
             // 
             this.grdProducts.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
@@ -516,6 +530,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.Appearance.Options.UseBackColor = true;
             this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.Controls.Add(this.chkShowDeleted);
             this.Controls.Add(this.btnRefresh);
             this.Controls.Add(this.grdProducts);
             this.Controls.Add(this.txtSearch);
@@ -548,6 +563,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.pnlNavLogout.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.picNav_Logout.Properties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.txtSearch.Properties)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.chkShowDeleted.Properties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.grdProducts)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.viewProducts)).EndInit();
             this.ResumeLayout(false);

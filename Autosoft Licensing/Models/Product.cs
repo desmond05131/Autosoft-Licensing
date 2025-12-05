@@ -20,6 +20,9 @@ namespace Autosoft_Licensing.Models
         public DateTime CreatedUtc { get; set; }
         public DateTime LastModifiedUtc { get; set; }
 
+        // NEW: Soft delete flag
+        public bool IsDeleted { get; set; }
+
         public List<Module> Modules { get; set; } = new List<Module>();
     }
 }

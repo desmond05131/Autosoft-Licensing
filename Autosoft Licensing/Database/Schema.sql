@@ -124,3 +124,9 @@ CREATE TABLE LicenseModules (
 CREATE INDEX IX_Licenses_Product ON Licenses(ProductID, CompanyName);
 CREATE INDEX IX_Licenses_Status ON Licenses(Status);
 CREATE INDEX IX_Licenses_LicenseKey ON Licenses(LicenseKey);
+
+-- Add IsDeleted column if it does not exist
+IF COL_LENGTH('dbo.Products', 'IsDeleted') IS NULL
+BEGIN
+    ALTER TABLE dbo.Products ADD IsDeleted bit NOT NULL CONSTRAINT DF_Products_IsDeleted DEFAULT(0);
+END
