@@ -39,8 +39,10 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
+using System.Windows.Forms; // <-- add this
 using DevExpress.Utils;
 using DevExpress.XtraEditors;
+using DevExpress.XtraEditors.Controls;
 using DevExpress.XtraGrid.Views.Grid;
 using Autosoft_Licensing.Models;
 using Autosoft_Licensing.Services;
@@ -56,6 +58,14 @@ namespace Autosoft_Licensing.UI.Pages
         private int? _userId;
         private User _existingUser;
         private User _currentUser; // host can set via InitializeForRole
+
+        // NEW UI fields
+        private LabelControl lblRole;
+        private ComboBoxEdit cmbRole;
+        private LabelControl lblEmail;
+        private TextEdit txtEmail;
+        private LabelControl lblCreated;
+        private TextEdit txtCreatedUtc;
 
         // Host can listen and navigate back to ManageUserPage after save
         public event EventHandler NavigateBackRequested;
@@ -86,6 +96,9 @@ namespace Autosoft_Licensing.UI.Pages
             }
             catch { /* ignore design-time issues */ }
 
+            // Ensure additional fields exist and are laid out
+            try { EnsureExtraFields(); } catch { /* best effort */ }
+
             // NEW: Wire Cancel navigation
             try
             {
@@ -101,6 +114,106 @@ namespace Autosoft_Licensing.UI.Pages
             catch { /* ignore */ }
         }
 
+        private void EnsureExtraFields()
+        {
+            // Try to place new fields relative to existing baseline controls
+            var container = FindContentPanel() ?? (Control)this;
+
+            if (lblRole == null)
+            {
+                lblRole = new LabelControl { Name = "lblRole", Text = "Role:" };
+                cmbRole = new ComboBoxEdit { Name = "cmbRole" };
+                cmbRole.Properties.Items.AddRange(new[] { "Admin", "Support" });
+                cmbRole.Properties.TextEditStyle = TextEditStyles.DisableTextEditor; // DropDownList
+                cmbRole.SelectedIndex = 1; // default Support
+
+                lblEmail = new LabelControl { Name = "lblEmail", Text = "Email:" };
+                txtEmail = new TextEdit { Name = "txtEmail" };
+
+                lblCreated = new LabelControl { Name = "lblCreated", Text = "Created (UTC):" };
+                txtCreatedUtc = new TextEdit { Name = "txtCreatedUtc", Enabled = false, Properties = { ReadOnly = true } };
+
+                // Basic layout: stack below DisplayName; Created below permissions grid
+                var txtUsernameCtl = FindControl<TextEdit>("txtUsername") ?? FindControl<TextEdit>("txtUserName");
+                var txtDisplayNameCtl = FindControl<TextEdit>("txtDisplayName");
+                var txtPasswordCtl = FindControl<TextEdit>("txtPassword");
+                var gridCtl = grdPermissions;
+
+                int leftLabel = (txtDisplayNameCtl?.Left ?? txtUsernameCtl?.Left ?? 24);
+                int leftInput = leftLabel + 110;
+                int widthInput = (txtDisplayNameCtl?.Width ?? txtUsernameCtl?.Width ?? 260);
+                int top = (txtDisplayNameCtl?.Bottom ?? txtUsernameCtl?.Bottom ?? 24) + 12;
+                int rowGap = 8;
+
+                // Role
+                lblRole.Location = new System.Drawing.Point(leftLabel, top + 4);
+                cmbRole.Location = new System.Drawing.Point(leftInput, top);
+                cmbRole.Size = new System.Drawing.Size(widthInput, 24);
+                top = cmbRole.Bottom + rowGap;
+
+                // Email
+                lblEmail.Location = new System.Drawing.Point(leftLabel, top + 4);
+                txtEmail.Location = new System.Drawing.Point(leftInput, top);
+                txtEmail.Size = new System.Drawing.Size(widthInput, 24);
+                top = txtEmail.Bottom + rowGap;
+
+                // If password box exists, ensure it stays below Email
+                if (txtPasswordCtl != null && txtPasswordCtl.Top < top)
+                {
+                    txtPasswordCtl.Top = top;
+                }
+
+                // Created at the bottom beneath permissions grid if available
+                int createdTop = (gridCtl != null ? gridCtl.Bottom + 12 : top + 12);
+                lblCreated.Location = new System.Drawing.Point(leftLabel, createdTop + 4);
+                txtCreatedUtc.Location = new System.Drawing.Point(leftInput, createdTop);
+                txtCreatedUtc.Size = new System.Drawing.Size(widthInput, 24);
+
+                container.Controls.Add(lblRole);
+                container.Controls.Add(cmbRole);
+                container.Controls.Add(lblEmail);
+                container.Controls.Add(txtEmail);
+                container.Controls.Add(lblCreated);
+                container.Controls.Add(txtCreatedUtc);
+            }
+        }
+
+        private Control FindContentPanel()
+        {
+            try
+            {
+                var fi = GetType().GetField("contentPanel", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public);
+                return fi?.GetValue(this) as Control;
+            }
+            catch { return null; }
+        }
+
+        private T FindControl<T>(string name) where T : Control
+        {
+            try
+            {
+                foreach (Control c in this.Controls)
+                {
+                    var found = FindControlRecursive<T>(c, name);
+                    if (found != null) return found;
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        private T FindControlRecursive<T>(Control root, string name) where T : Control
+        {
+            if (root == null) return null;
+            if (string.Equals(root.Name, name, StringComparison.OrdinalIgnoreCase) && root is T t) return t;
+            foreach (Control c in root.Controls)
+            {
+                var f = FindControlRecursive<T>(c, name);
+                if (f != null) return f;
+            }
+            return null;
+        }
+
         private void EnforceDefaultAdminLock()
         {
             try
@@ -113,6 +226,9 @@ namespace Autosoft_Licensing.UI.Pages
                     txtUsername.ReadOnly = true;
                     txtDisplayName.ReadOnly = true;
                     txtPassword.Enabled = false;
+
+                    if (cmbRole != null) cmbRole.Enabled = false;
+                    if (txtEmail != null) txtEmail.Enabled = false;
 
                     var view = grdPermissions.MainView as GridView;
                     if (view != null) view.OptionsBehavior.Editable = false;
@@ -140,6 +256,9 @@ namespace Autosoft_Licensing.UI.Pages
                     txtDisplayName.ReadOnly = true;
                     txtPassword.Enabled = false;
 
+                    if (cmbRole != null) cmbRole.Enabled = false;
+                    if (txtEmail != null) txtEmail.Enabled = false;
+
                     var view = grdPermissions.MainView as GridView;
                     if (view != null) view.OptionsBehavior.Editable = false;
                 }
@@ -148,6 +267,9 @@ namespace Autosoft_Licensing.UI.Pages
                     // Respect edit-mode rules (LoadExisting sets default admin to read-only and disables Save).
                     var view = grdPermissions.MainView as GridView;
                     if (view != null) view.OptionsBehavior.Editable = true;
+
+                    if (cmbRole != null) cmbRole.Enabled = true;
+                    if (txtEmail != null) txtEmail.Enabled = true;
                 }
 
                 // Ensure default admin stays locked even if InitializeForRole runs after LoadExisting
@@ -217,6 +339,11 @@ namespace Autosoft_Licensing.UI.Pages
                 txtDisplayName.Text = string.Empty;
                 txtPassword.Text = string.Empty;
                 chkIsActive.Checked = true;
+
+                if (txtEmail != null) txtEmail.Text = string.Empty;
+                if (txtCreatedUtc != null) txtCreatedUtc.Text = DateTime.Now.ToString("g");
+                if (cmbRole != null) cmbRole.SelectedIndex = 1; // Support
+
                 foreach (var r in _rows) r.IsChecked = false;
                 grdPermissions.RefreshDataSource();
                 btnSave.Enabled = btnSave.Enabled && true; // keep role gating
@@ -246,6 +373,10 @@ namespace Autosoft_Licensing.UI.Pages
                 txtPassword.Text = string.Empty; // do not show hash
                 chkIsActive.Checked = _existingUser.IsActive;
 
+                if (txtEmail != null) txtEmail.Text = _existingUser.Email ?? string.Empty;
+                if (txtCreatedUtc != null) txtCreatedUtc.Text = ToLocal(_existingUser.CreatedUtc).ToString("g");
+                if (cmbRole != null) cmbRole.EditValue = _existingUser.Role;
+
                 MapUserToPermissions(_existingUser);
                 grdPermissions.RefreshDataSource(); // ensure grid reflects mapped permissions
 
@@ -258,6 +389,9 @@ namespace Autosoft_Licensing.UI.Pages
                     txtUsername.ReadOnly = true;
                     txtDisplayName.ReadOnly = true;
                     txtPassword.Enabled = false;
+
+                    if (cmbRole != null) { cmbRole.EditValue = "Admin"; cmbRole.Enabled = false; }
+                    if (txtEmail != null) txtEmail.Enabled = false;
 
                     var view = grdPermissions.MainView as GridView;
                     if (view != null) view.OptionsBehavior.Editable = false;
@@ -351,6 +485,8 @@ namespace Autosoft_Licensing.UI.Pages
                 var displayName = (txtDisplayName.Text ?? string.Empty).Trim();
                 var password = txtPassword.Text ?? string.Empty;
                 var isActive = chkIsActive.Checked;
+                var email = txtEmail != null ? (txtEmail.Text ?? string.Empty).Trim() : null;
+                var selectedRole = cmbRole != null ? (cmbRole.Text ?? string.Empty).Trim() : string.Empty;
 
                 if (string.IsNullOrWhiteSpace(username))
                 {
@@ -360,6 +496,13 @@ namespace Autosoft_Licensing.UI.Pages
                 if (string.IsNullOrWhiteSpace(displayName))
                 {
                     ShowError("Display Name is required.");
+                    return;
+                }
+
+                // Optional email validation: if provided, require a basic '@'
+                if (!string.IsNullOrWhiteSpace(email) && !email.Contains("@"))
+                {
+                    ShowError("Email format looks invalid.");
                     return;
                 }
 
@@ -376,7 +519,7 @@ namespace Autosoft_Licensing.UI.Pages
                     }
                 }
 
-                // Only Admin can assign ManageUser right
+                // Only Admin can assign ManageUser right via grid (defensive)
                 bool currentCanAssignManageUser = _currentUser != null &&
                     (_currentUser.CanManageUsers || string.Equals(_currentUser.Role, "Admin", StringComparison.OrdinalIgnoreCase));
                 if (!currentCanAssignManageUser)
@@ -407,18 +550,29 @@ namespace Autosoft_Licensing.UI.Pages
                 var user = isNew ? new User() : new User { Id = _existingUser.Id };
                 user.Username = username;
                 user.DisplayName = string.IsNullOrWhiteSpace(displayName) ? username : displayName;
-                user.Email = _existingUser != null ? _existingUser.Email : null;
+                user.Email = email;
                 user.PasswordHash = passwordHash;
                 user.IsActive = isActive;
 
-                // Map permissions from grid
+                // Map permissions from grid (initial)
                 user.CanGenerateLicense = GetPerm("GEN");
                 user.CanViewRecords = GetPerm("REC");
                 user.CanManageProduct = GetPerm("PROD");
                 user.CanManageUsers = GetPerm("USER");
 
-                // Role mapping
-                user.Role = user.CanManageUsers ? "Admin" : "Support";
+                // Role mapping from UI combo
+                // CRITICAL: enforce role?permissions consistency
+                var roleFromUi = string.IsNullOrWhiteSpace(selectedRole) ? "Support" : selectedRole;
+                if (string.Equals(roleFromUi, "Admin", StringComparison.OrdinalIgnoreCase))
+                {
+                    user.Role = "Admin";
+                    user.CanManageUsers = true; // force Admin implies Manage Users
+                }
+                else
+                {
+                    user.Role = "Support";
+                    user.CanManageUsers = false; // Support cannot manage users
+                }
 
                 // Guard: at least one Admin must remain (covers self or others)
                 if (!isNew && _existingUser != null && _existingUser.CanManageUsers && !user.CanManageUsers)

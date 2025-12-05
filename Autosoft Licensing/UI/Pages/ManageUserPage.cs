@@ -276,7 +276,8 @@ namespace Autosoft_Licensing.UI.Pages
         {
             try
             {
-             FireNavigate(targetPage);
+                // FIX: pass the selected user's Id to the unified navigation args
+                FireNavigate(targetPage, userId);
             }
             catch (Exception ex)
             {
