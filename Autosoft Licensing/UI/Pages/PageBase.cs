@@ -11,7 +11,6 @@ namespace Autosoft_Licensing.UI.Pages
     /// Ensures the WinForms designer can load derived controls without requiring runtime-only services.
     /// Keep this class minimal and avoid any static initialization or calls to ServiceRegistry in the constructor.
     /// </summary>
-    [DesignerCategory("UserControl")]
     public class PageBase : XtraUserControl
     {
         private static bool _threadExceptionHooked = false;

@@ -59,13 +59,8 @@ namespace Autosoft_Licensing.UI.Pages
         private User _existingUser;
         private User _currentUser; // host can set via InitializeForRole
 
-        // NEW UI fields
-        private LabelControl lblRole;
-        private ComboBoxEdit cmbRole;
-        private LabelControl lblEmail;
-        private TextEdit txtEmail;
-        private LabelControl lblCreated;
-        private TextEdit txtCreatedUtc;
+        // Removed: manual UI fields now provided by Designer:
+        // lblRole, cmbRole, lblEmail, txtEmail, lblCreated, txtCreatedUtc
 
         // Host can listen and navigate back to ManageUserPage after save
         public event EventHandler NavigateBackRequested;
@@ -96,8 +91,7 @@ namespace Autosoft_Licensing.UI.Pages
             }
             catch { /* ignore design-time issues */ }
 
-            // Ensure additional fields exist and are laid out
-            try { EnsureExtraFields(); } catch { /* best effort */ }
+            // Removed: EnsureExtraFields(); all controls are now in Designer
 
             // NEW: Wire Cancel navigation
             try
@@ -112,106 +106,6 @@ namespace Autosoft_Licensing.UI.Pages
                 }
             }
             catch { /* ignore */ }
-        }
-
-        private void EnsureExtraFields()
-        {
-            // Try to place new fields relative to existing baseline controls
-            var container = FindContentPanel() ?? (Control)this;
-
-            if (lblRole == null)
-            {
-                lblRole = new LabelControl { Name = "lblRole", Text = "Role:" };
-                cmbRole = new ComboBoxEdit { Name = "cmbRole" };
-                cmbRole.Properties.Items.AddRange(new[] { "Admin", "Support" });
-                cmbRole.Properties.TextEditStyle = TextEditStyles.DisableTextEditor; // DropDownList
-                cmbRole.SelectedIndex = 1; // default Support
-
-                lblEmail = new LabelControl { Name = "lblEmail", Text = "Email:" };
-                txtEmail = new TextEdit { Name = "txtEmail" };
-
-                lblCreated = new LabelControl { Name = "lblCreated", Text = "Created (UTC):" };
-                txtCreatedUtc = new TextEdit { Name = "txtCreatedUtc", Enabled = false, Properties = { ReadOnly = true } };
-
-                // Basic layout: stack below DisplayName; Created below permissions grid
-                var txtUsernameCtl = FindControl<TextEdit>("txtUsername") ?? FindControl<TextEdit>("txtUserName");
-                var txtDisplayNameCtl = FindControl<TextEdit>("txtDisplayName");
-                var txtPasswordCtl = FindControl<TextEdit>("txtPassword");
-                var gridCtl = grdPermissions;
-
-                int leftLabel = (txtDisplayNameCtl?.Left ?? txtUsernameCtl?.Left ?? 24);
-                int leftInput = leftLabel + 110;
-                int widthInput = (txtDisplayNameCtl?.Width ?? txtUsernameCtl?.Width ?? 260);
-                int top = (txtDisplayNameCtl?.Bottom ?? txtUsernameCtl?.Bottom ?? 24) + 12;
-                int rowGap = 8;
-
-                // Role
-                lblRole.Location = new System.Drawing.Point(leftLabel, top + 4);
-                cmbRole.Location = new System.Drawing.Point(leftInput, top);
-                cmbRole.Size = new System.Drawing.Size(widthInput, 24);
-                top = cmbRole.Bottom + rowGap;
-
-                // Email
-                lblEmail.Location = new System.Drawing.Point(leftLabel, top + 4);
-                txtEmail.Location = new System.Drawing.Point(leftInput, top);
-                txtEmail.Size = new System.Drawing.Size(widthInput, 24);
-                top = txtEmail.Bottom + rowGap;
-
-                // If password box exists, ensure it stays below Email
-                if (txtPasswordCtl != null && txtPasswordCtl.Top < top)
-                {
-                    txtPasswordCtl.Top = top;
-                }
-
-                // Created at the bottom beneath permissions grid if available
-                int createdTop = (gridCtl != null ? gridCtl.Bottom + 12 : top + 12);
-                lblCreated.Location = new System.Drawing.Point(leftLabel, createdTop + 4);
-                txtCreatedUtc.Location = new System.Drawing.Point(leftInput, createdTop);
-                txtCreatedUtc.Size = new System.Drawing.Size(widthInput, 24);
-
-                container.Controls.Add(lblRole);
-                container.Controls.Add(cmbRole);
-                container.Controls.Add(lblEmail);
-                container.Controls.Add(txtEmail);
-                container.Controls.Add(lblCreated);
-                container.Controls.Add(txtCreatedUtc);
-            }
-        }
-
-        private Control FindContentPanel()
-        {
-            try
-            {
-                var fi = GetType().GetField("contentPanel", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public);
-                return fi?.GetValue(this) as Control;
-            }
-            catch { return null; }
-        }
-
-        private T FindControl<T>(string name) where T : Control
-        {
-            try
-            {
-                foreach (Control c in this.Controls)
-                {
-                    var found = FindControlRecursive<T>(c, name);
-                    if (found != null) return found;
-                }
-            }
-            catch { }
-            return null;
-        }
-
-        private T FindControlRecursive<T>(Control root, string name) where T : Control
-        {
-            if (root == null) return null;
-            if (string.Equals(root.Name, name, StringComparison.OrdinalIgnoreCase) && root is T t) return t;
-            foreach (Control c in root.Controls)
-            {
-                var f = FindControlRecursive<T>(c, name);
-                if (f != null) return f;
-            }
-            return null;
         }
 
         private void EnforceDefaultAdminLock()
@@ -577,7 +471,7 @@ namespace Autosoft_Licensing.UI.Pages
                 // Guard: at least one Admin must remain (covers self or others)
                 if (!isNew && _existingUser != null && _existingUser.CanManageUsers && !user.CanManageUsers)
                 {
-                    var anyOtherAdmin = (_dbService.GetUsers() ?? Enumerable.Empty<User>())
+                    var anyOtherAdmin = (_db_service_getusers_safe() ?? Enumerable.Empty<User>())
                         .Any(u => u.Id != _existingUser.Id && (u.CanManageUsers || string.Equals(u.Role, "Admin", StringComparison.OrdinalIgnoreCase)));
                     if (!anyOtherAdmin)
                     {
@@ -605,6 +499,13 @@ namespace Autosoft_Licensing.UI.Pages
                 System.Diagnostics.Debug.WriteLine($"UserDetailsPage.SaveUser error: {ex}");
                 ShowError("Failed to save user.");
             }
+        }
+
+        // Safe wrapper to avoid null-conditional on every call site
+        private IEnumerable<User> _db_service_getusers_safe()
+        {
+            try { return _dbService.GetUsers() ?? Enumerable.Empty<User>(); }
+            catch { return Enumerable.Empty<User>(); }
         }
     }
 }
