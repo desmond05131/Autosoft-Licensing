@@ -1,154 +1,130 @@
-Autosoft Licensing System
-1. System Overview
-Autosoft Licensing is a secure, desktop-based application designed to manage the lifecycle of software licenses for Autosoft plugins. It allows administrators to process license requests, generate cryptographically signed license files, and manage product/user registries.
+# Autosoft Licensing System
+
+## 📖 Overview
+**Autosoft Licensing** is a Windows Forms (WinForms) desktop application designed to manage the lifecycle of software licenses for AutoCount plugins. It serves as an administrative tool that allows internal staff to:
+* Manage Users (Admins/Staff).
+* Manage Products (Plugins).
+* Process License Requests (`.arl` files).
+* Generate Signed License Files (`.asl` files).
+* Track License History.
+
+The system implements a secure cryptographic pipeline to ensure that licenses cannot be tampered with or forged.
+
+---
+
+## 🏗 System Architecture
+The application follows a **Service-Oriented Architecture** with strict separation of concerns:
+
+* **UI Layer (`/UI`)**: Contains Forms and User Controls (Pages). It handles user interaction and delegates logic to services.
+* **Service Layer (`/Services`)**: Contains the business logic (e.g., `LicenseRequestService`, `EncryptionService`).
+* **Data Access Layer (`/Data`, `/Database`)**: Handles SQL Server interactions via `SqlConnectionFactory` and ADO.NET.
+* **Models (`/Models`)**: POCO classes representing database entities and JSON DTOs.
+
+### 🔑 Key Technologies
+* **.NET Framework**: Core runtime.
+* **Windows Forms**: UI Framework.
+* **MSSQL Server**: Relational database for storage.
+* **AES-256 & SHA-256**: Security standards for license generation.
+* **Newtonsoft.Json**: JSON serialization for license files.
+
+---
+
+## ⚙️ Logic & Workflows
+
+### 1. The Licensing Logic (Core)
+The heart of the application is the **License Generation Pipeline**. This process converts a raw request into a secured, usable license.
+
+#### **Step 1: License Request (`.arl`)**
+Clients generate a **License Request File** (`.arl`). This is a standard JSON file containing:
+* `CompanyName`: The client's registered name.
+* `ProductID`: The ID of the plugin they want to use.
+* `DealerCode`: The dealer managing the client.
+* `RequestedPeriodMonths`: Duration of the license.
+
+#### **Step 2: Validation & Processing**
+When the Admin uploads an `.arl` file in the **Generate License** module:
+1.  **Parsing**: The `ArlReaderService` reads the file and deserializes the JSON.
+2.  **Business Validation**: The `LicenseRequestService` checks:
+    * Are all mandatory fields present?
+    * Is the Product ID valid?
+    * Is the requested duration within allowed limits (e.g., max 10 years)?
+
+#### **Step 3: Security & Encryption (The "Black Box")**
+Once validated, the `AslGeneratorService` and `EncryptionService` take over:
+1.  **Key Generation**: A unique `LicenseKey` is generated using `LicenseKeyGenerator`.
+2.  **Canonicalization**: The license data object is converted to a "Canonical JSON" string. This ensures that field order and spacing are identical every time, which is critical for hashing.
+3.  **Checksum**: A **SHA-256** hash is calculated from the canonical JSON. This checksum is embedded into the license data.
+4.  **Encryption**: The entire JSON payload (including the checksum) is encrypted using **AES-256-CBC** (Cipher Block Chaining).
+    * **Key**: Defined in `App.config`.
+    * **IV**: Defined in `App.config`.
+5.  **Signing**: The final output is encoded in Base64.
+
+#### **Step 4: Output (`.asl`)**
+The result is an **AutoCount Signed License** (`.asl`) file. This file acts as a "digital key" for the client. The client software will decrypt it, recalculate the hash, and verify integrity before unlocking features.
+
+---
+
+## 📦 Module Breakdown
+
+### 1. Authentication Module (`LoginPage`)
+* **Function**: Gatekeeper for the application.
+* **Logic**: Accepts Username/Password. Uses `UserService` to query the `Users` table.
+* **Security**: Prevents unauthorized access to the license generator.
+
+### 2. User Management (`ManageUserPage`)
+* **Function**: CRUD (Create, Read, Update, Delete) for system operators.
+* **Features**:
+    * Add new admins or support staff.
+    * Update passwords.
+    * Assign active/inactive status to control access.
+
+### 3. Product Management (`ManageProductPage`)
+* **Function**: Registry of software products that can be licensed.
+* **Logic**:
+    * Stores `ProductID`, `ProductName`, and `Description`.
+    * Only products defined here can be referenced in an `.arl` file.
+
+### 4. License Generation UI (`GenerateLicensePage`)
+* **Function**: The main workspace for admins.
+* **Features**:
+    * **Upload**: Drag-and-drop or select `.arl` files.
+    * **Editor**: Allows the admin to override the requested duration (e.g., changing a 1-month request to a 1-year license).
+    * **Preview**: Shows the decrypted data before finalizing.
+    * **Generate**: Triggers the encryption pipeline and saves the `.asl` file.
+
+### 5. License Records (`LicenseRecordsPage`)
+* **Function**: Audit trail.
+* **Logic**: Every generated license is saved to the `LicenseRecords` database table.
+* **Features**:
+    * Search by Company Name or License Key.
+    * View historical expiration dates.
+    * Check which admin generated a specific license.
 
-The system operates on a Request-Response model using two specific file formats:
+---
 
-.ARL (Autosoft Request License): A file generated by the client/plugin containing registration details.
+## 🛠 Configuration & Setup
 
-.ASL (Autosoft Signed License): The encrypted license file generated by this tool, which the client imports to unlock features.
+### Database Setup
+1.  Open **SQL Server Management Studio (SSMS)**.
+2.  Execute the script located in `Database/Schema.sql` to create tables.
+3.  Execute `Database/Seed.sql` to insert the default Admin user.
 
-2. Core Licensing Logic & Security
-The heart of the application is a cryptographic pipeline that ensures licenses cannot be forged or tampered with.
+### Application Configuration (`App.config`)
+The application relies on specific keys in the `App.config` file for database connection and encryption security.
 
-2.1 The Licensing Lifecycle
-Request Generation (Client Side):
+> ⚠️ **CRITICAL SECURITY WARNING**: The Encryption Key and IV match the logic in the client DLL. If these keys are changed here, previously generated licenses will become invalid.
 
-The client plugin collects user data (Company Name, Product ID, Dealer Code).
+```xml
+<configuration>
+  <connectionStrings>
+    <add name="DefaultConnection" 
+         connectionString="Server=YOUR_SERVER_NAME;Database=AutosoftLicensing;Trusted_Connection=True;" 
+         providerName="System.Data.SqlClient" />
+  </connectionStrings>
 
-It creates a JSON object and calculates a SHA-256 checksum of the content.
+  <appSettings>
+    <add key="EncryptionKey" value="[YOUR_BASE64_KEY_HERE]" />
 
-The JSON is encoded (Base64) into an .ARL file.
-
-Validation (Admin Tool):
-
-When an admin uploads an .ARL file, the ArlReaderService parses the JSON.
-
-Integrity Check: It recalculates the checksum of the data and compares it to the checksum embedded in the file. If they do not match, the file is rejected as "Tampered/Invalid."
-
-Generation (Admin Tool):
-
-The admin selects the license type (Demo or Subscription).
-
-The AslGeneratorService creates a new LicenseData object including the generated License Key and Expiry Date.
-
-Canonicalization: The JSON is serialized using a "Canonical" format (sorted keys, specific date formatting) to ensure consistent hashing across different machines.
-
-Encryption (Output):
-
-The final JSON payload is encrypted using AES-256-CBC (Advanced Encryption Standard).
-
-The output is saved as an .ASL file.
-
-Verification (Client Side):
-
-The client decrypts the .ASL file using the shared secret key.
-
-It verifies the checksum and checks if ExpiryDate > CurrentDate.
-
-2.2 Security Standards used
-Encryption: AES-256-CBC with PKCS7 Padding.
-
-Hashing: SHA-256 for integrity verification.
-
-Key Management: Keys and IVs are currently configured in the application settings (Note: Production deployments should secure these keys).
-
-3. Application Modules
-The application is divided into distinct functional modules, each handled by specific UI pages and backend services.
-
-3.1 License Generation Module
-Page: GenerateLicensePage.cs This is the primary workspace for the administrator.
-
-File Upload: Accepts .ARL files. Automatically populates Company Name, Product ID, and requested parameters.
-
-Business Rules Engine:
-
-Demo Mode: If "Demo" is selected, the duration is strictly locked to 1 Month.
-
-Subscription Mode: Defaults to 12 Months but allows manual override by the admin.
-
-License Key Generation: Uses LicenseKeyGenerator to create a unique, formatted key (e.g., XXXX-XXXX-XXXX-XXXX).
-
-Output: Generates the encrypted .ASL file for the user to download.
-
-3.2 License Records Module
-Page: LicenseRecordsPage.cs & LicenseRecordDetailsPage.cs Acts as the historical audit trail for the system.
-
-Data Grid: Displays a paginated list of all generated licenses.
-
-Filtering: Allows searching by Company Name, License Key, or Product.
-
-Details View: Clicking a record shows deep metadata, including the original request date, the admin who approved it, and the raw license parameters.
-
-Status Tracking: Visual indicators show if a license is Active or Expired.
-
-3.3 Product Management Module
-Page: ManageProductPage.cs & ProductDetailsPage.cs Allows the configuration of software products that can be licensed.
-
-CRUD Operations: Create, Read, Update, and Delete products.
-
-Module Definition: Admins can define sub-modules for a product (e.g., "Accounting", "Inventory") which can be individually enabled/disabled in the license.
-
-Validation: Ensures Product IDs are unique to prevent licensing conflicts.
-
-3.4 User Management Module
-Page: ManageUserPage.cs & UserDetailsPage.cs Controls access to the Licensing Tool itself.
-
-Role Management: (Currently supports Admin roles).
-
-Security: Passwords and user credentials are managed here.
-
-Audit: Tracks which user generated which license (stored in the License History).
-
-3.5 Authentication Module
-Page: LoginPage.cs
-
-The entry point of the application.
-
-Validates credentials against the Users table in the database.
-
-Establishes the current Session context used for audit logging.
-
-4. Technical Architecture
-4.1 Backend Services
-The application relies on a Service-Oriented Architecture (SOA) via Dependency Injection.
-
-LicenseRequestService: Handles the logic of parsing and validating incoming .ARL requests.
-
-EncryptionService: Wraps the .NET cryptography libraries to provide consistent Encrypt/Decrypt methods.
-
-LicenseDatabaseService: Manages all SQL interactions (Dapper/ADO.NET) for storing records, products, and users.
-
-CanonicalJsonSerializer: A custom serializer ensuring that JSON is always formatted identically (date formats, property ordering) to guarantee checksum matches between the Admin Tool and Client Plugins.
-
-4.2 Database Schema
-The system uses a relational database (SQL Server) with the following core entities:
-
-Licenses: Stores the generated license keys, expiry dates, and payload references.
-
-Dealers/Customers: Stores the entities requesting the licenses.
-
-Products: Defines the software catalog.
-
-Users: Administrators of the tool.
-
-5. Setup & Configuration
-Prerequisites:
-
-Windows OS (WinForms support).
-
-.NET Framework / Core Runtime.
-
-SQL Server instance.
-
-Database Initialization:
-
-Run Schema.sql to create the tables.
-
-Run Seed.sql to insert initial admin users and default products.
-
-App.config:
-
-Ensure the ConnectionStrings points to your SQL Server instance.
-
-Important: Verify the EncryptionKey and IV match the keys used in your Client Plugin, or licenses will not work.
+    <add key="EncryptionIV" value="[YOUR_BASE64_IV_HERE]" />
+  </appSettings>
+</configuration>
