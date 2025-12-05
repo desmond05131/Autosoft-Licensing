@@ -65,33 +65,19 @@ namespace Autosoft_Licensing.UI.Pages
             this.headerPanel = new DevExpress.XtraEditors.PanelControl();
             this.lblHeaderTitle = new DevExpress.XtraEditors.LabelControl();
             this.contentPanel = new DevExpress.XtraEditors.PanelControl();
-
-            // Initialize Row 1
             this.lblUsername = new DevExpress.XtraEditors.LabelControl();
             this.txtUsername = new DevExpress.XtraEditors.TextEdit();
             this.chkIsActive = new DevExpress.XtraEditors.CheckEdit();
-
-            // Initialize Row 2
             this.lblDisplayName = new DevExpress.XtraEditors.LabelControl();
             this.txtDisplayName = new DevExpress.XtraEditors.TextEdit();
-
-            // Initialize Row 3 (Role)
             this.lblRole = new DevExpress.XtraEditors.LabelControl();
             this.cmbRole = new DevExpress.XtraEditors.ComboBoxEdit();
-
-            // Initialize Row 4 (Email)
             this.lblEmail = new DevExpress.XtraEditors.LabelControl();
             this.txtEmail = new DevExpress.XtraEditors.TextEdit();
-
-            // Initialize Row 5 (Password)
             this.lblPassword = new DevExpress.XtraEditors.LabelControl();
             this.txtPassword = new DevExpress.XtraEditors.TextEdit();
-
-            // Initialize Row 6 (Created)
             this.lblCreated = new DevExpress.XtraEditors.LabelControl();
             this.txtCreatedUtc = new DevExpress.XtraEditors.TextEdit();
-
-            // Grid & Buttons
             this.lblAccessRight = new DevExpress.XtraEditors.LabelControl();
             this.grdPermissions = new DevExpress.XtraGrid.GridControl();
             this.viewPermissions = new DevExpress.XtraGrid.Views.Grid.GridView();
@@ -100,7 +86,6 @@ namespace Autosoft_Licensing.UI.Pages
             this.repositoryCheckPermission = new DevExpress.XtraEditors.Repository.RepositoryItemCheckEdit();
             this.btnSave = new DevExpress.XtraEditors.SimpleButton();
             this.btnCancel = new DevExpress.XtraEditors.SimpleButton();
-
             ((System.ComponentModel.ISupportInitialize)(this.headerPanel)).BeginInit();
             this.headerPanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.contentPanel)).BeginInit();
@@ -116,26 +101,34 @@ namespace Autosoft_Licensing.UI.Pages
             ((System.ComponentModel.ISupportInitialize)(this.viewPermissions)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryCheckPermission)).BeginInit();
             this.SuspendLayout();
-
+            // 
             // headerPanel
-            this.headerPanel.Appearance.BackColor = System.Drawing.Color.FromArgb(253, 243, 211);
+            // 
+            this.headerPanel.Appearance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(253)))), ((int)(((byte)(243)))), ((int)(((byte)(211)))));
             this.headerPanel.Appearance.Options.UseBackColor = true;
             this.headerPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             this.headerPanel.Controls.Add(this.lblHeaderTitle);
             this.headerPanel.Dock = System.Windows.Forms.DockStyle.Top;
-            this.headerPanel.Size = new System.Drawing.Size(1000, 60);
-
+            this.headerPanel.Location = new System.Drawing.Point(0, 0);
+            this.headerPanel.Name = "headerPanel";
+            this.headerPanel.Size = new System.Drawing.Size(1089, 60);
+            this.headerPanel.TabIndex = 1;
+            // 
             // lblHeaderTitle
+            // 
             this.lblHeaderTitle.Appearance.Font = new System.Drawing.Font("Segoe UI", 14F, System.Drawing.FontStyle.Bold);
+            this.lblHeaderTitle.Appearance.Options.UseFont = true;
             this.lblHeaderTitle.Location = new System.Drawing.Point(18, 18);
+            this.lblHeaderTitle.Name = "lblHeaderTitle";
+            this.lblHeaderTitle.Size = new System.Drawing.Size(166, 25);
+            this.lblHeaderTitle.TabIndex = 0;
             this.lblHeaderTitle.Text = "Autosoft Licensing";
-
+            // 
             // contentPanel
+            // 
             this.contentPanel.Appearance.BackColor = System.Drawing.Color.White;
             this.contentPanel.Appearance.Options.UseBackColor = true;
             this.contentPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
-            this.contentPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            // Add ALL controls here
             this.contentPanel.Controls.Add(this.lblUsername);
             this.contentPanel.Controls.Add(this.txtUsername);
             this.contentPanel.Controls.Add(this.chkIsActive);
@@ -153,91 +146,196 @@ namespace Autosoft_Licensing.UI.Pages
             this.contentPanel.Controls.Add(this.grdPermissions);
             this.contentPanel.Controls.Add(this.btnSave);
             this.contentPanel.Controls.Add(this.btnCancel);
-
-            // Row 1: Username (Label Y=33), Is Active aligned with textbox at Y=30
+            this.contentPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.contentPanel.Location = new System.Drawing.Point(0, 60);
+            this.contentPanel.Name = "contentPanel";
+            this.contentPanel.Size = new System.Drawing.Size(1089, 520);
+            this.contentPanel.TabIndex = 0;
+            // 
+            // lblUsername
+            // 
             this.lblUsername.Location = new System.Drawing.Point(30, 33);
+            this.lblUsername.Name = "lblUsername";
+            this.lblUsername.Size = new System.Drawing.Size(55, 13);
+            this.lblUsername.TabIndex = 0;
             this.lblUsername.Text = "Username :";
+            // 
+            // txtUsername
+            // 
             this.txtUsername.Location = new System.Drawing.Point(130, 30);
-            this.txtUsername.Size = new System.Drawing.Size(300, 24);
-
+            this.txtUsername.Name = "txtUsername";
+            this.txtUsername.Size = new System.Drawing.Size(300, 20);
+            this.txtUsername.TabIndex = 1;
+            // 
+            // chkIsActive
+            // 
             this.chkIsActive.Location = new System.Drawing.Point(450, 30);
+            this.chkIsActive.Name = "chkIsActive";
             this.chkIsActive.Properties.Caption = "Is Active?";
-            this.chkIsActive.Visible = true;
-
-            // Row 2: Display Name (Label Y=73)
+            this.chkIsActive.Size = new System.Drawing.Size(75, 20);
+            this.chkIsActive.TabIndex = 2;
+            // 
+            // lblDisplayName
+            // 
             this.lblDisplayName.Location = new System.Drawing.Point(30, 73);
+            this.lblDisplayName.Name = "lblDisplayName";
+            this.lblDisplayName.Size = new System.Drawing.Size(71, 13);
+            this.lblDisplayName.TabIndex = 3;
             this.lblDisplayName.Text = "Display Name :";
+            // 
+            // txtDisplayName
+            // 
             this.txtDisplayName.Location = new System.Drawing.Point(130, 70);
-            this.txtDisplayName.Size = new System.Drawing.Size(300, 24);
-
-            // Row 3: Password (Moved Up) (Label Y=113)
-            this.lblPassword.Location = new System.Drawing.Point(30, 113);
-            this.lblPassword.Text = "Password :";
-            this.txtPassword.Location = new System.Drawing.Point(130, 110);
-            this.txtPassword.Size = new System.Drawing.Size(300, 24);
-            this.txtPassword.Properties.UseSystemPasswordChar = true;
-
-            // Row 4: Role (Moved Down) (Label Y=153)
+            this.txtDisplayName.Name = "txtDisplayName";
+            this.txtDisplayName.Size = new System.Drawing.Size(300, 20);
+            this.txtDisplayName.TabIndex = 4;
+            // 
+            // lblRole
+            // 
             this.lblRole.Location = new System.Drawing.Point(30, 153);
+            this.lblRole.Name = "lblRole";
+            this.lblRole.Size = new System.Drawing.Size(28, 13);
+            this.lblRole.TabIndex = 5;
             this.lblRole.Text = "Role :";
+            // 
+            // cmbRole
+            // 
             this.cmbRole.Location = new System.Drawing.Point(130, 150);
-            this.cmbRole.Size = new System.Drawing.Size(300, 24);
+            this.cmbRole.Name = "cmbRole";
             this.cmbRole.Properties.TextEditStyle = DevExpress.XtraEditors.Controls.TextEditStyles.DisableTextEditor;
-
-            // Row 5: Email (Moved Down) (Label Y=193)
+            this.cmbRole.Size = new System.Drawing.Size(300, 20);
+            this.cmbRole.TabIndex = 6;
+            // 
+            // lblEmail
+            // 
             this.lblEmail.Location = new System.Drawing.Point(30, 193);
+            this.lblEmail.Name = "lblEmail";
+            this.lblEmail.Size = new System.Drawing.Size(31, 13);
+            this.lblEmail.TabIndex = 7;
             this.lblEmail.Text = "Email :";
+            // 
+            // txtEmail
+            // 
             this.txtEmail.Location = new System.Drawing.Point(130, 190);
-            this.txtEmail.Size = new System.Drawing.Size(300, 24);
-
-            // Row 6: Created (Label Y=233)
+            this.txtEmail.Name = "txtEmail";
+            this.txtEmail.Size = new System.Drawing.Size(300, 20);
+            this.txtEmail.TabIndex = 8;
+            // 
+            // lblPassword
+            // 
+            this.lblPassword.Location = new System.Drawing.Point(30, 113);
+            this.lblPassword.Name = "lblPassword";
+            this.lblPassword.Size = new System.Drawing.Size(53, 13);
+            this.lblPassword.TabIndex = 9;
+            this.lblPassword.Text = "Password :";
+            // 
+            // txtPassword
+            // 
+            this.txtPassword.Location = new System.Drawing.Point(130, 110);
+            this.txtPassword.Name = "txtPassword";
+            this.txtPassword.Properties.UseSystemPasswordChar = true;
+            this.txtPassword.Size = new System.Drawing.Size(300, 20);
+            this.txtPassword.TabIndex = 10;
+            // 
+            // lblCreated
+            // 
             this.lblCreated.Location = new System.Drawing.Point(30, 233);
+            this.lblCreated.Name = "lblCreated";
+            this.lblCreated.Size = new System.Drawing.Size(77, 13);
+            this.lblCreated.TabIndex = 11;
             this.lblCreated.Text = "Created (UTC) :";
-            this.txtCreatedUtc.Location = new System.Drawing.Point(130, 230);
-            this.txtCreatedUtc.Size = new System.Drawing.Size(300, 24);
-            this.txtCreatedUtc.Properties.ReadOnly = true;
+            // 
+            // txtCreatedUtc
+            // 
             this.txtCreatedUtc.Enabled = false;
-
-            // Grid: Access Rights
+            this.txtCreatedUtc.Location = new System.Drawing.Point(130, 230);
+            this.txtCreatedUtc.Name = "txtCreatedUtc";
+            this.txtCreatedUtc.Properties.ReadOnly = true;
+            this.txtCreatedUtc.Size = new System.Drawing.Size(300, 20);
+            this.txtCreatedUtc.TabIndex = 12;
+            // 
+            // lblAccessRight
+            // 
             this.lblAccessRight.Location = new System.Drawing.Point(30, 270);
+            this.lblAccessRight.Name = "lblAccessRight";
+            this.lblAccessRight.Size = new System.Drawing.Size(61, 13);
+            this.lblAccessRight.TabIndex = 13;
             this.lblAccessRight.Text = "Access Right";
+            // 
+            // grdPermissions
+            // 
             this.grdPermissions.Location = new System.Drawing.Point(30, 295);
-            this.grdPermissions.Size = new System.Drawing.Size(520, 160);
             this.grdPermissions.MainView = this.viewPermissions;
-            this.grdPermissions.RepositoryItems.Add(this.repositoryCheckPermission);
-
-            // View Config
-            this.viewPermissions.Columns.AddRange(new DevExpress.XtraGrid.Columns.GridColumn[] { this.colDescription, this.colChecked });
+            this.grdPermissions.Name = "grdPermissions";
+            this.grdPermissions.RepositoryItems.AddRange(new DevExpress.XtraEditors.Repository.RepositoryItem[] {
+            this.repositoryCheckPermission});
+            this.grdPermissions.Size = new System.Drawing.Size(520, 160);
+            this.grdPermissions.TabIndex = 14;
+            this.grdPermissions.ViewCollection.AddRange(new DevExpress.XtraGrid.Views.Base.BaseView[] {
+            this.viewPermissions});
+            // 
+            // viewPermissions
+            // 
+            this.viewPermissions.Columns.AddRange(new DevExpress.XtraGrid.Columns.GridColumn[] {
+            this.colDescription,
+            this.colChecked});
+            this.viewPermissions.GridControl = this.grdPermissions;
+            this.viewPermissions.Name = "viewPermissions";
             this.viewPermissions.OptionsView.ShowGroupPanel = false;
+            // 
+            // colDescription
+            // 
             this.colDescription.FieldName = "Description";
+            this.colDescription.Name = "colDescription";
             this.colDescription.Visible = true;
             this.colDescription.VisibleIndex = 0;
             this.colDescription.Width = 350;
-            this.colChecked.FieldName = "IsChecked";
+            // 
+            // colChecked
+            // 
             this.colChecked.Caption = "Check?";
             this.colChecked.ColumnEdit = this.repositoryCheckPermission;
+            this.colChecked.FieldName = "IsChecked";
+            this.colChecked.Name = "colChecked";
             this.colChecked.Visible = true;
             this.colChecked.VisibleIndex = 1;
             this.colChecked.Width = 100;
-
-            // Buttons
-            this.btnCancel.Text = "Cancel";
-            this.btnCancel.Location = new System.Drawing.Point(900, 500);
-            this.btnCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-
-            this.btnSave.Text = "Save";
-            this.btnSave.Location = new System.Drawing.Point(990, 500);
+            // 
+            // repositoryCheckPermission
+            // 
+            this.repositoryCheckPermission.Name = "repositoryCheckPermission";
+            // 
+            // btnSave
+            // 
             this.btnSave.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnSave.Appearance.BackColor = System.Drawing.Color.FromArgb(98, 75, 255);
+            this.btnSave.Appearance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(98)))), ((int)(((byte)(75)))), ((int)(((byte)(255)))));
             this.btnSave.Appearance.ForeColor = System.Drawing.Color.White;
             this.btnSave.Appearance.Options.UseBackColor = true;
             this.btnSave.Appearance.Options.UseForeColor = true;
-
-            // Finalizing
+            this.btnSave.Location = new System.Drawing.Point(1799, 920);
+            this.btnSave.Name = "btnSave";
+            this.btnSave.Size = new System.Drawing.Size(80, 30);
+            this.btnSave.TabIndex = 15;
+            this.btnSave.Text = "Save";
+            // 
+            // btnCancel
+            // 
+            this.btnCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnCancel.Location = new System.Drawing.Point(1709, 920);
+            this.btnCancel.Name = "btnCancel";
+            this.btnCancel.Size = new System.Drawing.Size(80, 30);
+            this.btnCancel.TabIndex = 16;
+            this.btnCancel.Text = "Cancel";
+            // 
+            // UserDetailsPage
+            // 
             this.Controls.Add(this.contentPanel);
             this.Controls.Add(this.headerPanel);
+            this.Name = "UserDetailsPage";
+            this.Size = new System.Drawing.Size(1089, 580);
             ((System.ComponentModel.ISupportInitialize)(this.headerPanel)).EndInit();
             this.headerPanel.ResumeLayout(false);
+            this.headerPanel.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.contentPanel)).EndInit();
             this.contentPanel.ResumeLayout(false);
             this.contentPanel.PerformLayout();
@@ -252,6 +350,7 @@ namespace Autosoft_Licensing.UI.Pages
             ((System.ComponentModel.ISupportInitialize)(this.viewPermissions)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryCheckPermission)).EndInit();
             this.ResumeLayout(false);
+
         }
     }
 }
