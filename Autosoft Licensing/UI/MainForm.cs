@@ -5,135 +5,96 @@ using DevExpress.XtraEditors;
 using Autosoft_Licensing.Models;
 using Autosoft_Licensing.Services;
 using Autosoft_Licensing.UI.Pages;
-using System.Text;
 
 namespace Autosoft_Licensing
 {
     public partial class MainForm : XtraForm
     {
-        // Cache singletons per page element name
         private readonly Dictionary<string, PageBase> _pageCache = new Dictionary<string, PageBase>(StringComparer.OrdinalIgnoreCase);
-
-        // Currently logged-in user (set this from your login flow)
-        public User LoggedInUser { get; private set; }
-
-        // When true suppress modal message boxes (used by automated UI smoke tests)
+        private User _currentUser;
         private bool _suppressMessageBoxes = false;
 
         public MainForm()
         {
             InitializeComponent();
 
-            // REMOVE AFTER MANUAL TESTING:
-            // Force-load Manage User page with a dummy super admin to verify navigation and permissions quickly.
             try
             {
-                var dummyAdmin = new User
+                if (this.accordion != null)
                 {
-                    Id = 0,
-                    Username = "super_admin",
-                    DisplayName = "Super Administrator (Dummy)",
-                    Role = "Admin",
-                    PasswordHash = string.Empty,
-                    CreatedUtc = DateTime.UtcNow,
-                    IsActive = true,
-                    CanGenerateLicense = true,
-                    CanViewRecords = true,
-                    CanManageProduct = true,
-                    CanManageUsers = true
-                };
-
-                SetLoggedInUser(dummyAdmin);
-
-                // Ensure runtime UI exists
-                BuildAccordion();
-
-                // Navigate directly to Manage User
-                LoadPage("aceUserManagement", "User Management");
+                    this.accordion.Visible = false;
+                    this.accordion.Enabled = false;
+                }
             }
-            catch
-            {
-                // swallow to avoid impacting normal startup if runtime UI not yet available
-            }
+            catch { }
+
+            ShowLogin();
         }
+
+        public User LoggedInUser { get; private set; }
 
         public void SetLoggedInUser(User user)
         {
             LoggedInUser = user;
+            _currentUser = user;
             UpdateRoleVisibility();
         }
 
-        public void NavigateToDefaultPage()
+        private void ShowLogin()
         {
-            // Ensure runtime UI exists
-            if (this.accordion == null || this.contentPanel == null)
+            try
             {
-                this.BuildAccordion();
-            }
+                _currentUser = null;
+                LoggedInUser = null;
 
-            var navGroup = (accordion != null && accordion.Elements.Count > 0) ? accordion.Elements[0] : null;
-            if (navGroup == null) return;
-
-            foreach (var el in navGroup.Elements)
-            {
-                if (el == null) continue;
-
-                bool isAdminElement = string.Equals(el.Name, "aceUserManagement", StringComparison.OrdinalIgnoreCase)
-                                   || string.Equals(el.Name, "aceSettingsSecurity", StringComparison.OrdinalIgnoreCase);
-
-                if (isAdminElement && (LoggedInUser == null || !string.Equals(LoggedInUser.Role, "Admin", StringComparison.OrdinalIgnoreCase)))
-                    continue;
-
-                LoadPage(el.Name, el.Text);
-                return;
-            }
-        }
-
-        public void NavigateToElement(string elementName)
-        {
-            if (string.IsNullOrEmpty(elementName))
-                return;
-
-            // Ensure runtime UI exists
-            if (this.accordion == null || this.contentPanel == null)
-            {
-                this.BuildAccordion();
-            }
-
-            // Find element by name under the first nav group
-            var navGroup = (accordion.Elements.Count > 0) ? accordion.Elements[0] : null;
-            if (navGroup == null) return;
-
-            foreach (var el in navGroup.Elements)
-            {
-                if (el == null) continue;
-                if (string.Equals(el.Name, elementName, StringComparison.OrdinalIgnoreCase))
+                if (this.contentPanel == null)
                 {
-                    LoadPage(el.Name, el.Text);
-                    return;
+                    BuildAccordion();
+                }
+
+                contentPanel.Controls.Clear();
+
+                var login = new LoginPage();
+                login.Initialize(ServiceRegistry.Database, ServiceRegistry.Encryption);
+                login.InitializeForRole(null);
+
+                login.LoginSuccess += OnLoginSuccess;
+
+                contentPanel.Controls.Add(login);
+                login.Dock = DockStyle.Fill;
+            }
+            catch (Exception ex)
+            {
+                if (!_suppressMessageBoxes)
+                {
+                    XtraMessageBox.Show("Failed to show login: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }
 
-        public IReadOnlyList<(string Name, string Text)> GetNavigationElements()
+        private void OnLoginSuccess(object sender, User user)
         {
-            var list = new List<(string, string)>();
-
-            if (this.accordion == null || this.contentPanel == null)
+            try
             {
-                BuildAccordion();
+                _currentUser = user;
+                LoggedInUser = user;
+
+                string startPage = null;
+                if (user.CanGenerateLicense) startPage = "GenerateLicensePage";
+                else if (user.CanViewRecords) startPage = "LicenseRecordsPage";
+                else if (user.CanManageProduct) startPage = "ManageProductPage";
+                else if (user.CanManageUsers) startPage = "ManageUserPage";
+                else startPage = "LicenseRecordsPage";
+
+                LoadPage(startPage, startPage);
             }
-
-            var navGroup = (accordion.Elements.Count > 0) ? accordion.Elements[0] : null;
-            if (navGroup == null) return list;
-
-            foreach (var el in navGroup.Elements)
+            catch (Exception ex)
             {
-                if (el == null) continue;
-                list.Add((el.Name ?? string.Empty, el.Text ?? string.Empty));
+                if (!_suppressMessageBoxes)
+                {
+                    XtraMessageBox.Show("Login succeeded but navigation failed: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
             }
-
-            return list;
         }
 
         private void LoadPage(string elementName, string elementText)
@@ -141,80 +102,93 @@ namespace Autosoft_Licensing
             if (string.IsNullOrEmpty(elementName))
                 return;
 
-            // Ensure runtime UI exists (avoid NRE when called before form Load)
-            if (this.accordion == null || this.contentPanel == null)
+            if (this.contentPanel == null)
             {
-                this.BuildAccordion();
+                BuildAccordion();
             }
 
-            // Protect admin-only elements
-            if ((elementName.Equals("aceUserManagement", StringComparison.OrdinalIgnoreCase) ||
-                 elementName.Equals("aceSettingsSecurity", StringComparison.OrdinalIgnoreCase)) &&
-                 (LoggedInUser == null || !string.Equals(LoggedInUser.Role, "Admin", StringComparison.OrdinalIgnoreCase)))
-            {
-                if (!_suppressMessageBoxes)
-                {
-                    XtraMessageBox.Show("You do not have permission to access this page.", "Access denied", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                }
-                return;
-            }
+            string key = elementName;
+            if (elementName.Equals("aceManageProduct", StringComparison.OrdinalIgnoreCase))
+                key = "ManageProductPage";
+            else if (elementName.Equals("aceUserManagement", StringComparison.OrdinalIgnoreCase))
+                key = "ManageUserPage";
+            else if (elementName.Equals("aceLicenseList", StringComparison.OrdinalIgnoreCase))
+                key = "LicenseRecordsPage";
+            else if (elementName.Equals("aceGenerateRequest", StringComparison.OrdinalIgnoreCase) ||
+                     elementName.Equals("aceGenerateLicense", StringComparison.OrdinalIgnoreCase) ||
+                     elementName.Equals("btnNav_GenerateLicense", StringComparison.OrdinalIgnoreCase))
+                key = "GenerateLicensePage";
 
-            if (!_pageCache.TryGetValue(elementName, out var page))
+            if (!_pageCache.TryGetValue(key, out var page))
             {
-                switch (elementName)
+                switch (key)
                 {
-                    case "aceGenerateRequest":
-                    case "btnNav_GenerateLicense":
-                    case "aceGenerateLicense":
                     case "GenerateLicensePage":
-                        page = new GenerateLicensePage();
-                        break;
-
-                    case "aceLicenseList":
-                    case "btnNav_LicenseRecords":
-                    case "LicenseRecordsPage":
-                        page = new LicenseRecordsPage();
-                        if (page is LicenseRecordsPage recordsPage)
+                    {
+                        var p = new GenerateLicensePage();
+                        try
                         {
-                            recordsPage.NavigateRequested += OnPageNavigationRequested;
+                            p.Initialize(
+                                ServiceRegistry.ArlReader,
+                                ServiceRegistry.AslGenerator,
+                                ServiceRegistry.Product,
+                                ServiceRegistry.Database,
+                                ServiceRegistry.User);
                         }
+                        catch { }
+                        page = p;
                         break;
+                    }
+
+                    case "LicenseRecordsPage":
+                    {
+                        var p = new LicenseRecordsPage();
+                        try
+                        {
+                            p.Initialize(ServiceRegistry.Database, ServiceRegistry.User);
+                        }
+                        catch { }
+                        page = p;
+                        break;
+                    }
 
                     case "LicenseRecordDetailsPage":
                         page = new LicenseRecordDetailsPage();
-                        if (page is LicenseRecordDetailsPage detailsPage)
-                        {
-                            detailsPage.NavigateRequested += OnDetailsPageNavigationRequested;
-                        }
                         break;
 
-                    // NEW: Manage Product navigation
-                    case "aceManageProduct":
-                        page = new ManageProductPage();
-                        if (page is ManageProductPage managePage)
+                    case "ManageProductPage":
+                    {
+                        var p = new ManageProductPage();
+                        try
                         {
-                            // Initialize DB and wire navigation
-                            managePage.Initialize(ServiceRegistry.Database);
-                            managePage.NavigateRequested += OnManageProductNavigation;
+                            p.Initialize(ServiceRegistry.Database);
                         }
+                        catch { }
+                        page = p;
                         break;
+                    }
 
-                    // NEW: Manage User navigation
-                    case "aceUserManagement":
                     case "ManageUserPage":
-                        page = new ManageUserPage();
-                        if (page is ManageUserPage muPage)
+                    {
+                        var p = new ManageUserPage();
+                        try
                         {
-                            muPage.Initialize(ServiceRegistry.Database);
-                            muPage.NavigateRequested += OnUserNavigationRequested;
+                            p.Initialize(ServiceRegistry.Database);
                         }
+                        catch { }
+                        page = p;
                         break;
+                    }
 
                     default:
-                        page = new GenericPage(elementText ?? elementName);
+                        page = new GenericPage(elementText ?? key);
                         break;
                 }
-                _pageCache[elementName] = page;
+
+                // Use the custom NavigateEventArgs from pages (fully qualified to avoid ambiguity)
+                page.NavigateRequested += new EventHandler<Autosoft_Licensing.UI.Pages.NavigateEventArgs>(OnPageNavigate);
+
+                _pageCache[key] = page;
             }
 
             contentPanel.Controls.Clear();
@@ -223,7 +197,7 @@ namespace Autosoft_Licensing
 
             try
             {
-                page.InitializeForRole(LoggedInUser);
+                page.InitializeForRole(_currentUser);
             }
             catch (Exception ex)
             {
@@ -234,66 +208,22 @@ namespace Autosoft_Licensing
             }
         }
 
-        // Existing navigation handlers...
-        private void OnPageNavigationRequested(object sender, Autosoft_Licensing.UI.Pages.LicenseRecordsPage.NavigateEventArgs e)
+        // Match the delegate type: Autosoft_Licensing.UI.Pages.NavigateEventArgs
+        private void OnPageNavigate(object sender, Autosoft_Licensing.UI.Pages.NavigateEventArgs e)
         {
             try
             {
-                if (string.IsNullOrEmpty(e.TargetPage))
+                if (e == null || string.IsNullOrEmpty(e.TargetPage))
                     return;
 
-                switch (e.TargetPage)
+                if (string.Equals(e.TargetPage, "Logout", StringComparison.OrdinalIgnoreCase))
                 {
-                    case "LicenseRecordDetailsPage":
-                        if (e.LicenseId.HasValue)
-                        {
-                            if (!_pageCache.TryGetValue("LicenseRecordDetailsPage", out var page))
-                            {
-                                page = new LicenseRecordDetailsPage();
-                                if (page is LicenseRecordDetailsPage detailsPage)
-                                    detailsPage.NavigateRequested += OnDetailsPageNavigationRequested;
-
-                                _pageCache["LicenseRecordDetailsPage"] = page;
-                            }
-
-                            if (page is LicenseRecordDetailsPage detailsPageToInit)
-                                detailsPageToInit.Initialize(e.LicenseId.Value);
-
-                            contentPanel.Controls.Clear();
-                            page.Dock = DockStyle.Fill;
-                            contentPanel.Controls.Add(page);
-                            page.InitializeForRole(LoggedInUser);
-                        }
-                        break;
-
-                    case "GenerateLicensePage":
-                        LoadPage("GenerateLicensePage", "Generate License");
-                        break;
-
-                    case "LicenseRecordsPage":
-                        LoadPage("LicenseRecordsPage", "License Records");
-                        break;
-
-                    default:
-                        LoadPage(e.TargetPage, e.TargetPage);
-                        break;
-                }
-            }
-            catch (Exception ex)
-            {
-                if (!_suppressMessageBoxes)
-                {
-                    XtraMessageBox.Show($"Navigation failed: {ex.Message}", "Navigation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            }
-        }
-
-        private void OnDetailsPageNavigationRequested(object sender, LicenseRecordDetailsPage.NavigateEventArgs e)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(e.TargetPage))
+                    _currentUser = null;
+                    LoggedInUser = null;
+                    _pageCache.Clear();
+                    ShowLogin();
                     return;
+                }
 
                 LoadPage(e.TargetPage, e.TargetPage);
             }
@@ -310,282 +240,13 @@ namespace Autosoft_Licensing
         {
             try
             {
-                if (accordion == null) return;
-
-                var navGroup = (accordion.Elements.Count > 0) ? accordion.Elements[0] : null;
-                if (navGroup == null) return;
-
-                // Switch to granular permissions: hide all when no user
-                if (LoggedInUser == null)
+                if (this.accordion != null)
                 {
-                    foreach (var el in navGroup.Elements)
-                    {
-                        if (el == null || string.IsNullOrEmpty(el.Name)) continue;
-                        if (el.Name.Equals("aceGenerateRequest", StringComparison.OrdinalIgnoreCase) ||
-                            el.Name.Equals("aceLicenseList", StringComparison.OrdinalIgnoreCase) ||
-                            el.Name.Equals("aceManageProduct", StringComparison.OrdinalIgnoreCase) ||
-                            el.Name.Equals("aceUserManagement", StringComparison.OrdinalIgnoreCase) ||
-                            el.Name.Equals("aceSettingsSecurity", StringComparison.OrdinalIgnoreCase))
-                        {
-                            el.Visible = false;
-                        }
-                    }
-                    return;
-                }
-
-                // Granular user flags
-                bool canGenerate = LoggedInUser.CanGenerateLicense;
-                bool canViewRecords = LoggedInUser.CanViewRecords;
-                bool canManageProduct = LoggedInUser.CanManageProduct;
-                bool canManageUsers = LoggedInUser.CanManageUsers;
-
-                foreach (var el in navGroup.Elements)
-                {
-                    if (el == null || string.IsNullOrEmpty(el.Name)) continue;
-
-                    if (el.Name.Equals("aceGenerateRequest", StringComparison.OrdinalIgnoreCase))
-                        el.Visible = canGenerate;
-                    else if (el.Name.Equals("aceLicenseList", StringComparison.OrdinalIgnoreCase))
-                        el.Visible = canViewRecords;
-                    else if (el.Name.Equals("aceManageProduct", StringComparison.OrdinalIgnoreCase))
-                        el.Visible = canManageProduct;
-                    else if (el.Name.Equals("aceUserManagement", StringComparison.OrdinalIgnoreCase))
-                        el.Visible = canManageUsers;
-                    else if (el.Name.Equals("aceSettingsSecurity", StringComparison.OrdinalIgnoreCase))
-                        el.Visible = false; // keep hidden unless explicitly needed; footer label can still show "Admin" text if used elsewhere
-                    // All other elements unchanged
+                    this.accordion.Visible = false;
+                    this.accordion.Enabled = false;
                 }
             }
-            catch
-            {
-                // best-effort; do not throw from UI update
-            }
+            catch { }
         }
-
-        private void navList_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            // TODO: swap content based on selected item.
-            // This stub resolves the missing handler compile error.
-        }
-
-        public (bool Success, string Message) RunUiSmokeTest()
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine("Starting UI smoke test...");
-
-            try
-            {
-                if (this.accordion == null || this.contentPanel == null)
-                {
-                    BuildAccordion();
-                }
-
-                if (accordion == null || contentPanel == null)
-                {
-                    return (false, "Failed to construct navigation or content host controls.");
-                }
-
-                _suppressMessageBoxes = true;
-
-                var navGroup = (accordion.Elements.Count > 0) ? accordion.Elements[0] : null;
-                if (navGroup == null)
-                {
-                    _suppressMessageBoxes = false;
-                    return (false, "No navigation group found in accordion.");
-                }
-
-                sb.AppendLine($"Found navigation group '{navGroup.Text}' with {navGroup.Elements.Count} elements.");
-
-                var seenInstances = new Dictionary<string, PageBase>(StringComparer.OrdinalIgnoreCase);
-
-                foreach (var el in navGroup.Elements)
-                {
-                    if (el == null) continue;
-                    var name = el.Name ?? string.Empty;
-                    var text = el.Text ?? name;
-
-                    sb.AppendLine($"- Checking element: Name='{name}', Text='{text}'");
-
-                    bool isAdminElement = name.Equals("aceUserManagement", StringComparison.OrdinalIgnoreCase) ||
-                                          name.Equals("aceSettingsSecurity", StringComparison.OrdinalIgnoreCase);
-
-                    var savedUser = this.LoggedInUser;
-                    this.LoggedInUser = null;
-                    UpdateRoleVisibility();
-
-                    try
-                    {
-                        LoadPage(name, text);
-                    }
-                    catch (Exception ex)
-                    {
-                        this.LoggedInUser = savedUser;
-                        UpdateRoleVisibility();
-                        _suppressMessageBoxes = false;
-                        return (false, $"Exception while loading page '{name}': {ex.Message}");
-                    }
-
-                    if (isAdminElement)
-                    {
-                        if (_pageCache.ContainsKey(name))
-                        {
-                            this.LoggedInUser = savedUser;
-                            UpdateRoleVisibility();
-                            _suppressMessageBoxes = false;
-                            return (false, $"Admin element '{name}' should not be accessible when no user is set, but it was created in cache.");
-                        }
-                        sb.AppendLine($"  -> Admin element '{name}' correctly blocked when no user is set.");
-                    }
-                    else
-                    {
-                        if (!_pageCache.TryGetValue(name, out var createdPage) || createdPage == null)
-                        {
-                            this.LoggedInUser = savedUser;
-                            UpdateRoleVisibility();
-                            _suppressMessageBoxes = false;
-                            return (false, $"Element '{name}' did not create a cached page instance.");
-                        }
-
-                        var displayed = contentPanel.Controls.Count > 0 ? contentPanel.Controls[0] as PageBase : null;
-                        if (displayed == null)
-                        {
-                            this.LoggedInUser = savedUser;
-                            UpdateRoleVisibility();
-                            _suppressMessageBoxes = false;
-                            return (false, $"Element '{name}' did not display a PageBase-derived control in the content panel.");
-                        }
-
-                        if (!object.ReferenceEquals(displayed, createdPage))
-                        {
-                            this.LoggedInUser = savedUser;
-                            UpdateRoleVisibility();
-                            _suppressMessageBoxes = false;
-                            return (false, $"Element '{name}' displayed a control that is not the cached instance.");
-                        }
-
-                        LoadPage(name, text);
-                        var displayedAgain = contentPanel.Controls.Count > 0 ? contentPanel.Controls[0] as PageBase : null;
-
-                        if (!object.ReferenceEquals(displayedAgain, createdPage))
-                        {
-                            this.LoggedInUser = savedUser;
-                            UpdateRoleVisibility();
-                            _suppressMessageBoxes = false;
-                            return (false, $"Element '{name}' did not reuse the same page instance on repeated navigation.");
-                        }
-
-                        seenInstances[name] = createdPage;
-                        sb.AppendLine($"  -> '{name}' loaded and reused instance (Type={createdPage.GetType().Name}).");
-                    }
-
-                    this.LoggedInUser = savedUser;
-                    UpdateRoleVisibility();
-                }
-
-                sb.AppendLine($"UI smoke test completed. Pages created: {seenInstances.Count} (non-admin).");
-                _suppressMessageBoxes = false;
-                return (true, sb.ToString());
-            }
-            catch (Exception ex)
-            {
-                _suppressMessageBoxes = false;
-                return (false, "UI smoke test failed: " + ex.Message + "\n\n" + ex.StackTrace);
-            }
-        }
-
-        // NEW: Handle navigation events from ManageProductPage
-        private void OnManageProductNavigation(object sender, ManageProductPage.NavigateEventArgs e)
-        {
-            try
-            {
-                if (e == null || string.IsNullOrEmpty(e.TargetPage))
-                    return;
-
-                if (string.Equals(e.TargetPage, "ProductDetailsPage", StringComparison.OrdinalIgnoreCase))
-                {
-                    var details = new ProductDetailsPage();
-                    // Initialize with provided product id (null => create mode)
-                    details.Initialize(e.ProductId, null, null);
-                    details.NavigateBackRequested += OnProductDetailsBack;
-
-                    ShowPage(details);
-                    details.InitializeForRole(LoggedInUser);
-                }
-                else
-                {
-                    LoadPage(e.TargetPage, e.TargetPage);
-                }
-            }
-            catch (Exception ex)
-            {
-                if (!_suppressMessageBoxes)
-                {
-                    XtraMessageBox.Show($"Navigation failed: {ex.Message}", "Navigation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            }
-        }
-
-        // NEW: Handle back from ProductDetailsPage
-        private void OnProductDetailsBack(object sender, ProductDetailsPage.NavigateBackEventArgs e)
-        {
-            try
-            {
-                // Reload Manage Product page to refresh grid
-                LoadPage("aceManageProduct", "Manage Product");
-
-                if (e != null && e.Saved && !_suppressMessageBoxes)
-                {
-                    XtraMessageBox.Show("Product saved successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
-            }
-            catch (Exception ex)
-            {
-                if (!_suppressMessageBoxes)
-                {
-                    XtraMessageBox.Show($"Navigation failed: {ex.Message}", "Navigation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            }
-        }
-
-        // NEW: Handle navigation events from ManageUserPage
-        private void OnUserNavigationRequested(object sender, ManageUserPage.NavigateEventArgs e)
-        {
-            try
-            {
-                if (e == null || string.IsNullOrEmpty(e.TargetPage))
-                    return;
-
-                if (string.Equals(e.TargetPage, "UserDetailsPage", StringComparison.OrdinalIgnoreCase))
-                {
-                    var detailsPage = new UserDetailsPage();
-
-                    // Initialize with optional user id (null => create mode).
-                    // Signature available: Initialize(int? userId) [resolves services], or DI overload.
-                    detailsPage.Initialize(e.UserId);
-
-                    // When details page requests navigating back, reload the Manage User page (refresh list)
-                    detailsPage.NavigateBackRequested += (s, args2) =>
-                    {
-                        LoadPage("aceUserManagement", "User Management");
-                    };
-
-                    ShowPage(detailsPage);
-                    detailsPage.InitializeForRole(LoggedInUser);
-                }
-                else
-                {
-                    LoadPage(e.TargetPage, e.TargetPage);
-                }
-            }
-            catch (Exception ex)
-            {
-                if (!_suppressMessageBoxes)
-                {
-                    XtraMessageBox.Show($"Navigation failed: {ex.Message}", "Navigation Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            }
-        }
-
-        // Placeholder...
     }
 }

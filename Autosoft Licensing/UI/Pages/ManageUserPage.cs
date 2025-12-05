@@ -79,13 +79,20 @@ namespace Autosoft_Licensing.UI.Pages
             {
                 if (!DesignMode)
                 {
-                    try { _dbService ??= ServiceRegistry.Database; } catch { }
+                    try { if (_dbService == null) _dbService = ServiceRegistry.Database; } catch { }
 
                     // Wire actions
                     btnCreate.Click += btnCreate_Click;
                     btnView.Click += btnView_Click;
                     btnEdit.Click += btnEdit_Click;
                     btnDelete.Click += btnDelete_Click;
+
+                    // Navigation buttons
+                    if (btnNav_GenerateLicense != null) btnNav_GenerateLicense.Click += (s, e) => FireNavigate("GenerateLicensePage");
+                    if (btnNav_LicenseRecords != null) btnNav_LicenseRecords.Click += (s, e) => FireNavigate("LicenseRecordsPage");
+                    if (btnNav_ManageProduct != null) btnNav_ManageProduct.Click += (s, e) => FireNavigate("ManageProductPage");
+                    if (btnNav_ManageUser != null) btnNav_ManageUser.Click += (s, e) => FireNavigate("ManageUserPage");
+                    if (btnNavLogoutText != null) btnNavLogoutText.Click += (s, e) => FireNavigate("Logout");
 
                     // Grid setup (read-only)
                     var view = grdUsers.MainView as GridView;
@@ -123,6 +130,12 @@ namespace Autosoft_Licensing.UI.Pages
                 btnEdit.Enabled = canManage;
                 btnDelete.Enabled = canManage;
                 btnView.Enabled = true;
+
+                if (btnNav_GenerateLicense != null) btnNav_GenerateLicense.Visible = user?.CanGenerateLicense ?? false;
+                if (btnNav_LicenseRecords != null) btnNav_LicenseRecords.Visible = user?.CanViewRecords ?? false;
+                if (btnNav_ManageProduct != null) btnNav_ManageProduct.Visible = user?.CanManageProduct ?? false;
+                if (btnNav_ManageUser != null) btnNav_ManageUser.Visible = user?.CanManageUsers ?? false;
+                if (btnNavLogoutText != null) btnNavLogoutText.Visible = true;
             }
             catch { /* ignore */ }
         }

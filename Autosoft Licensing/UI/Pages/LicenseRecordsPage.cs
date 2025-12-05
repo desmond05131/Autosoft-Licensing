@@ -64,8 +64,8 @@ namespace Autosoft_Licensing.UI.Pages
                 if (!DesignMode)
                 {
                     // Wire services from ServiceRegistry (best-effort)
-                    try { _dbService ??= ServiceRegistry.Database; } catch { }
-                    try { _userService ??= ServiceRegistry.User; } catch { }
+                    try { if (_dbService == null) _dbService = ServiceRegistry.Database; } catch { }
+                    try { if (_userService == null) _userService = ServiceRegistry.User; } catch { }
 
                     // Initialize filter combos
                     InitializeFilterCombos();
@@ -88,6 +88,13 @@ namespace Autosoft_Licensing.UI.Pages
 
                     // Initial data load
                     RefreshData();
+
+                    // Navigation buttons
+                    if (btnNav_GenerateLicense != null) btnNav_GenerateLicense.Click += (s, e) => FireNavigate("GenerateLicensePage");
+                    if (btnNav_LicenseRecords != null) btnNav_LicenseRecords.Click += (s, e) => FireNavigate("LicenseRecordsPage");
+                    if (btnNav_ManageProduct != null) btnNav_ManageProduct.Click += (s, e) => FireNavigate("ManageProductPage");
+                    if (btnNav_ManageUser != null) btnNav_ManageUser.Click += (s, e) => FireNavigate("ManageUserPage");
+                    if (btnNavLogoutText != null) btnNavLogoutText.Click += (s, e) => FireNavigate("Logout");
                 }
             }
             catch (Exception ex)
@@ -590,7 +597,13 @@ namespace Autosoft_Licensing.UI.Pages
                 btnCreate.Enabled = isAdmin;
                 btnEdit.Enabled = isAdmin;
                 btnDelete.Enabled = isAdmin;
-                btnView.Enabled = true; // All roles can view
+                btnView.Enabled = true;
+
+                if (btnNav_GenerateLicense != null) btnNav_GenerateLicense.Visible = user.CanGenerateLicense;
+                if (btnNav_LicenseRecords != null) btnNav_LicenseRecords.Visible = user.CanViewRecords;
+                if (btnNav_ManageProduct != null) btnNav_ManageProduct.Visible = user.CanManageProduct;
+                if (btnNav_ManageUser != null) btnNav_ManageUser.Visible = user.CanManageUsers;
+                if (btnNavLogoutText != null) btnNavLogoutText.Visible = true;
             }
             catch { }
         }

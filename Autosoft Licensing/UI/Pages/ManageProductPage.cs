@@ -115,7 +115,14 @@ namespace Autosoft_Licensing.UI.Pages
                         chkShowDeleted.CheckedChanged += (s, e) => RefreshData();
 
                     // Initial load
+                    // Initial load
                     RefreshData();
+
+                    if (btnNav_GenerateLicense != null) btnNav_GenerateLicense.Click += (s, e) => FireNavigate("GenerateLicensePage");
+                    if (btnNav_LicenseRecords != null) btnNav_LicenseRecords.Click += (s, e) => FireNavigate("LicenseRecordsPage");
+                    if (btnNav_ManageProduct != null) btnNav_ManageProduct.Click += (s, e) => FireNavigate("ManageProductPage");
+                    if (btnNav_ManageUser != null) btnNav_ManageUser.Click += (s, e) => FireNavigate("ManageUserPage");
+                    if (btnNavLogoutText != null) btnNavLogoutText.Click += (s, e) => FireNavigate("Logout");
                 }
             }
             catch (Exception ex)
@@ -133,10 +140,8 @@ namespace Autosoft_Licensing.UI.Pages
         {
             try
             {
-                if (user == null)
-                    return;
+                if (user == null) return;
 
-                // Allow Admin (and optional "ProductManager") to modify
                 var role = user.Role ?? string.Empty;
                 bool canEdit = role.Equals("Admin", StringComparison.OrdinalIgnoreCase)
                                || role.Equals("ProductManager", StringComparison.OrdinalIgnoreCase);
@@ -145,8 +150,14 @@ namespace Autosoft_Licensing.UI.Pages
                 btnEdit.Enabled = canEdit;
                 btnDelete.Enabled = canEdit;
                 btnView.Enabled = true;
+
+                if (btnNav_GenerateLicense != null) btnNav_GenerateLicense.Visible = user.CanGenerateLicense;
+                if (btnNav_LicenseRecords != null) btnNav_LicenseRecords.Visible = user.CanViewRecords;
+                if (btnNav_ManageProduct != null) btnNav_ManageProduct.Visible = user.CanManageProduct;
+                if (btnNav_ManageUser != null) btnNav_ManageUser.Visible = user.CanManageUsers;
+                if (btnNavLogoutText != null) btnNavLogoutText.Visible = true;
             }
-            catch { /* ignore */ }
+            catch { }
         }
 
         private void RefreshData()

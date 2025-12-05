@@ -48,10 +48,10 @@ namespace Autosoft_Licensing.UI.Pages
                 if (!DesignMode)
                 {
                     // Wire services from ServiceRegistry (best-effort)
-                    try { _dbService ??= ServiceRegistry.Database; } catch { }
-                    try { _productService ??= ServiceRegistry.Product; } catch { }
-                    try { _encryptionService ??= ServiceRegistry.Encryption; } catch { }
-                    try { _fileService ??= ServiceRegistry.File; } catch { }
+                    try { if (_dbService == null) _dbService = ServiceRegistry.Database; } catch { }
+                    try { if (_productService == null) _productService = ServiceRegistry.Product; } catch { }
+                    try { if (_encryptionService == null) _encryptionService = ServiceRegistry.Encryption; } catch { }
+                    try { if (_fileService == null) _fileService = ServiceRegistry.File; } catch { }
 
                     // Wire event handlers
                     btnBack.Click += btnBack_Click;

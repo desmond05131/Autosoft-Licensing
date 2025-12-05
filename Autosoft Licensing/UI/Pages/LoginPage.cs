@@ -23,6 +23,7 @@ NOTES / TODOs:
 */
 
 using System;
+using System.Text;
 using System.Windows.Forms;
 using DevExpress.XtraEditors;
 using Autosoft_Licensing.Models;
@@ -32,6 +33,12 @@ namespace Autosoft_Licensing.UI.Pages
 {
     public partial class LoginPage : PageBase
     {
+        private ILicenseDatabaseService _db;
+        private IEncryptionService _crypto;
+
+        // Raised when login succeeds; the MainForm should subscribe to transition to the app shell
+        public event EventHandler<User> LoginSuccess;
+
         public LoginPage()
         {
             // Disable DevExpress default look-and-feel BEFORE control creation so skins cannot repaint over
@@ -53,6 +60,13 @@ namespace Autosoft_Licensing.UI.Pages
             // Wire events explicitly (designer wires Load and others)
             if (btnLogin != null)
                 btnLogin.Click += btnLogin_Click;
+        }
+
+        // ACTION 1: Inject ILicenseDatabaseService and IEncryptionService via Initialize()
+        public void Initialize(ILicenseDatabaseService db, IEncryptionService crypto)
+        {
+            _db = db ?? throw new ArgumentNullException(nameof(db));
+            _crypto = crypto ?? throw new ArgumentNullException(nameof(crypto));
         }
 
         private void btnLogin_Click(object sender, EventArgs e)
@@ -79,62 +93,49 @@ namespace Autosoft_Licensing.UI.Pages
 
             try
             {
-                // TODO: Replace ServiceRegistry usage with constructor-injected IUserService.
-                var userService = ServiceRegistry.User;
-
-                // Call into IUserService. This method is expected to perform proper hashing, salting, etc.
-                var authOk = userService.ValidateCredentials(username, password);
-
-                if (!authOk)
+                if (_db == null || _crypto == null)
                 {
-                    // Exact string required by UI guide for invalid credentials (local inline).
-                    lblError.Text = "Invalid username or password.";
-                    lblError.Visible = true;
-                    return;
-                }
-
-                // Load full user record and propagate to host (main form / context).
-                var user = ServiceRegistry.Database.GetUserByUsername(username);
-                if (user == null)
-                {
-                    // Unexpected: user validated but record not found. Surface generic failure.
                     lblError.Text = "Login failed, contact admin.";
                     lblError.Visible = true;
                     return;
                 }
 
-                // Propagate authenticated user to the host MainForm and navigate to default page.
-                var parentForm = this.FindForm() as MainForm;
-                if (parentForm != null)
+                // Fetch user and ensure it exists and is active
+                var user = _db.GetUserByUsername(username);
+                if (user == null || !user.IsActive)
                 {
-                    try
-                    {
-                        parentForm.SetLoggedInUser(user);
-
-                        // Use the MainForm.NavigateToDefaultPage implemented in MainForm.cs
-                        parentForm.NavigateToDefaultPage();
-                    }
-                    catch
-                    {
-                        // Surface a safe, generic message to the end user.
-                        lblError.Text = "Login failed, contact admin.";
-                        lblError.Visible = true;
-                    }
+                    lblError.Text = "Invalid username or password.";
+                    lblError.Visible = true;
+                    return;
                 }
-                else
+
+                // Verify password using SHA256 hex of UTF8 password text
+                var inputBytes = Encoding.UTF8.GetBytes(password);
+                var inputHash = _crypto.ComputeSha256Hex(inputBytes);
+
+                if (!string.Equals(inputHash, user.PasswordHash, StringComparison.OrdinalIgnoreCase))
                 {
-                    // Host not found (e.g., when hosted differently). Show friendly info and leave TODO.
-                    lblError.Text = "Login succeeded but application host not found.";
+                    lblError.Text = "Invalid username or password.";
+                    lblError.Visible = true;
+                    return;
+                }
+
+                // Success: notify host shell
+                try
+                {
+                    LoginSuccess?.Invoke(this, user);
+                }
+                catch
+                {
+                    // Surface a safe, generic message to the end user.
+                    lblError.Text = "Login failed, contact admin.";
                     lblError.Visible = true;
                 }
             }
             catch (Exception)
             {
-                // Do not reveal internal details; show a safe, support-directed message.
                 lblError.Text = "Login failed, contact admin.";
                 lblError.Visible = true;
-
-                // TODO: log exception details using application logging (not shown in UI).
             }
         }
 

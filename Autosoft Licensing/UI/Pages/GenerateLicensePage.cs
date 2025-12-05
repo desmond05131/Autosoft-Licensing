@@ -49,6 +49,17 @@ namespace Autosoft_Licensing.UI.Pages
         public GenerateLicensePage()
         {
             InitializeComponent();
+            try
+            {
+                // Wire top nav
+                if (btnNav_GenerateLicense != null) btnNav_GenerateLicense.Click += (s, e) => FireNavigate("GenerateLicensePage");
+                if (btnNav_LicenseRecords != null) btnNav_LicenseRecords.Click += (s, e) => FireNavigate("LicenseRecordsPage");
+                if (btnNav_ManageProduct != null) btnNav_ManageProduct.Click += (s, e) => FireNavigate("ManageProductPage");
+                if (btnNav_ManageUser != null) btnNav_ManageUser.Click += (s, e) => FireNavigate("ManageUserPage");
+                if (btnNavLogoutText != null) btnNavLogoutText.Click += (s, e) => FireNavigate("Logout");
+                if (pnlNavLogout != null) pnlNavLogout.Click += (s, e) => FireNavigate("Logout");
+            }
+            catch { }
 
             try
             {
@@ -88,18 +99,18 @@ namespace Autosoft_Licensing.UI.Pages
                     btnDownload.Enabled = false;
 
                     // Best-effort ServiceRegistry wiring (omitted here for brevity; unchanged)
-                    try { _arlReader ??= ServiceRegistry.ArlReader; } catch { }
-                    try { _aslService ??= ServiceRegistry.AslGenerator; } catch { }
-                    try { _productService ??= ServiceRegistry.Product; } catch { }
+                    try { if (_arlReader == null) _arlReader = ServiceRegistry.ArlReader; } catch { }
+                    try { if (_aslService == null) _aslService = ServiceRegistry.AslGenerator; } catch { }
+                    try { if (_productService == null) _productService = ServiceRegistry.Product; } catch { }
                     try
                     {
-                        _dbService ??= ServiceRegistry.Database;
+                        if (_dbService == null) _dbService = ServiceRegistry.Database;
                     }
                     catch
                     {
                         try
                         {
-                            var memDb = new InMemoryLicenseDatabaseService();
+                            var memDb = new Autosoft_Licensing.Tools.InMemoryLicenseDatabaseService();
                             ServiceRegistry.Database = memDb;
                             _dbService = memDb;
                         }
@@ -108,7 +119,7 @@ namespace Autosoft_Licensing.UI.Pages
                             _dbService = null;
                         }
                     }
-                    try { _userService ??= ServiceRegistry.User; } catch { }
+                    try { if (_userService == null) _userService = ServiceRegistry.User; } catch { }
 
                     // Ensure modules grid is editable
                     try

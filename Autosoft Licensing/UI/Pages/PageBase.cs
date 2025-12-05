@@ -16,6 +16,9 @@ namespace Autosoft_Licensing.UI.Pages
     {
         private static bool _threadExceptionHooked = false;
 
+        // Shared navigation event for all pages
+        public event EventHandler<NavigateEventArgs> NavigateRequested;
+
         public PageBase()
         {
             // Protect design-time: any code that might access runtime-only services should be avoided here.
@@ -148,5 +151,25 @@ namespace Autosoft_Licensing.UI.Pages
         {
             // no-op by default
         }
+
+        // Helper to raise navigation requests from any page
+        protected void FireNavigate(string target)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(target)) return;
+                NavigateRequested?.Invoke(this, new NavigateEventArgs { TargetPage = target });
+            }
+            catch
+            {
+                // ignore
+            }
+        }
+    }
+
+    // Unified NavigateEventArgs for page-to-shell navigation
+    public class NavigateEventArgs : EventArgs
+    {
+        public string TargetPage { get; set; }
     }
 }
