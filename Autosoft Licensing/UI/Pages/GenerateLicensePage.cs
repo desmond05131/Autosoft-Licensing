@@ -264,6 +264,9 @@ namespace Autosoft_Licensing.UI.Pages
                 btnGenerateKey.Enabled = true;
                 btnPreview.Enabled = false;
                 btnDownload.Enabled = false;
+
+                // Auto-trigger key generation so admin doesn't have to click
+                GenerateKey();
             }
             catch (Exception)
             {
