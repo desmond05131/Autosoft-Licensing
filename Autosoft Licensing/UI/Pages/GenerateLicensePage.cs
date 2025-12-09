@@ -329,69 +329,73 @@ namespace Autosoft_Licensing.UI.Pages
 
         private void btnGenerateKey_Click(object sender, EventArgs e)
         {
+            GenerateKey();
+        }
+
+        private void GenerateKey()
+        {
             try
             {
-                if (_currentRequest == null || string.IsNullOrWhiteSpace(txtCompanyName.Text) || string.IsNullOrWhiteSpace(txtProductId.Text))
+                // Validate basic fields
+                var company = txtCompanyName?.Text?.Trim();
+                var productId = txtProductId?.Text?.Trim();
+                if (string.IsNullOrWhiteSpace(company) || string.IsNullOrWhiteSpace(productId))
                 {
-                    ShowError("Invalid license request file.");
+                    ShowError("Please upload a valid request or fill in Company and Product ID.");
                     return;
                 }
 
-                var company = txtCompanyName.Text.Trim();
-                var product = txtProductId.Text.Trim();
-                var issueLocal = dtIssueDate.DateTime.Date;
-                var expireLocal = dtExpireDate.DateTime.Date;
+                // Read dates (local -> utc)
+                var issueLocal = dtIssueDate?.DateTime ?? DateTime.Now.Date;
+                var expireLocal = dtExpireDate?.DateTime ?? issueLocal.AddMonths(1);
+                var validFromUtc = ToUtc(issueLocal);
+                var validToUtc = ToUtc(expireLocal);
 
-                if (expireLocal < issueLocal)
+                // Duplicate check (must ignore deleted — handled in Database service)
+                if (_dbService != null && _dbService.ExistsDuplicateLicense(company, productId, validFromUtc, validToUtc))
                 {
-                    ShowError("Operation failed. Contact admin.");
+                    // prevent generation when an active/valid duplicate exists
+                    txtLicenseKey.Text = string.Empty;
+                    ShowError("A license with the same Company, Product and dates already exists.");
+                    // Keep Preview/Download disabled
+                    btnPreview.Enabled = false;
+                    btnDownload.Enabled = false;
                     return;
                 }
 
-                var issueUtc = ToUtc(issueLocal);
-                var expireUtc = ToUtc(expireLocal);
-
-                if (_dbService != null && _dbService.ExistsDuplicateLicense(company, product, issueUtc, expireUtc))
-                {
-                    ShowError("Duplicate license exists for same Company, Product, IssueDate and ExpiryDate.");
-                    return;
-                }
-
+                // Generate a 32-char key (current skeleton behavior aligns with tests)
+                // Prefer ServiceRegistry.KeyGenerator if available; else fallback to GUID-based format
+                string key = null;
                 try
                 {
-                    if (_aslService == null) throw new InvalidOperationException("ASL generator service not initialized.");
-
-                    _currentPayload = new AslPayload
-                    {
-                        LicenseKey = Guid.NewGuid().ToString("N").ToUpper().Substring(0, 32),
-                        CompanyName = txtCompanyName.Text.Trim(),
-                        ProductID = txtProductId.Text.Trim(),
-                        DealerCode = _currentRequest?.DealerCode,
-                        ValidFromUtc = ToUtc(dtIssueDate.DateTime.Date),
-                        ValidToUtc = ToUtc(dtExpireDate.DateTime.Date),
-                        ModuleCodes = GetSelectedModuleCodes(),
-                        LicenseType = rgLicenseType.Properties.Items[rgLicenseType.SelectedIndex].Value?.ToString()
-                    };
-
-                    txtLicenseKey.Text = _currentPayload.LicenseKey ?? string.Empty;
-
-                    btnPreview.Enabled = true;
-                    btnDownload.Enabled = true;
-                }
-                catch (ValidationException vx)
-                {
-                    ShowError(vx.Message);
-                    return;
+                    if (ServiceRegistry.KeyGenerator != null)
+                        key = ServiceRegistry.KeyGenerator.GenerateKey(company, productId);
                 }
                 catch
                 {
-                    ShowError("Operation failed. Contact admin.");
-                    return;
+                    // fall back below
                 }
+
+                if (string.IsNullOrWhiteSpace(key))
+                {
+                    // GUID-based deterministic-friendly 32 hex chars (without dashes), as used by tests
+                    key = Guid.NewGuid().ToString("N");
+                }
+
+                txtLicenseKey.Text = key;
+
+                // Enable preview & download immediately after generation
+                btnPreview.Enabled = true;
+                btnDownload.Enabled = true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                ShowError("Operation failed. Contact admin.");
+                ShowError("Failed to generate license key.");
+                System.Diagnostics.Debug.WriteLine($"GenerateKey error: {ex}");
+                // Ensure fields/buttons are in a safe state
+                txtLicenseKey.Text = string.Empty;
+                btnPreview.Enabled = false;
+                btnDownload.Enabled = false;
             }
         }
 

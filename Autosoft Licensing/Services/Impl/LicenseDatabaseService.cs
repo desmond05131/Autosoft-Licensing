@@ -265,6 +265,7 @@ VALUES (@ProductId, @ModuleCode, @Name, @Description, @IsActive);", conn, tx);
             using var tx = conn.BeginTransaction();
             try
             {
+                // 1. Update Product Details
                 using (var cmd = new SqlCommand(@"
 UPDATE dbo.Products
 SET ProductID = @ProductID,
@@ -283,24 +284,87 @@ WHERE Id = @Id;", conn, tx))
                     cmd.ExecuteNonQuery();
                 }
 
-                // Synchronize modules: delete all then insert current list
-                using (var del = new SqlCommand("DELETE FROM dbo.Modules WHERE ProductId = @pid;", conn, tx))
+                // 2. Fetch existing modules to map Code -> Id
+                var dbModules = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                using (var cmd = new SqlCommand("SELECT Id, ModuleCode FROM dbo.Modules WHERE ProductId = @pid;", conn, tx))
                 {
-                    del.Parameters.AddWithValue("@pid", product.Id);
-                    del.ExecuteNonQuery();
+                    cmd.Parameters.AddWithValue("@pid", product.Id);
+                    using (var r = cmd.ExecuteReader())
+                    {
+                        while (r.Read())
+                        {
+                            var mid = r.GetInt32(0);
+                            var mcode = r.GetString(1);
+                            if (!dbModules.ContainsKey(mcode)) dbModules[mcode] = mid;
+                        }
+                    }
                 }
+
+                // 3. Upsert (Update or Insert)
+                var incomingCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
                 foreach (var m in product.Modules ?? new List<Module>())
                 {
-                    using var ins = new SqlCommand(@"
+                    // Normalize nulls to avoid PK/UK violations on ModuleCode
+                    var moduleCode = m.ModuleCode ?? string.Empty;
+                    incomingCodes.Add(moduleCode);
+
+                    if (dbModules.TryGetValue(moduleCode, out int existingId))
+                    {
+                        // UPDATE existing module by Id
+                        using (var up = new SqlCommand(@"
+UPDATE dbo.Modules 
+SET Name = @Name, Description = @Description, IsActive = @IsActive 
+WHERE Id = @Id;", conn, tx))
+                        {
+                            up.Parameters.AddWithValue("@Id", existingId);
+                            up.Parameters.AddWithValue("@Name", (object)m.Name ?? DBNull.Value);
+                            up.Parameters.AddWithValue("@Description", (object)m.Description ?? DBNull.Value);
+                            up.Parameters.AddWithValue("@IsActive", m.IsActive);
+                            up.ExecuteNonQuery();
+                        }
+                    }
+                    else
+                    {
+                        // INSERT new module
+                        using (var ins = new SqlCommand(@"
 INSERT INTO dbo.Modules (ProductId, ModuleCode, Name, Description, IsActive)
-VALUES (@ProductId, @ModuleCode, @Name, @Description, @IsActive);", conn, tx);
-                    ins.Parameters.AddWithValue("@ProductId", product.Id);
-                    ins.Parameters.AddWithValue("@ModuleCode", m.ModuleCode);
-                    ins.Parameters.AddWithValue("@Name", (object)m.Name ?? DBNull.Value);
-                    ins.Parameters.AddWithValue("@Description", (object)m.Description ?? DBNull.Value);
-                    ins.Parameters.AddWithValue("@IsActive", m.IsActive);
-                    ins.ExecuteNonQuery();
+VALUES (@ProductId, @ModuleCode, @Name, @Description, @IsActive);", conn, tx))
+                        {
+                            ins.Parameters.AddWithValue("@ProductId", product.Id);
+                            ins.Parameters.AddWithValue("@ModuleCode", moduleCode);
+                            ins.Parameters.AddWithValue("@Name", (object)m.Name ?? DBNull.Value);
+                            ins.Parameters.AddWithValue("@Description", (object)m.Description ?? DBNull.Value);
+                            ins.Parameters.AddWithValue("@IsActive", m.IsActive);
+                            ins.ExecuteNonQuery();
+                        }
+                    }
+                }
+
+                // 4. Delete removed modules (Clean up)
+                foreach (var kvp in dbModules)
+                {
+                    if (!incomingCodes.Contains(kvp.Key))
+                    {
+                        try
+                        {
+                            // Try hard delete
+                            using (var del = new SqlCommand("DELETE FROM dbo.Modules WHERE Id = @Id;", conn, tx))
+                            {
+                                del.Parameters.AddWithValue("@Id", kvp.Value);
+                                del.ExecuteNonQuery();
+                            }
+                        }
+                        catch (SqlException)
+                        {
+                            // FK Constraint (Module in use) -> Fallback to Soft Delete (Deactivate)
+                            using (var soft = new SqlCommand("UPDATE dbo.Modules SET IsActive = 0 WHERE Id = @Id;", conn, tx))
+                            {
+                                soft.Parameters.AddWithValue("@Id", kvp.Value);
+                                soft.ExecuteNonQuery();
+                            }
+                        }
+                    }
                 }
 
                 tx.Commit();
@@ -766,7 +830,8 @@ FROM dbo.Licenses
 WHERE ProductID = @pid
   AND CompanyName = @cn
   AND ValidFromUtc = @vf
-  AND ValidToUtc = @vt;", conn);
+  AND ValidToUtc = @vt
+  AND Status != 'Deleted';", conn);
                 cmd.Parameters.AddWithValue("@pid", productId ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@cn", companyName ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@vf", validFromUtc);
