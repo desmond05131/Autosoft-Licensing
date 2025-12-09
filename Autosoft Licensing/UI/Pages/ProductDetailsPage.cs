@@ -433,8 +433,6 @@ namespace Autosoft_Licensing.UI.Pages
                     var existingByName = _dbService.GetProductByName(productNameStr);
                     if (existingByName != null)
                     {
-                        // If creating, any existing name is a conflict.
-                        // If editing, conflict only when found Id differs from current _productId.
                         var existingId = existingByName.Id;
                         var currentId = _productId ?? 0;
                         if (existingId != 0 && existingId != currentId)
@@ -446,7 +444,6 @@ namespace Autosoft_Licensing.UI.Pages
                 }
                 catch
                 {
-                    // Fail-safe: if we cannot verify uniqueness, stop to prevent duplicates
                     ShowError("Unable to verify Product Name uniqueness due to a database error.");
                     return;
                 }
@@ -474,6 +471,12 @@ namespace Autosoft_Licensing.UI.Pages
                     LastModifiedUtc = _productId == null ? DateTime.UtcNow : ToUtc(lastModifiedLocal),
                     Modules = new List<Module>()
                 };
+
+                // CRITICAL FIX: ensure the Product Id is explicitly set in edit mode immediately after instantiation
+                if (_productId.HasValue)
+                {
+                    product.Id = _productId.Value;
+                }
 
                 // Map BindingList -> List<Module>
                 foreach (var row in (_modules ?? new BindingList<ModuleRowViewModel>()))
@@ -508,7 +511,6 @@ namespace Autosoft_Licensing.UI.Pages
                 }
                 else
                 {
-                    product.Id = _productId.Value;
                     // Always stamp last modified
                     product.LastModifiedUtc = DateTime.UtcNow;
 

@@ -2,7 +2,7 @@
   "CompanyName": "Acme Corp",
   "RequestedPeriodMonths": 15,
   "DealerCode": "DEALER-001",
-  "ProductID": "PROD-001",
+  "ProductID": "ACC-2025",
   "LicenseType": "Subscription",
   "LicenseKey": "REQ-001",
   "CurrencyCode": "USD",

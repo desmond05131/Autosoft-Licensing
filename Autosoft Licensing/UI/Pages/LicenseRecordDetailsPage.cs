@@ -31,14 +31,6 @@ namespace Autosoft_Licensing.UI.Pages
         private int _licenseId;
         private LicenseMetadata _currentLicense;
 
-        // Navigation event
-        public event EventHandler<NavigateEventArgs> NavigateRequested;
-
-        public class NavigateEventArgs : EventArgs
-        {
-            public string TargetPage { get; set; }
-        }
-
         public LicenseRecordDetailsPage()
         {
             InitializeComponent();
@@ -281,17 +273,10 @@ namespace Autosoft_Licensing.UI.Pages
         {
             try
             {
-                // Trigger navigation back to LicenseRecordsPage
-                NavigateRequested?.Invoke(this, new NavigateEventArgs
-                {
-                    TargetPage = "LicenseRecordsPage"
-                });
+                // Use base navigation to route back via MainForm
+                FireNavigate("LicenseRecordsPage");
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"btnBack_Click error: {ex}");
-                ShowError("Failed to navigate back.");
-            }
+            catch { /* ignore */ }
         }
 
         private void btnCopyChecksum_Click(object sender, EventArgs e)

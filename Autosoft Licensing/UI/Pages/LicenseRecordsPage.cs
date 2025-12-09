@@ -29,17 +29,6 @@ namespace Autosoft_Licensing.UI.Pages
         // Internal data
         private List<LicenseRecordRow> _dataSource;
 
-        // Navigation event - host form can subscribe to handle page navigation
-        public event EventHandler<NavigateEventArgs> NavigateRequested;
-
-        // Event args for navigation
-        public class NavigateEventArgs : EventArgs
-        {
-            public string TargetPage { get; set; }
-            public int? LicenseId { get; set; }
-            public bool IsReadOnly { get; set; }
-        }
-
         // Internal row model for grid binding
         private class LicenseRecordRow
         {
@@ -337,8 +326,6 @@ namespace Autosoft_Licensing.UI.Pages
                 }
 
                 // IMPORTANT: Do NOT filter by countdown. Use it only for row coloring.
-                // Filtering here would hide long-duration licenses (e.g., 11 months) with default 30-day value,
-                // causing the grid to be empty and tests to fail.
 
                 // Filter out deleted licenses (soft delete)
                 filtered = filtered.Where(l => l.Status != LicenseStatus.Deleted);
@@ -609,18 +596,16 @@ namespace Autosoft_Licensing.UI.Pages
         }
 
         /// <summary>
-        /// Helper to trigger navigation event.
+        /// Helper to trigger navigation using base class event.
         /// </summary>
         private void Navigate(string targetPage, int? licenseId = null, bool isReadOnly = false)
         {
             try
             {
-                NavigateRequested?.Invoke(this, new NavigateEventArgs
-                {
-                    TargetPage = targetPage,
-                    LicenseId = licenseId,
-                    IsReadOnly = isReadOnly
-                });
+                // Use the base class helper 'FireNavigate'
+                // Note: 'isReadOnly' is not currently supported by the base args, so we rely on Role Security for now.
+                // If exact View-only mode for Admins is required, we can implement a specific 'View' mode logic later.
+                FireNavigate(targetPage, licenseId);
             }
             catch (Exception ex)
             {

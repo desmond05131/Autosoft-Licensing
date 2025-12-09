@@ -277,6 +277,36 @@ namespace Autosoft_Licensing
                     return;
                 }
 
+                // NEW: Handle License Record Details and pass LicenseId + wire back navigation
+                if (string.Equals(e.TargetPage, "LicenseRecordDetailsPage", StringComparison.OrdinalIgnoreCase))
+                {
+                    var details = new LicenseRecordDetailsPage();
+                    try
+                    {
+                        // 1. Pass the RecordId (License ID) from the grid event
+                        if (e.RecordId.HasValue)
+                        {
+                            details.Initialize(e.RecordId.Value);
+                        }
+
+                        // 2. Wire the navigation event so "Back" works
+                        details.NavigateRequested += OnPageNavigate;
+
+                        // 3. Apply roles
+                        details.InitializeForRole(_currentUser);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Error init details: {ex}");
+                    }
+
+                    // 4. Show the page
+                    contentPanel.Controls.Clear();
+                    details.Dock = DockStyle.Fill;
+                    contentPanel.Controls.Add(details);
+                    return;
+                }
+
                 // Default: Load standard menu pages by name
                 LoadPage(e.TargetPage, e.TargetPage);
             }
