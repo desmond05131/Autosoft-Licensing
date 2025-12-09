@@ -93,4 +93,9 @@
   <data name="UserClicked" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Assets\user_clicked.png;System.Drawing.Bitmap, System.Drawing</value>
   </data>
+
+  <!-- Newly added Setting asset -->
+  <data name="Setting" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Assets\setting.png;System.Drawing.Bitmap, System.Drawing</value>
+  </data>
 </root>

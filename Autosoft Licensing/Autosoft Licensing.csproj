@@ -467,6 +467,7 @@
     <Content Include="Assets\product_clicked.png" />
     <Content Include="Assets\records-clicked.png" />
     <Content Include="Assets\records.png" />
+    <Content Include="Assets\setting.png" />
     <Content Include="Assets\user.png" />
     <Content Include="Assets\user_clicked.png" />
     <Content Include="AutosoftLicensing.txt" />
