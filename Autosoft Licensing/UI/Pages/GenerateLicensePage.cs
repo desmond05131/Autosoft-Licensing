@@ -14,6 +14,7 @@ using System.Linq;
 using System.Windows.Forms;
 using System.Drawing;
 using DevExpress.XtraEditors;
+using DevExpress.XtraEditors.Controls;
 using DevExpress.XtraEditors.Repository;
 using DevExpress.XtraGrid;
 using DevExpress.XtraGrid.Views.Grid;
@@ -46,7 +47,7 @@ namespace Autosoft_Licensing.UI.Pages
             public string ModuleCode { get; set; }
         }
 
-        // AppSettings-driven defaults helper (updated: Demo in Days)
+        // AppSettings-driven defaults helper
         private (int demoDays, int subscriptionMonths, int permanentYears) GetDefaultDurations()
         {
             // Safe defaults
@@ -58,20 +59,10 @@ namespace Autosoft_Licensing.UI.Pages
             {
                 if (_dbService != null)
                 {
-                    // Read Demo in Days (new key). Fallback 30. Clamp to [1..365].
+                    // Read settings from DB, fallback to safe defaults if missing or invalid
                     defDemoDays = SafeParseInt(_dbService.GetSetting("Duration_Demo_Days", "30"), 30);
-                    if (defDemoDays < 1) defDemoDays = 1;
-                    if (defDemoDays > 365) defDemoDays = 365;
-
-                    // Subscription months (unchanged). Clamp to [1..120].
                     defSubMonths = SafeParseInt(_dbService.GetSetting("Duration_Sub_Months", "12"), 12);
-                    if (defSubMonths < 1) defSubMonths = 1;
-                    if (defSubMonths > 120) defSubMonths = 120;
-
-                    // Permanent years (unchanged). Clamp to [1..999].
                     defPermYears = SafeParseInt(_dbService.GetSetting("Duration_Perm_Years", "10"), 10);
-                    if (defPermYears < 1) defPermYears = 1;
-                    if (defPermYears > 999) defPermYears = 999;
                 }
             }
             catch
@@ -82,7 +73,6 @@ namespace Autosoft_Licensing.UI.Pages
             return (defDemoDays, defSubMonths, defPermYears);
         }
 
-        // Helper since SafeParseInt used above (kept local to avoid dependency ripple)
         private static int SafeParseInt(string s, int fallback)
         {
             return int.TryParse(s, out var v) ? v : fallback;
@@ -92,16 +82,29 @@ namespace Autosoft_Licensing.UI.Pages
         {
             InitializeComponent();
 
-            // FORCE EVENT WIRING: Ensure buttons are connected to their handlers
-            if (btnUploadArl != null) btnUploadArl.Click += btnUploadArl_Click;
-            if (btnGenerateKey != null) btnGenerateKey.Click += btnGenerateKey_Click;
-            if (btnPreview != null) btnPreview.Click += btnPreview_Click;
-            if (btnDownload != null) btnDownload.Click += btnDownload_Click;
-
             try
             {
                 if (!DesignMode)
                 {
+                    // Initialize RadioGroup Items
+                    if (rgLicenseType != null)
+                    {
+                        rgLicenseType.Properties.Items.Clear();
+                        rgLicenseType.Properties.Items.Add(new RadioGroupItem(LicenseType.Demo, "Demo"));
+                        rgLicenseType.Properties.Items.Add(new RadioGroupItem(LicenseType.Subscription, "Subscription"));
+                        rgLicenseType.Properties.Items.Add(new RadioGroupItem(LicenseType.Permanent, "Permanent"));
+                        rgLicenseType.SelectedIndex = 1; // Default to Subscription
+
+                        // Wire up the event handler manually since it was missing
+                        rgLicenseType.SelectedIndexChanged += rgLicenseType_SelectedIndexChanged;
+                    }
+
+                    // Wire up the subscription months spinner
+                    if (numSubscriptionMonths != null)
+                    {
+                        numSubscriptionMonths.ValueChanged += numSubscriptionMonths_ValueChanged;
+                    }
+
                     // Standardized navigation wiring
                     if (btnNav_GenerateLicense != null) BindNavigationEvent(btnNav_GenerateLicense, "GenerateLicensePage");
                     if (btnNav_LicenseRecords != null) BindNavigationEvent(btnNav_LicenseRecords, "LicenseRecordsPage");
@@ -109,7 +112,6 @@ namespace Autosoft_Licensing.UI.Pages
                     if (btnNav_ManageUser != null) BindNavigationEvent(btnNav_ManageUser, "ManageUserPage");
                     if (btnNav_GeneralSetting != null) BindNavigationEvent(btnNav_GeneralSetting, "GeneralSettingPage");
 
-                    // Logout (panel + inner label + picture)
                     if (btnNav_Logout != null) BindNavigationEvent(btnNav_Logout, "Logout");
                     if (lblNav_Logout != null) BindNavigationEvent(lblNav_Logout, "Logout");
                     if (picNav_Logout != null) BindNavigationEvent(picNav_Logout, "Logout");
@@ -118,9 +120,6 @@ namespace Autosoft_Licensing.UI.Pages
             catch { /* best-effort */ }
         }
 
-        /// <summary>
-        /// Inject runtime services (host should call this).
-        /// </summary>
         public void Initialize(
             IArlReaderService arlReader,
             IAslGeneratorService aslService,
@@ -136,7 +135,7 @@ namespace Autosoft_Licensing.UI.Pages
             _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         }
 
-        private void _user_service_check(IUserService _dummy) { /* no-op to satisfy static analysis placement */ }
+        private void _user_service_check(IUserService _dummy) { }
 
         #region Event handlers
 
@@ -150,7 +149,6 @@ namespace Autosoft_Licensing.UI.Pages
                     return;
                 }
 
-                // FIX: Implement file dialog and parsing
                 using (var ofd = new OpenFileDialog())
                 {
                     ofd.Filter = "License Request Files (*.arl)|*.arl|All files (*.*)|*.*";
@@ -167,7 +165,6 @@ namespace Autosoft_Licensing.UI.Pages
                         txtCompanyName.Text = _currentRequest.CompanyName ?? string.Empty;
                         txtProductId.Text = _currentRequest.ProductID ?? string.Empty;
 
-                        // Look up product name
                         string productName = string.Empty;
                         if (_productService != null && !string.IsNullOrEmpty(_currentRequest.ProductID))
                         {
@@ -175,7 +172,6 @@ namespace Autosoft_Licensing.UI.Pages
                         }
                         txtProductName.Text = productName;
 
-                        // Populate Currency if available in request (or leave/default)
                         if (txtCurrency != null)
                             txtCurrency.Text = _currentRequest.CurrencyCode ?? "MYR";
 
@@ -186,18 +182,15 @@ namespace Autosoft_Licensing.UI.Pages
                             productModules = _productService.GetModulesByProductId(_currentRequest.ProductID);
                         }
 
-                        // 4. Bind Grid (pre-select modules from request if any, otherwise default to all active or none)
-                        // ARL V2 schema doesn't send modules, so usually we default to 'Select All' or 'Select None' based on business rule.
-                        // Here we select all available modules by default for convenience.
+                        // 4. Bind Grid
                         var modulesToEnable = productModules.Select(m => m.ModuleCode).ToList();
                         BindModules(productModules, modulesToEnable);
 
                         // 5. Apply Defaults (Dates & License Type)
-                        var (defDemoDays, defSubMonths, defPermYears) = GetDefaultDurations();
                         var issueLocal = DateTime.Now.Date;
                         dtIssueDate.DateTime = issueLocal;
 
-                        // Determine License Type
+                        // Determine License Type from ARL
                         LicenseType lt = LicenseType.Subscription;
                         if (!string.IsNullOrWhiteSpace(_currentRequest.LicenseType))
                         {
@@ -209,39 +202,22 @@ namespace Autosoft_Licensing.UI.Pages
                                 lt = LicenseType.Subscription;
                         }
 
-                        // Set Radio Group
+                        // Set Radio Group (This triggers rgLicenseType_SelectedIndexChanged, which sets defaults)
                         if (rgLicenseType != null)
                         {
-                            // Try setting by enum, if radio items are mapped to enum values
                             rgLicenseType.EditValue = lt;
-                            // Fallback if mapped to strings
-                            if (rgLicenseType.EditValue == null)
-                                rgLicenseType.EditValue = lt.ToString();
                         }
 
-                        // Set Expiry
-                        if (lt == LicenseType.Demo)
+                        // 6. Override specific values from ARL if applicable
+                        // If ARL specifies a Subscription period, respect it over the default settings
+                        if (lt == LicenseType.Subscription && _currentRequest.RequestedPeriodMonths > 0)
                         {
-                            dtExpireDate.DateTime = issueLocal.AddDays(defDemoDays);
-                            if (numSubscriptionMonths != null) numSubscriptionMonths.Enabled = false;
-                        }
-                        else if (lt == LicenseType.Permanent)
-                        {
-                            dtExpireDate.DateTime = issueLocal.AddYears(defPermYears);
-                            if (numSubscriptionMonths != null) numSubscriptionMonths.Enabled = false;
-                        }
-                        else // Subscription
-                        {
-                            var months = _currentRequest.RequestedPeriodMonths > 0 ? _currentRequest.RequestedPeriodMonths : defSubMonths;
-                            dtExpireDate.DateTime = issueLocal.AddMonths(months);
+                            // Trigger value change to update expiry
                             if (numSubscriptionMonths != null)
-                            {
-                                numSubscriptionMonths.Enabled = true;
-                                numSubscriptionMonths.Value = months;
-                            }
+                                numSubscriptionMonths.Value = _currentRequest.RequestedPeriodMonths;
                         }
 
-                        // 6. Reset generation state
+                        // 7. Reset generation state
                         txtLicenseKey.Text = string.Empty;
                         btnGenerateKey.Enabled = true;
                         btnPreview.Enabled = false;
@@ -280,12 +256,10 @@ namespace Autosoft_Licensing.UI.Pages
             {
                 var (defDemoDays, defSubMonths, defPermYears) = GetDefaultDurations();
 
-                var issueLocal = dtIssueDate?.DateTime.Date ?? DateTime.Now.Date;
-                // Determine selected LicenseType from the radio group
+                // Determine selected LicenseType
                 LicenseType selected = LicenseType.Subscription;
                 try
                 {
-                    // Typical mapping: rgLicenseType.EditValue stores enum or string. Handle both.
                     var val = rgLicenseType?.EditValue;
                     if (val is LicenseType ltEnum)
                         selected = ltEnum;
@@ -293,38 +267,47 @@ namespace Autosoft_Licensing.UI.Pages
                     {
                         if (Enum.TryParse<LicenseType>(s, true, out var parsed)) selected = parsed;
                     }
-                    // Map index if value mapping fails (0=Demo, 1=Sub, 2=Perm)
                     else if (rgLicenseType != null && rgLicenseType.SelectedIndex >= 0)
                     {
-                        selected = (LicenseType)rgLicenseType.SelectedIndex;
+                        var idx = rgLicenseType.SelectedIndex;
+                        if (idx == 0) selected = LicenseType.Demo;
+                        else if (idx == 2) selected = LicenseType.Permanent;
+                        else selected = LicenseType.Subscription;
                     }
                 }
                 catch { }
 
-                if (selected == LicenseType.Demo)
+                // Update UI Labels and spinner values based on type
+                if (numSubscriptionMonths != null)
                 {
-                    dtExpireDate.DateTime = issueLocal.AddDays(defDemoDays);
-                    if (numSubscriptionMonths != null) numSubscriptionMonths.Enabled = false;
-                }
-                else if (selected == LicenseType.Permanent)
-                {
-                    dtExpireDate.DateTime = issueLocal.AddYears(defPermYears);
-                    if (numSubscriptionMonths != null) numSubscriptionMonths.Enabled = false;
-                }
-                else // Subscription
-                {
-                    // If switching to sub, prefer current spinner value if valid, else default
-                    int months = defSubMonths;
-                    if (numSubscriptionMonths != null)
+                    // Temporarily detach event to prevent double calculation during setup
+                    numSubscriptionMonths.ValueChanged -= numSubscriptionMonths_ValueChanged;
+
+                    if (selected == LicenseType.Demo)
                     {
-                        numSubscriptionMonths.Enabled = true;
-                        if (numSubscriptionMonths.Value > 0) months = (int)numSubscriptionMonths.Value;
-                        else numSubscriptionMonths.Value = defSubMonths;
+                        lblMonths.Text = "Days :";
+                        numSubscriptionMonths.Value = defDemoDays;
+                        numSubscriptionMonths.Enabled = true; // Allow admin adjustment? Prompt implies using Setting value, but doesn't forbid edit. Enabled fits standard UX.
                     }
-                    dtExpireDate.DateTime = issueLocal.AddMonths(months);
+                    else if (selected == LicenseType.Permanent)
+                    {
+                        lblMonths.Text = "Years :";
+                        numSubscriptionMonths.Value = defPermYears;
+                        numSubscriptionMonths.Enabled = true;
+                    }
+                    else // Subscription
+                    {
+                        lblMonths.Text = "Months :";
+                        numSubscriptionMonths.Value = defSubMonths;
+                        numSubscriptionMonths.Enabled = true;
+                    }
+
+                    numSubscriptionMonths.ValueChanged += numSubscriptionMonths_ValueChanged;
                 }
 
-                // Update current payload type reflectively
+                // Force date recalculation immediately
+                RecalculateExpiry(selected);
+
                 if (_currentPayload != null) _currentPayload.LicenseType = selected.ToString();
             }
             catch (Exception ex)
@@ -333,21 +316,60 @@ namespace Autosoft_Licensing.UI.Pages
             }
         }
 
-        // Months spinner changed (guard against disabled states)
         private void numSubscriptionMonths_ValueChanged(object sender, EventArgs e)
         {
             try
             {
-                // Prevent overwriting calculations when not applicable (Demo/Permanent disable this)
-                if (numSubscriptionMonths == null || !numSubscriptionMonths.Enabled) return;
+                // Re-read current type
+                LicenseType currentType = LicenseType.Subscription;
+                if (rgLicenseType != null && rgLicenseType.EditValue is LicenseType lt)
+                    currentType = lt;
+                else if (rgLicenseType != null && rgLicenseType.SelectedIndex == 0) currentType = LicenseType.Demo;
+                else if (rgLicenseType != null && rgLicenseType.SelectedIndex == 2) currentType = LicenseType.Permanent;
 
-                var issueLocal = dtIssueDate?.DateTime.Date ?? DateTime.Now.Date;
-                var months = Math.Max(1, (int)numSubscriptionMonths.Value);
-                dtExpireDate.DateTime = issueLocal.AddMonths(months);
+                RecalculateExpiry(currentType);
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine("numSubscriptionMonths_ValueChanged error: " + ex);
+            }
+        }
+
+        private void RecalculateExpiry(LicenseType type)
+        {
+            if (numSubscriptionMonths == null) return;
+
+            var issueLocal = dtIssueDate?.DateTime.Date ?? DateTime.Now.Date;
+            int value = (int)numSubscriptionMonths.Value;
+            if (value < 1) value = 1;
+
+            if (type == LicenseType.Demo)
+            {
+                // Value represents Days
+                dtExpireDate.DateTime = issueLocal.AddDays(value);
+            }
+            else if (type == LicenseType.Permanent)
+            {
+                // Value represents Years
+                // Maximize date to 31/12/9999 as requested
+                try
+                {
+                    // If the user entered a very large number of years or explicitly wants "Forever"
+                    // Often Permanent = 9999-12-31.
+                    // We interpret the spinner as "Valid for X years", but ensure it caps at 9999.
+                    var target = issueLocal.AddYears(value);
+                    if (target.Year > 9999) target = new DateTime(9999, 12, 31);
+                    dtExpireDate.DateTime = target;
+                }
+                catch
+                {
+                    dtExpireDate.DateTime = new DateTime(9999, 12, 31);
+                }
+            }
+            else // Subscription
+            {
+                // Value represents Months
+                dtExpireDate.DateTime = issueLocal.AddMonths(value);
             }
         }
 
@@ -360,7 +382,6 @@ namespace Autosoft_Licensing.UI.Pages
         {
             try
             {
-                // Validate basic fields
                 var company = txtCompanyName?.Text?.Trim();
                 var productId = txtProductId?.Text?.Trim();
                 if (string.IsNullOrWhiteSpace(company) || string.IsNullOrWhiteSpace(productId))
@@ -369,25 +390,20 @@ namespace Autosoft_Licensing.UI.Pages
                     return;
                 }
 
-                // Read dates (local -> utc)
                 var issueLocal = dtIssueDate?.DateTime ?? DateTime.Now.Date;
                 var expireLocal = dtExpireDate?.DateTime ?? issueLocal.AddMonths(1);
                 var validFromUtc = ToUtc(issueLocal);
                 var validToUtc = ToUtc(expireLocal);
 
-                // Duplicate check (must ignore deleted — handled in Database service)
                 if (_dbService != null && _dbService.ExistsDuplicateLicense(company, productId, validFromUtc, validToUtc))
                 {
-                    // prevent generation when an active/valid duplicate exists
                     txtLicenseKey.Text = string.Empty;
                     ShowError("A license with the same Company, Product and dates already exists.");
-                    // Keep Preview/Download disabled
                     btnPreview.Enabled = false;
                     btnDownload.Enabled = false;
                     return;
                 }
 
-                // Generate a 32-char key
                 string key = null;
                 try
                 {
@@ -398,13 +414,11 @@ namespace Autosoft_Licensing.UI.Pages
 
                 if (string.IsNullOrWhiteSpace(key))
                 {
-                    // Fallback
                     key = Guid.NewGuid().ToString("N").ToUpper();
                 }
 
                 txtLicenseKey.Text = key;
 
-                // Update payload object
                 if (_currentPayload == null) _currentPayload = new AslPayload();
                 _currentPayload.CompanyName = company;
                 _currentPayload.ProductID = productId;
@@ -412,16 +426,13 @@ namespace Autosoft_Licensing.UI.Pages
                 _currentPayload.ValidFromUtc = validFromUtc;
                 _currentPayload.ValidToUtc = validToUtc;
 
-                // Ensure DealerCode is set (fallback if manually entered)
                 if (string.IsNullOrWhiteSpace(_currentPayload.DealerCode)) _currentPayload.DealerCode = "DEALER-001";
 
-                // Ensure LicenseType is synced
                 if (rgLicenseType != null && rgLicenseType.EditValue != null)
                     _currentPayload.LicenseType = rgLicenseType.EditValue.ToString();
                 else
                     _currentPayload.LicenseType = LicenseType.Subscription.ToString();
 
-                // Enable preview & download immediately after generation
                 btnPreview.Enabled = true;
                 btnDownload.Enabled = true;
             }
@@ -429,7 +440,6 @@ namespace Autosoft_Licensing.UI.Pages
             {
                 ShowError("Failed to generate license key.");
                 System.Diagnostics.Debug.WriteLine($"GenerateKey error: {ex}");
-                // Ensure fields/buttons are in a safe state
                 txtLicenseKey.Text = string.Empty;
                 btnPreview.Enabled = false;
                 btnDownload.Enabled = false;
@@ -534,7 +544,6 @@ namespace Autosoft_Licensing.UI.Pages
 
                     base64Asl = _aslService.CreateAsl(licenseData, CryptoConstants.AesKey, CryptoConstants.AesIV, ensureLicenseKey: true);
 
-                    // Write to disk
                     try
                     {
                         if (ServiceRegistry.File != null)
@@ -544,7 +553,6 @@ namespace Autosoft_Licensing.UI.Pages
                     }
                     catch
                     {
-                        // Fallback
                         System.IO.File.WriteAllText(sfd.FileName, base64Asl ?? string.Empty, new System.Text.UTF8Encoding(false));
                     }
                 }
@@ -559,7 +567,6 @@ namespace Autosoft_Licensing.UI.Pages
                     return;
                 }
 
-                // Insert metadata to DB
                 try
                 {
                     if (_dbService != null)
@@ -587,7 +594,6 @@ namespace Autosoft_Licensing.UI.Pages
 
                 ShowInfo("License generated successfully.", "Success");
 
-                // Lock UI
                 try
                 {
                     btnGenerateKey.Enabled = false;

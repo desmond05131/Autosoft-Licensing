@@ -13,15 +13,21 @@ namespace Autosoft_Licensing.UI.Pages
         {
             InitializeComponent();
 
+            // Override Spinner Limits (Fix for Max Value Issues)
+            // By default DevExpress SpinEdits might be limited to 100 or decimal bounds.
+            if (spinDemo != null) spinDemo.Properties.MaxValue = 9999;
+            if (spinSub != null) spinSub.Properties.MaxValue = 9999;
+            if (spinPerm != null) spinPerm.Properties.MaxValue = 9999;
+
             try
             {
-                // Nav wiring using PageBase helper
+                // Nav wiring
                 if (btnNav_GenerateLicense != null) BindNavigationEvent(btnNav_GenerateLicense, "GenerateLicensePage");
                 if (btnNav_LicenseRecords != null) BindNavigationEvent(btnNav_LicenseRecords, "LicenseRecordsPage");
                 if (btnNav_ManageProduct != null) BindNavigationEvent(btnNav_ManageProduct, "ManageProductPage");
                 if (btnNav_ManageUser != null) BindNavigationEvent(btnNav_ManageUser, "ManageUserPage");
                 if (btnNav_GeneralSetting != null) BindNavigationEvent(btnNav_GeneralSetting, "GeneralSettingPage");
-                // NEW: Logout nav bindings (panel + inner controls)
+
                 if (btnNav_Logout != null) BindNavigationEvent(btnNav_Logout, "Logout");
                 if (lblNav_Logout != null) BindNavigationEvent(lblNav_Logout, "Logout");
                 if (picNav_Logout != null) BindNavigationEvent(picNav_Logout, "Logout");
@@ -33,10 +39,7 @@ namespace Autosoft_Licensing.UI.Pages
                 if (!DesignMode)
                 {
                     btnSave.Click += btnSave_Click;
-
-                    // Best-effort ServiceRegistry wiring
                     try { if (_dbService == null) _dbService = ServiceRegistry.Database; } catch { }
-
                     LoadSettings();
                 }
             }
@@ -63,10 +66,18 @@ namespace Autosoft_Licensing.UI.Pages
                 int subMonths = SafeParseInt(_dbService.GetSetting("Duration_Sub_Months", "12"), 12);
                 int permYears = SafeParseInt(_dbService.GetSetting("Duration_Perm_Years", "10"), 10);
 
-                // Clamp within control limits
-                if (demoDays < 1) demoDays = 1; if (demoDays > 365) demoDays = 365;
-                if (subMonths < 1) subMonths = 1; if (subMonths > 120) subMonths = 120;
-                if (permYears < 1) permYears = 1; if (permYears > 999) permYears = 999;
+                // Relaxed clamping (Fix for limited Demo/Perm periods)
+                // Demo days: 1 to 9999
+                if (demoDays < 1) demoDays = 1;
+                if (demoDays > 9999) demoDays = 9999;
+
+                // Sub months: 1 to 9999
+                if (subMonths < 1) subMonths = 1;
+                if (subMonths > 9999) subMonths = 9999;
+
+                // Perm years: 1 to 9999
+                if (permYears < 1) permYears = 1;
+                if (permYears > 9999) permYears = 9999;
 
                 spinDemo.Value = demoDays;
                 spinSub.Value = subMonths;
@@ -116,20 +127,15 @@ namespace Autosoft_Licensing.UI.Pages
             {
                 if (user == null) return;
 
-                // Visibility of top nav according to user permissions
                 if (btnNav_GenerateLicense != null) btnNav_GenerateLicense.Visible = user.CanGenerateLicense;
                 if (btnNav_LicenseRecords != null) btnNav_LicenseRecords.Visible = user.CanViewRecords;
                 if (btnNav_ManageProduct != null) btnNav_ManageProduct.Visible = user.CanManageProduct;
                 if (btnNav_ManageUser != null) btnNav_ManageUser.Visible = user.CanManageUsers;
 
-                // Settings page: typically Admin-only; if not Admin, keep visible only if they have ManageUser or ManageProduct (optional)
                 bool isAdmin = string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase);
                 if (btnNav_GeneralSetting != null) btnNav_GeneralSetting.Visible = isAdmin;
 
-                // Save button only for Admin
                 if (btnSave != null) btnSave.Enabled = isAdmin;
-
-                // NEW: Logout always visible
                 if (btnNav_Logout != null) btnNav_Logout.Visible = true;
             }
             catch { /* ignore */ }

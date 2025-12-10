@@ -125,7 +125,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.headerPanel.LookAndFeel.Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat;
             this.headerPanel.LookAndFeel.UseDefaultLookAndFeel = false;
             this.headerPanel.Name = "headerPanel";
-            this.headerPanel.Size = new System.Drawing.Size(999, 60);
+            this.headerPanel.Size = new System.Drawing.Size(997, 60);
             this.headerPanel.TabIndex = 0;
             // 
             // lblHeaderTitle
@@ -153,7 +153,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.navPanel.Dock = System.Windows.Forms.DockStyle.Top;
             this.navPanel.Location = new System.Drawing.Point(0, 60);
             this.navPanel.Name = "navPanel";
-            this.navPanel.Size = new System.Drawing.Size(999, 52);
+            this.navPanel.Size = new System.Drawing.Size(997, 52);
             this.navPanel.TabIndex = 1;
             // 
             // btnNav_GenerateLicense
@@ -503,7 +503,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.btnSave.Appearance.ForeColor = System.Drawing.Color.White;
             this.btnSave.Appearance.Options.UseBackColor = true;
             this.btnSave.Appearance.Options.UseForeColor = true;
-            this.btnSave.Location = new System.Drawing.Point(863, 605);
+            this.btnSave.Location = new System.Drawing.Point(861, 869);
             this.btnSave.LookAndFeel.UseDefaultLookAndFeel = false;
             this.btnSave.Name = "btnSave";
             this.btnSave.Size = new System.Drawing.Size(136, 30);
@@ -519,7 +519,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.Controls.Add(this.headerPanel);
             this.Controls.Add(this.btnSave);
             this.Name = "GeneralSettingPage";
-            this.Size = new System.Drawing.Size(999, 665);
+            this.Size = new System.Drawing.Size(997, 929);
             ((System.ComponentModel.ISupportInitialize)(this.headerPanel)).EndInit();
             this.headerPanel.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.navPanel)).EndInit();
