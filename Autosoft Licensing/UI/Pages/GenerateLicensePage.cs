@@ -99,8 +99,17 @@ namespace Autosoft_Licensing.UI.Pages
                 if (btnNav_LicenseRecords != null) BindNavigationEvent(btnNav_LicenseRecords, "LicenseRecordsPage");
                 if (btnNav_ManageProduct != null) BindNavigationEvent(btnNav_ManageProduct, "ManageProductPage");
                 if (btnNav_ManageUser != null) BindNavigationEvent(btnNav_ManageUser, "ManageUserPage");
-                if (btnNavLogoutText != null) BindNavigationEvent(btnNavLogoutText, "Logout");
-                if (pnlNavLogout != null) BindNavigationEvent(pnlNavLogout, "Logout");
+
+                // NEW: General Setting + Logout consistent bindings
+                if (btnNav_GeneralSetting != null) BindNavigationEvent(btnNav_GeneralSetting, "GeneralSettingPage");
+                if (btnNav_Logout != null) BindNavigationEvent(btnNav_Logout, "Logout");
+
+                // Also bind inner label/picture clicks to same target
+                if (lblNav_Setting != null) BindNavigationEvent(lblNav_Setting, "GeneralSettingPage");
+                if (picNav_Setting != null) BindNavigationEvent(picNav_Setting, "GeneralSettingPage");
+
+                if (lblNav_Logout != null) BindNavigationEvent(lblNav_Logout, "Logout");
+                if (picNav_Logout != null) BindNavigationEvent(picNav_Logout, "Logout");
             }
             catch { /* best-effort, avoid exceptions in ctor */ }
 
@@ -730,10 +739,13 @@ namespace Autosoft_Licensing.UI.Pages
                 if (btnNav_LicenseRecords != null) btnNav_LicenseRecords.Visible = user.CanViewRecords;
                 if (btnNav_ManageProduct != null) btnNav_ManageProduct.Visible = user.CanManageProduct;
                 if (btnNav_ManageUser != null) btnNav_ManageUser.Visible = user.CanManageUsers;
-                if (btnNavLogoutText != null) btnNavLogoutText.Visible = true;
 
-                // Optionally keep action buttons enabled based on page rules (no change requested here)
-                // e.g., btnGenerateKey.Enabled = user.CanGenerateLicense;
+                // NEW: Settings Admin-only
+                if (btnNav_GeneralSetting != null)
+                    btnNav_GeneralSetting.Visible = string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase);
+
+                // NEW: Logout always visible
+                if (btnNav_Logout != null) btnNav_Logout.Visible = true;
             }
             catch { /* ignore */ }
         }

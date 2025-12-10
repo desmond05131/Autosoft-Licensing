@@ -405,9 +405,9 @@ namespace Autosoft_Licensing.UI.Pages
             // 
             this.lblDemo.Location = new System.Drawing.Point(18, 40);
             this.lblDemo.Name = "lblDemo";
-            this.lblDemo.Size = new System.Drawing.Size(121, 13);
+            this.lblDemo.Size = new System.Drawing.Size(110, 13);
             this.lblDemo.TabIndex = 0;
-            this.lblDemo.Text = "Demo Duration (Months):";
+            this.lblDemo.Text = "Demo Duration (Days):";
             // 
             // spinDemo
             // 

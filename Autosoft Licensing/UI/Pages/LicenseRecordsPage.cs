@@ -83,7 +83,14 @@ namespace Autosoft_Licensing.UI.Pages
                     if (btnNav_LicenseRecords != null) BindNavigationEvent(btnNav_LicenseRecords, "LicenseRecordsPage");
                     if (btnNav_ManageProduct != null) BindNavigationEvent(btnNav_ManageProduct, "ManageProductPage");
                     if (btnNav_ManageUser != null) BindNavigationEvent(btnNav_ManageUser, "ManageUserPage");
-                    if (btnNavLogoutText != null) BindNavigationEvent(btnNavLogoutText, "Logout");
+                    // NEW: General Setting and Logout
+                    if (btnNav_GeneralSetting != null) BindNavigationEvent(btnNav_GeneralSetting, "GeneralSettingPage");
+                    if (btnNav_Logout != null)
+                    {
+                        BindNavigationEvent(btnNav_Logout, "Logout");
+                        if (lblNav_Logout != null) BindNavigationEvent(lblNav_Logout, "Logout");
+                        if (picNav_Logout != null) BindNavigationEvent(picNav_Logout, "Logout");
+                    }
                 }
             }
             catch (Exception ex)
@@ -590,7 +597,12 @@ namespace Autosoft_Licensing.UI.Pages
                 if (btnNav_LicenseRecords != null) btnNav_LicenseRecords.Visible = user.CanViewRecords;
                 if (btnNav_ManageProduct != null) btnNav_ManageProduct.Visible = user.CanManageProduct;
                 if (btnNav_ManageUser != null) btnNav_ManageUser.Visible = user.CanManageUsers;
-                if (btnNavLogoutText != null) btnNavLogoutText.Visible = true;
+
+                // NEW: General Setting visible for Admin only
+                if (btnNav_GeneralSetting != null) btnNav_GeneralSetting.Visible = isAdmin;
+
+                // NEW: Logout always visible
+                if (btnNav_Logout != null) btnNav_Logout.Visible = true;
             }
             catch { }
         }
@@ -602,9 +614,6 @@ namespace Autosoft_Licensing.UI.Pages
         {
             try
             {
-                // Use the base class helper 'FireNavigate'
-                // Note: 'isReadOnly' is not currently supported by the base args, so we rely on Role Security for now.
-                // If exact View-only mode for Admins is required, we can implement a specific 'View' mode logic later.
                 FireNavigate(targetPage, licenseId);
             }
             catch (Exception ex)
