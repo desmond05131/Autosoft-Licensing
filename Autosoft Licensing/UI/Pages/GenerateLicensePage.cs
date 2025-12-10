@@ -20,8 +20,8 @@ using DevExpress.XtraGrid.Views.Grid;
 using Autosoft_Licensing.Services;
 using Autosoft_Licensing.Models;
 using Autosoft_Licensing.Utils;
-using Autosoft_Licensing.Models.Enums; // <-- Added to resolve LicenseType references
-using Autosoft_Licensing.Tools; // for InMemoryLicenseDatabaseService fallback
+using Autosoft_Licensing.Models.Enums;
+using Autosoft_Licensing.Tools;
 
 namespace Autosoft_Licensing.UI.Pages
 {
@@ -93,7 +93,6 @@ namespace Autosoft_Licensing.UI.Pages
             InitializeComponent();
 
             // FORCE EVENT WIRING: Ensure buttons are connected to their handlers
-            // This fixes the issue where Designer.cs loses the subscriptions
             if (btnUploadArl != null) btnUploadArl.Click += btnUploadArl_Click;
             if (btnGenerateKey != null) btnGenerateKey.Click += btnGenerateKey_Click;
             if (btnPreview != null) btnPreview.Click += btnPreview_Click;
@@ -137,10 +136,9 @@ namespace Autosoft_Licensing.UI.Pages
             _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         }
 
-        // small helper to avoid altering the original method signature semantics (keeps ctor stable)
         private void _user_service_check(IUserService _dummy) { /* no-op to satisfy static analysis placement */ }
 
-        #region Event handlers (existing)
+        #region Event handlers
 
         private void btnUploadArl_Click(object sender, EventArgs e)
         {
@@ -152,73 +150,128 @@ namespace Autosoft_Licensing.UI.Pages
                     return;
                 }
 
-                // Existing: open dialog and parse ARL (omitted here). Assume _currentRequest set.
-                // After _currentRequest is set, apply default date logic:
-
-                var (defDemoDays, defSubMonths, defPermYears) = GetDefaultDurations();
-
-                // Issue date default to local today
-                var issueLocal = DateTime.Now.Date;
-                dtIssueDate.DateTime = issueLocal;
-
-                // License type from _currentRequest (string). Map to enum safely.
-                LicenseType lt = LicenseType.Subscription;
-                try
+                // FIX: Implement file dialog and parsing
+                using (var ofd = new OpenFileDialog())
                 {
-                    if (_currentRequest != null && !string.IsNullOrWhiteSpace(_currentRequest.LicenseType))
+                    ofd.Filter = "License Request Files (*.arl)|*.arl|All files (*.*)|*.*";
+                    ofd.Title = "Select License Request";
+                    if (ofd.ShowDialog() != DialogResult.OK) return;
+
+                    try
                     {
-                        if (string.Equals(_currentRequest.LicenseType, "Demo", StringComparison.Ordinal))
-                            lt = LicenseType.Demo;
-                        else
-                            lt = LicenseType.Subscription; // ARL "Paid" ? Subscription rules
+                        // 1. Parse ARL
+                        _currentRequest = _arlReader.ParseArl(ofd.FileName);
+                        if (_currentRequest == null) throw new ValidationException("Invalid license request file.");
+
+                        // 2. Populate Header Fields
+                        txtCompanyName.Text = _currentRequest.CompanyName ?? string.Empty;
+                        txtProductId.Text = _currentRequest.ProductID ?? string.Empty;
+
+                        // Look up product name
+                        string productName = string.Empty;
+                        if (_productService != null && !string.IsNullOrEmpty(_currentRequest.ProductID))
+                        {
+                            productName = _productService.GetProductName(_currentRequest.ProductID);
+                        }
+                        txtProductName.Text = productName;
+
+                        // Populate Currency if available in request (or leave/default)
+                        if (txtCurrency != null)
+                            txtCurrency.Text = _currentRequest.CurrencyCode ?? "MYR";
+
+                        // 3. Load Product Modules
+                        IEnumerable<ModuleDto> productModules = Enumerable.Empty<ModuleDto>();
+                        if (_productService != null && !string.IsNullOrEmpty(_currentRequest.ProductID))
+                        {
+                            productModules = _productService.GetModulesByProductId(_currentRequest.ProductID);
+                        }
+
+                        // 4. Bind Grid (pre-select modules from request if any, otherwise default to all active or none)
+                        // ARL V2 schema doesn't send modules, so usually we default to 'Select All' or 'Select None' based on business rule.
+                        // Here we select all available modules by default for convenience.
+                        var modulesToEnable = productModules.Select(m => m.ModuleCode).ToList();
+                        BindModules(productModules, modulesToEnable);
+
+                        // 5. Apply Defaults (Dates & License Type)
+                        var (defDemoDays, defSubMonths, defPermYears) = GetDefaultDurations();
+                        var issueLocal = DateTime.Now.Date;
+                        dtIssueDate.DateTime = issueLocal;
+
+                        // Determine License Type
+                        LicenseType lt = LicenseType.Subscription;
+                        if (!string.IsNullOrWhiteSpace(_currentRequest.LicenseType))
+                        {
+                            if (string.Equals(_currentRequest.LicenseType, "Demo", StringComparison.OrdinalIgnoreCase))
+                                lt = LicenseType.Demo;
+                            else if (string.Equals(_currentRequest.LicenseType, "Permanent", StringComparison.OrdinalIgnoreCase))
+                                lt = LicenseType.Permanent;
+                            else
+                                lt = LicenseType.Subscription;
+                        }
+
+                        // Set Radio Group
+                        if (rgLicenseType != null)
+                        {
+                            // Try setting by enum, if radio items are mapped to enum values
+                            rgLicenseType.EditValue = lt;
+                            // Fallback if mapped to strings
+                            if (rgLicenseType.EditValue == null)
+                                rgLicenseType.EditValue = lt.ToString();
+                        }
+
+                        // Set Expiry
+                        if (lt == LicenseType.Demo)
+                        {
+                            dtExpireDate.DateTime = issueLocal.AddDays(defDemoDays);
+                            if (numSubscriptionMonths != null) numSubscriptionMonths.Enabled = false;
+                        }
+                        else if (lt == LicenseType.Permanent)
+                        {
+                            dtExpireDate.DateTime = issueLocal.AddYears(defPermYears);
+                            if (numSubscriptionMonths != null) numSubscriptionMonths.Enabled = false;
+                        }
+                        else // Subscription
+                        {
+                            var months = _currentRequest.RequestedPeriodMonths > 0 ? _currentRequest.RequestedPeriodMonths : defSubMonths;
+                            dtExpireDate.DateTime = issueLocal.AddMonths(months);
+                            if (numSubscriptionMonths != null)
+                            {
+                                numSubscriptionMonths.Enabled = true;
+                                numSubscriptionMonths.Value = months;
+                            }
+                        }
+
+                        // 6. Reset generation state
+                        txtLicenseKey.Text = string.Empty;
+                        btnGenerateKey.Enabled = true;
+                        btnPreview.Enabled = false;
+                        btnDownload.Enabled = false;
+
+                        // Initialize payload container
+                        _currentPayload = new AslPayload
+                        {
+                            CompanyName = _currentRequest.CompanyName,
+                            ProductID = _currentRequest.ProductID,
+                            DealerCode = _currentRequest.DealerCode,
+                            LicenseKey = null
+                        };
+                    }
+                    catch (ValidationException vx)
+                    {
+                        ShowError(vx.Message);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Error parsing ARL: {ex}");
+                        ShowError("Invalid license request file.");
                     }
                 }
-                catch { }
-
-                // Apply expire date and UI state
-                if (lt == LicenseType.Demo)
-                {
-                    dtExpireDate.DateTime = issueLocal.AddDays(defDemoDays);
-                    if (numSubscriptionMonths != null) numSubscriptionMonths.Enabled = false;
-                }
-                else if (lt == LicenseType.Permanent)
-                {
-                    dtExpireDate.DateTime = issueLocal.AddYears(defPermYears);
-                    if (numSubscriptionMonths != null) numSubscriptionMonths.Enabled = false;
-                }
-                else // Subscription
-                {
-                    // Use requested months if present; otherwise default
-                    var months = _currentRequest?.RequestedPeriodMonths > 0 ? _currentRequest.RequestedPeriodMonths : defSubMonths;
-                    dtExpireDate.DateTime = issueLocal.AddMonths(months);
-                    if (numSubscriptionMonths != null)
-                    {
-                        numSubscriptionMonths.Enabled = true;
-                        numSubscriptionMonths.Value = months;
-                    }
-                }
-
-                // Enable Generate key as per original flow (not shown)
-                // btnGenerateKey.Enabled = true; btnPreview.Enabled = false; btnDownload.Enabled = false;
-            }
-            catch (System.ComponentModel.DataAnnotations.ValidationException vex)
-            {
-                ShowError(vex.Message);
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine("btnUploadArl_Click error: " + ex);
                 ShowError("Operation failed. Contact admin.");
             }
-        }
-
-        private string _product_service_getname_safe(string productId)
-        {
-            try { return _productService.GetProductName(productId); } catch { return string.Empty; }
-        }
-        private IEnumerable<ModuleDto> _product_service_getmodules_safe(string productId)
-        {
-            try { return _productService.GetModulesByProductId(productId); } catch { return Enumerable.Empty<ModuleDto>(); }
         }
 
         private void rgLicenseType_SelectedIndexChanged(object sender, EventArgs e)
@@ -240,6 +293,11 @@ namespace Autosoft_Licensing.UI.Pages
                     {
                         if (Enum.TryParse<LicenseType>(s, true, out var parsed)) selected = parsed;
                     }
+                    // Map index if value mapping fails (0=Demo, 1=Sub, 2=Perm)
+                    else if (rgLicenseType != null && rgLicenseType.SelectedIndex >= 0)
+                    {
+                        selected = (LicenseType)rgLicenseType.SelectedIndex;
+                    }
                 }
                 catch { }
 
@@ -255,13 +313,19 @@ namespace Autosoft_Licensing.UI.Pages
                 }
                 else // Subscription
                 {
-                    dtExpireDate.DateTime = issueLocal.AddMonths(defSubMonths);
+                    // If switching to sub, prefer current spinner value if valid, else default
+                    int months = defSubMonths;
                     if (numSubscriptionMonths != null)
                     {
                         numSubscriptionMonths.Enabled = true;
-                        numSubscriptionMonths.Value = defSubMonths;
+                        if (numSubscriptionMonths.Value > 0) months = (int)numSubscriptionMonths.Value;
+                        else numSubscriptionMonths.Value = defSubMonths;
                     }
+                    dtExpireDate.DateTime = issueLocal.AddMonths(months);
                 }
+
+                // Update current payload type reflectively
+                if (_currentPayload != null) _currentPayload.LicenseType = selected.ToString();
             }
             catch (Exception ex)
             {
@@ -323,26 +387,39 @@ namespace Autosoft_Licensing.UI.Pages
                     return;
                 }
 
-                // Generate a 32-char key (current skeleton behavior aligns with tests)
-                // Prefer ServiceRegistry.KeyGenerator if available; else fallback to GUID-based format
+                // Generate a 32-char key
                 string key = null;
                 try
                 {
                     if (ServiceRegistry.KeyGenerator != null)
                         key = ServiceRegistry.KeyGenerator.GenerateKey(company, productId);
                 }
-                catch
-                {
-                    // fall back below
-                }
+                catch { }
 
                 if (string.IsNullOrWhiteSpace(key))
                 {
-                    // GUID-based deterministic-friendly 32 hex chars (without dashes), as used by tests
-                    key = Guid.NewGuid().ToString("N");
+                    // Fallback
+                    key = Guid.NewGuid().ToString("N").ToUpper();
                 }
 
                 txtLicenseKey.Text = key;
+
+                // Update payload object
+                if (_currentPayload == null) _currentPayload = new AslPayload();
+                _currentPayload.CompanyName = company;
+                _currentPayload.ProductID = productId;
+                _currentPayload.LicenseKey = key;
+                _currentPayload.ValidFromUtc = validFromUtc;
+                _currentPayload.ValidToUtc = validToUtc;
+
+                // Ensure DealerCode is set (fallback if manually entered)
+                if (string.IsNullOrWhiteSpace(_currentPayload.DealerCode)) _currentPayload.DealerCode = "DEALER-001";
+
+                // Ensure LicenseType is synced
+                if (rgLicenseType != null && rgLicenseType.EditValue != null)
+                    _currentPayload.LicenseType = rgLicenseType.EditValue.ToString();
+                else
+                    _currentPayload.LicenseType = LicenseType.Subscription.ToString();
 
                 // Enable preview & download immediately after generation
                 btnPreview.Enabled = true;
@@ -365,7 +442,7 @@ namespace Autosoft_Licensing.UI.Pages
             {
                 if (_currentPayload == null)
                 {
-                    ShowError("Operation failed. Contact admin.");
+                    ShowError("Operation failed. Please generate a key first.");
                     return;
                 }
 
@@ -406,7 +483,7 @@ namespace Autosoft_Licensing.UI.Pages
             {
                 if (_currentPayload == null)
                 {
-                    ShowError("Operation failed. Contact admin.");
+                    ShowError("Operation failed. Please generate a key first.");
                     return;
                 }
 
@@ -436,13 +513,12 @@ namespace Autosoft_Licensing.UI.Pages
 
                 try
                 {
-                    if (_asl_service_check() == null) throw new InvalidOperationException("ASL generator not initialized.");
+                    if (_aslService == null) throw new InvalidOperationException("ASL generator not initialized.");
 
-                    // Map payload to LicenseData
                     var licenseData = new LicenseData
                     {
                         CompanyName = _currentPayload.CompanyName,
-                        ProductID = _current_payload_productid_safe(),
+                        ProductID = _currentPayload.ProductID ?? string.Empty,
                         DealerCode = _currentPayload.DealerCode,
                         ValidFromUtc = _currentPayload.ValidFromUtc,
                         ValidToUtc = _currentPayload.ValidToUtc,
@@ -456,32 +532,34 @@ namespace Autosoft_Licensing.UI.Pages
                     else
                         licenseData.LicenseType = LicenseType.Subscription;
 
-                    // CRITICAL FIX (already implemented): same string used for disk and DB
                     base64Asl = _aslService.CreateAsl(licenseData, CryptoConstants.AesKey, CryptoConstants.AesIV, ensureLicenseKey: true);
 
                     // Write to disk
                     try
                     {
-                        ServiceRegistry.File?.WriteFileBase64(sfd.FileName, base64Asl);
+                        if (ServiceRegistry.File != null)
+                            ServiceRegistry.File.WriteFileBase64(sfd.FileName, base64Asl);
+                        else
+                            System.IO.File.WriteAllText(sfd.FileName, base64Asl ?? string.Empty, new System.Text.UTF8Encoding(false));
                     }
                     catch
                     {
+                        // Fallback
                         System.IO.File.WriteAllText(sfd.FileName, base64Asl ?? string.Empty, new System.Text.UTF8Encoding(false));
                     }
                 }
-                catch (ArgumentNullException) { throw; }
                 catch (ValidationException vx)
                 {
                     ShowError(vx.Message);
                     return;
                 }
-                catch
+                catch (Exception)
                 {
                     ShowError("Operation failed. Contact admin.");
                     return;
                 }
 
-                // Insert metadata to DB (include the EXACT same Base64 string)
+                // Insert metadata to DB
                 try
                 {
                     if (_dbService != null)
@@ -489,49 +567,38 @@ namespace Autosoft_Licensing.UI.Pages
                         var meta = new LicenseMetadata
                         {
                             CompanyName = _currentPayload.CompanyName,
-                            ProductID = _current_payload_productid_safe(),
+                            ProductID = _currentPayload.ProductID ?? string.Empty,
                             DealerCode = _currentPayload.DealerCode,
                             LicenseKey = _currentPayload.LicenseKey,
                             ValidFromUtc = _currentPayload.ValidFromUtc,
                             ValidToUtc = _currentPayload.ValidToUtc,
                             LicenseType = Enum.TryParse<LicenseType>(_currentPayload.LicenseType, true, out var lt3) ? lt3 : LicenseType.Subscription,
                             ImportedOnUtc = ServiceRegistry.Clock.UtcNow,
-                            RawAslBase64 = base64Asl, // EXACTLY the same Base64 string saved to disk
+                            RawAslBase64 = base64Asl,
                             Remarks = memRemark?.Text,
                             ModuleCodes = _currentPayload.ModuleCodes?.ToList() ?? new List<string>(),
-                            CurrencyCode = string.IsNullOrWhiteSpace(txtCurrency.Text) ? null : txtCurrency.Text
+                            CurrencyCode = string.IsNullOrWhiteSpace(txtCurrency.Text) ? null : txtCurrency.Text,
+                            Status = LicenseStatus.Valid
                         };
                         _dbService.InsertLicense(meta);
                     }
                 }
-                catch
-                {
-                    // non-blocking
-                }
+                catch { /* non-blocking */ }
 
                 ShowInfo("License generated successfully.", "Success");
 
-                // NEW: UI LOCKING — prevent accidental re-download/generation without starting fresh.
+                // Lock UI
                 try
                 {
                     btnGenerateKey.Enabled = false;
                     btnDownload.Enabled = false;
-                    // Keep Preview enabled so user can still inspect current payload if needed
-                    // Optionally also lock preview: uncomment next line to disable
-                    // btnPreview.Enabled = false;
                 }
-                catch { /* ignore UI state failures */ }
+                catch { }
             }
             catch (Exception)
             {
                 ShowError("Operation failed. Contact admin.");
             }
-        }
-
-        private IAslGeneratorService _asl_service_check() { return _aslService; }
-        private string _current_payload_productid_safe()
-        {
-            try { return _currentPayload.ProductID ?? string.Empty; } catch { return string.Empty; }
         }
 
         #endregion
@@ -635,12 +702,7 @@ namespace Autosoft_Licensing.UI.Pages
             return list;
         }
 
-        #endregion
-
-        private void grpModules_Paint(object sender, PaintEventArgs e)
-        {
-
-        }
+        private void grpModules_Paint(object sender, PaintEventArgs e) { }
 
         public override void InitializeForRole(User user)
         {
@@ -648,111 +710,19 @@ namespace Autosoft_Licensing.UI.Pages
             {
                 if (user == null) return;
 
-                // Role-based visibility (requested replacement)
                 if (btnNav_GenerateLicense != null) btnNav_GenerateLicense.Visible = user.CanGenerateLicense;
                 if (btnNav_LicenseRecords != null) btnNav_LicenseRecords.Visible = user.CanViewRecords;
                 if (btnNav_ManageProduct != null) btnNav_ManageProduct.Visible = user.CanManageProduct;
                 if (btnNav_ManageUser != null) btnNav_ManageUser.Visible = user.CanManageUsers;
 
-                // NEW: Settings Admin-only
                 if (btnNav_GeneralSetting != null)
                     btnNav_GeneralSetting.Visible = string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase);
 
-                // NEW: Logout always visible
                 if (btnNav_Logout != null) btnNav_Logout.Visible = true;
             }
             catch { /* ignore */ }
         }
+
+        #endregion
     }
 }
-
-
-
-/// ?? Copilot Instructions — Fix UI layout for GenerateLicensePage
-/// 
-/// You must modify ONLY the UI/layout portions of GenerateLicensePage.cs,
-/// GenerateLicensePage.Designer.cs, and GenerateLicensePage.Navigation.cs.
-/// Use *DevExpress controls only*. WinForms controls are not allowed.
-///
-/// ?? GOAL — Make the page UI look **identical** to the wireframe:
-/// (Displayed by the user in screenshot at path: /mnt/data/Screenshot 2025-11-24 170655.png)
-///
-/// ?????????????????????????????????????????????????????????????????
-/// EXACT REQUIREMENTS YOU MUST FOLLOW:
-///
-/// 1. TOP NAVIGATION BAR (DevExpress)
-///    • Four tabs/buttons with icons:
-///         - Generate License
-///         - License Records
-///         - Manage Product
-///         - Manage User
-///    • Use DevExpress BarManager / Ribbon / or NavigationBar (NOT standard WinForms MenuStrip).
-///    • Highlight “Generate License” as the active tab.
-///    • Icons MUST be shown. If no icons exist, use temporary placeholders:
-///         Example icons (embedded as 16x16 PNG):
-///         • generate.png
-///         • records.png
-///         • product.png
-///         • user.png
-///    • Create an /Assets/ folder and load icons with:
-///         ImageOptions.Image = Image.FromFile("Assets/generate.png");
-///
-/// 2. “Upload License File” button
-///    • Align left, wide, same style as wireframe.
-///    • Use DevExpress SimpleButton with consistent styling.
-///
-/// 3. INFO PANEL
-///    • DevExpress GroupControl with title “Info”.
-///    • Inside it place three **read-only** DevExpress TextEdit fields:
-///         - Company Name
-///         - Product ID
-///         - Product Name
-///    • Use a 2-column table layout identical to the wireframe.
-///
-/// 4. TYPES PANEL
-///    • DevExpress GroupControl with title “Types”.
-///    • Use RadioGroup (Demo / Subscription / Permanent).
-///    • When “Subscription” is selected, show a numeric SpinEdit: “Months: <value>”.
-///    • Make layout identical to wireframe (radio group left, Months field right).
-///
-/// 5. MODULES PANEL
-///    • DevExpress GroupControl with title “Modules”.
-///    • Use a vertical CheckListBoxControl (DevExpress)
-///    • Must be scrollable.
-///    • Height and width must match wireframe exactly.
-///
-/// 6. ISSUE DATE + EXPIRE DATE
-///    • Use DevExpress DateEdit controls.
-///    • Must auto-fill from backend values.
-///    • Align exactly like wireframe:
-///         Issue Date left, Expire Date under it.
-///
-/// 7. REMARK FIELD
-///    • DevExpress MemoEdit (multi-line).
-///    • Full width as in wireframe.
-///    • Margin and indentation exactly same.
-///
-/// 8. LICENSE KEY FIELD + BUTTONS
-///    • DevExpress TextEdit (read-only)
-///    • Two buttons:
-///         - “Generate License Key”
-///         - “Download License”
-///    • Buttons aligned horizontally on the right, identical to wireframe.
-///
-/// 9. SPACING, PADDING, ALIGNMENT MUST MATCH
-///    • No WinForms default spacing.
-///    • Use TableLayoutPanel or DevExpress LayoutControl.
-///    • Ensure the page looks pixel-accurate to the wireframe.
-///
-/// 10. IMPORTANT RULES
-///     • DO NOT use Windows.Forms controls.
-///     • DO NOT change backend logic.
-///     • DO NOT rename methods.
-///     • You may rearrange Designer code safely.
-///
-/// ?????????????????????????????????????????????????????????????????
-/// Use the wireframe as the authoritative source. Adjust positions,
-/// widths, margins, paddings, and anchors until it visually matches.
-/// 
-/// Begin implementing now.
-
