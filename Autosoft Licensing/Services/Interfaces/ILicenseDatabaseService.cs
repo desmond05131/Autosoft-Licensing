@@ -59,5 +59,9 @@ namespace Autosoft_Licensing.Services
 
         // Duplicate check: exact-match on CompanyName + ProductID + ValidFromUtc + ValidToUtc
         bool ExistsDuplicateLicense(string companyName, string productId, DateTime validFromUtc, DateTime validToUtc);
+
+        // --- App Settings (global key/value) ---
+        string GetSetting(string key, string defaultValue);
+        void SaveSetting(string key, string value);
     }
 }

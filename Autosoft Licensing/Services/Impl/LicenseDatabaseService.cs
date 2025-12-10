@@ -991,6 +991,33 @@ VALUES (@lid, @mid);", conn, tx);
             }
         }
 
+        // ---------- App Settings ----------
+        public string GetSetting(string key, string defaultValue)
+        {
+            using var conn = _factory.Create();
+            using var cmd = new SqlCommand("SELECT TOP(1) [Value] FROM dbo.AppSettings WHERE [Key] = @k;", conn);
+            cmd.Parameters.AddWithValue("@k", key ?? (object)DBNull.Value);
+            conn.Open();
+            var obj = cmd.ExecuteScalar();
+            if (obj == null || obj == DBNull.Value) return defaultValue;
+            return Convert.ToString(obj);
+        }
+
+        public void SaveSetting(string key, string value)
+        {
+            using var conn = _factory.Create();
+            using var cmd = new SqlCommand(@"
+MERGE dbo.AppSettings AS target
+USING (SELECT @Key AS [Key]) AS source
+ON (target.[Key] = source.[Key])
+WHEN MATCHED THEN UPDATE SET [Value] = @Value
+WHEN NOT MATCHED THEN INSERT ([Key], [Value]) VALUES (@Key, @Value);", conn);
+            cmd.Parameters.AddWithValue("@Key", (object)key ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@Value", (object)value ?? DBNull.Value);
+            conn.Open();
+            cmd.ExecuteNonQuery();
+        }
+
         // Helper to parse enums using the non-generic Enum.Parse and cast to the requested enum type.
         private static T ParseEnum<T>(string value, bool ignoreCase = true) where T : struct, Enum
         {

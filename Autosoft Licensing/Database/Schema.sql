@@ -149,3 +149,36 @@ ALTER TABLE dbo.Users ADD [CanManageProduct] BIT NOT NULL CONSTRAINT DF_Users_Ca
 
 IF COL_LENGTH('dbo.Users', 'CanManageUsers') IS NULL
 ALTER TABLE dbo.Users ADD [CanManageUsers] BIT NOT NULL CONSTRAINT DF_Users_CanManageUsers DEFAULT(0) WITH VALUES;
+
+-- AppSettings table (stores global app configuration key/value pairs)
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.tables t
+    WHERE t.name = 'AppSettings' AND t.schema_id = SCHEMA_ID('dbo')
+)
+BEGIN
+    CREATE TABLE dbo.AppSettings (
+        [Key]   NVARCHAR(100) NOT NULL PRIMARY KEY,
+        [Value] NVARCHAR(MAX) NULL
+    );
+END
+GO
+
+-- Default seed values for global durations
+IF NOT EXISTS (SELECT 1 FROM dbo.AppSettings WHERE [Key] = 'Duration_Demo_Months')
+BEGIN
+    INSERT INTO dbo.AppSettings ([Key], [Value]) VALUES ('Duration_Demo_Months', '1');
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.AppSettings WHERE [Key] = 'Duration_Sub_Months')
+BEGIN
+    INSERT INTO dbo.AppSettings ([Key], [Value]) VALUES ('Duration_Sub_Months', '12');
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.AppSettings WHERE [Key] = 'Duration_Perm_Years')
+BEGIN
+    INSERT INTO dbo.AppSettings ([Key], [Value]) VALUES ('Duration_Perm_Years', '10');
+END
+GO

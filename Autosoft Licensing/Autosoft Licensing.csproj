@@ -243,6 +243,9 @@
     <Compile Include="Services\Interfaces\ILicenseKeyGenerator.cs" />
     <Compile Include="Services\Interfaces\IProductService.cs" />
     <Compile Include="Services\Interfaces\IUserService.cs" />
+    <EmbeddedResource Include="UI\Pages\GeneralSettingPage.resx">
+      <DependentUpon>GeneralSettingPage.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="UI\Pages\ManageUserPage.resx">
       <DependentUpon>ManageUserPage.cs</DependentUpon>
     </EmbeddedResource>
@@ -298,6 +301,12 @@
     <Compile Include="Services\Interfaces\ILicenseRequestService.cs" />
     <Compile Include="Services\Interfaces\ILicenseService.cs" />
     <Compile Include="Services\Interfaces\IValidationService.cs" />
+    <Compile Include="UI\Pages\GeneralSettingPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UI\Pages\GeneralSettingPage.Designer.cs">
+      <DependentUpon>GeneralSettingPage.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\Pages\GenerateLicensePage.cs">
       <SubType>UserControl</SubType>
     </Compile>

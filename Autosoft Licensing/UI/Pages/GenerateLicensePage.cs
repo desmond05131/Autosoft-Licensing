@@ -46,6 +46,41 @@ namespace Autosoft_Licensing.UI.Pages
             public string ModuleCode { get; set; }
         }
 
+        // NEW: AppSettings-driven defaults helper
+        private (int demoMonths, int subscriptionMonths, int permanentYears) GetDefaultDurations()
+        {
+            // Safe defaults
+            int defDemo = 1;
+            int defSub = 12;
+            int defPerm = 10;
+
+            try
+            {
+                if (_dbService != null)
+                {
+                    var sDemo = _dbService.GetSetting("Duration_Demo_Months", "1");
+                    var sSub  = _dbService.GetSetting("Duration_Sub_Months", "12");
+                    var sPerm = _dbService.GetSetting("Duration_Perm_Years", "10");
+
+                    int parsed;
+                    if (int.TryParse(sDemo, out parsed)) defDemo = parsed;
+                    if (int.TryParse(sSub, out parsed))  defSub  = parsed;
+                    if (int.TryParse(sPerm, out parsed)) defPerm = parsed;
+
+                    // Clamp to sane bounds
+                    defDemo = Math.Max(1, Math.Min(defDemo, 120));
+                    defSub  = Math.Max(1, Math.Min(defSub, 120));
+                    defPerm = Math.Max(1, Math.Min(defPerm, 99));
+                }
+            }
+            catch
+            {
+                // keep defaults
+            }
+
+            return (defDemo, defSub, defPerm);
+        }
+
         public GenerateLicensePage()
         {
             InitializeComponent();
@@ -247,19 +282,45 @@ namespace Autosoft_Licensing.UI.Pages
 
                 dtIssueDate.DateTime = DateTime.UtcNow.Date; // display local date, stored using ToUtc when saving
 
-                // Respect the requested months but enforce Demo -> 1 month representation in UI.
-                int months = Math.Max(1, arl.RequestedPeriodMonths);
-                if (string.Equals(arl?.LicenseType, "Demo", StringComparison.Ordinal))
-                    months = 1;
+                // --- Apply AppSettings-driven defaults ---
+                (int defDemo, int defSub, int defPerm) = GetDefaultDurations();
 
-                numSubscriptionMonths.Value = months;
-                dtExpireDate.DateTime = dtIssueDate.DateTime.AddMonths(months);
+                // Determine LicenseType from ARL (Paid => Subscription)
+                var selectedType = LicenseType.Subscription;
+                if (!string.IsNullOrWhiteSpace(arl.LicenseType))
+                {
+                    if (arl.LicenseType.Equals("Demo", StringComparison.Ordinal))
+                        selectedType = LicenseType.Demo;
+                    else if (arl.LicenseType.Equals("Permanent", StringComparison.Ordinal))
+                        selectedType = LicenseType.Permanent;
+                    else
+                        selectedType = LicenseType.Subscription;
+                }
 
-                // Set LicenseType radio selection visually: Demo -> Demo, otherwise treat Paid as Subscription
-                if (string.Equals(arl.LicenseType, "Demo", StringComparison.Ordinal))
-                    rgLicenseType.SelectedIndex = 0; // Demo
-                else
-                    rgLicenseType.SelectedIndex = 1; // Subscription (treat Paid as subscription by default)
+                // Reflect type in radio group
+                rgLicenseType.SelectedIndex = selectedType == LicenseType.Demo ? 0 :
+                                              selectedType == LicenseType.Subscription ? 1 : 2;
+
+                // Respect ARL.RequestedPeriodMonths for Subscription when reasonable; Demo/Permanent use settings
+                var issueLocal = dtIssueDate.DateTime;
+                switch (selectedType)
+                {
+                    case LicenseType.Demo:
+                        numSubscriptionMonths.Value = defDemo;
+                        dtExpireDate.DateTime = issueLocal.AddMonths(defDemo);
+                        break;
+
+                    case LicenseType.Subscription:
+                        // prefer ARL value if >=1, else fallback to AppSetting
+                        var months = arl.RequestedPeriodMonths >= 1 ? arl.RequestedPeriodMonths : defSub;
+                        numSubscriptionMonths.Value = Math.Max(1, months);
+                        dtExpireDate.DateTime = issueLocal.AddMonths((int)numSubscriptionMonths.Value);
+                        break;
+
+                    case LicenseType.Permanent:
+                        dtExpireDate.DateTime = issueLocal.AddYears(defPerm);
+                        break;
+                }
 
                 btnGenerateKey.Enabled = true;
                 btnPreview.Enabled = false;
@@ -287,28 +348,45 @@ namespace Autosoft_Licensing.UI.Pages
         {
             try
             {
-                var selected = rgLicenseType.Properties.Items[rgLicenseType.SelectedIndex].Value?.ToString();
-                if (string.Equals(selected, "Demo", StringComparison.OrdinalIgnoreCase))
+                (int defDemo, int defSub, int defPerm) = GetDefaultDurations();
+
+                // Current issue date (local)
+                var issueLocal = DateTime.UtcNow.Date;
+                try { issueLocal = dtIssueDate?.DateTime.Date ?? DateTime.UtcNow.Date; } catch { }
+
+                // Determine selected type from radio group
+                var selectedType = LicenseType.Subscription;
+                try
                 {
-                    numSubscriptionMonths.Value = 1;
-                    numSubscriptionMonths.Enabled = false;
-                    dtExpireDate.DateTime = dtIssueDate.DateTime.AddMonths(1);
+                    var txt = Convert.ToString(rgLicenseType.EditValue);
+                    if (!string.IsNullOrWhiteSpace(txt) && Enum.TryParse(txt, true, out LicenseType lt))
+                        selectedType = lt;
                 }
-                else if (string.Equals(selected, "Subscription", StringComparison.OrdinalIgnoreCase))
+                catch { selectedType = LicenseType.Subscription; }
+
+                switch (selectedType)
                 {
-                    numSubscriptionMonths.Enabled = true;
-                    if (numSubscriptionMonths.Value <= 1) numSubscriptionMonths.Value = 12;
-                    dtExpireDate.DateTime = dtIssueDate.DateTime.AddMonths((int)numSubscriptionMonths.Value);
-                }
-                else
-                {
-                    numSubscriptionMonths.Enabled = false;
-                    dtExpireDate.DateTime = DateTime.SpecifyKind(DateTime.MaxValue.Date, DateTimeKind.Utc).ToLocalTime();
+                    case LicenseType.Demo:
+                        // Demo months from settings; enforce and recompute expiry
+                        try { if (numSubscriptionMonths != null) numSubscriptionMonths.Value = defDemo; } catch { }
+                        try { dtExpireDate.DateTime = issueLocal.AddMonths(defDemo); } catch { }
+                        break;
+
+                    case LicenseType.Subscription:
+                        // Subscription default months from settings; recompute expiry
+                        try { if (numSubscriptionMonths != null) numSubscriptionMonths.Value = defSub; } catch { }
+                        try { dtExpireDate.DateTime = issueLocal.AddMonths(defSub); } catch { }
+                        break;
+
+                    case LicenseType.Permanent:
+                        // Permanent expiry computed by years setting
+                        try { dtExpireDate.DateTime = issueLocal.AddYears(defPerm); } catch { }
+                        break;
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // ignore UI update failures
+                System.Diagnostics.Debug.WriteLine("rgLicenseType_SelectedIndexChanged error: " + ex);
             }
         }
 
@@ -319,8 +397,10 @@ namespace Autosoft_Licensing.UI.Pages
                 var selected = rgLicenseType.Properties.Items[rgLicenseType.SelectedIndex].Value?.ToString();
                 if (string.Equals(selected, "Demo", StringComparison.OrdinalIgnoreCase))
                 {
-                    numSubscriptionMonths.Value = 1;
-                    dtExpireDate.DateTime = dtIssueDate.DateTime.AddMonths(1);
+                    // Enforce Demo using AppSettings
+                    (int defDemo, int _, int __) = GetDefaultDurations();
+                    numSubscriptionMonths.Value = defDemo;
+                    dtExpireDate.DateTime = dtIssueDate.DateTime.AddMonths(defDemo);
                     return;
                 }
 
@@ -485,7 +565,7 @@ namespace Autosoft_Licensing.UI.Pages
                     var licenseData = new LicenseData
                     {
                         CompanyName = _currentPayload.CompanyName,
-                        ProductID = _currentPayload.ProductID,
+                        ProductID = _current_payload_productid_safe(),
                         DealerCode = _currentPayload.DealerCode,
                         ValidFromUtc = _currentPayload.ValidFromUtc,
                         ValidToUtc = _currentPayload.ValidToUtc,
