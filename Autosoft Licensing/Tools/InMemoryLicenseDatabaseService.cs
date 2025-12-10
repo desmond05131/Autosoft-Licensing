@@ -20,6 +20,9 @@ namespace Autosoft_Licensing.Tools
         private readonly List<LicenseRequestRecord> _requests = new List<LicenseRequestRecord>();
         private readonly List<LicenseMetadata> _licenses = new List<LicenseMetadata>();
 
+        // In-memory AppSettings (global key/value)
+        private readonly Dictionary<string, string> _settings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
         private int _nextUserId = 1;
         private int _nextProductId = 1;
         private int _nextModuleId = 1;
@@ -51,6 +54,11 @@ namespace Autosoft_Licensing.Tools
             _modules.Add(new Module { Id = _nextModuleId++, ProductId = prod.Id, ModuleCode = "MODULE-001", Name = "Module 1", IsActive = true });
             _modules.Add(new Module { Id = _nextModuleId++, ProductId = prod.Id, ModuleCode = "MODULE-002", Name = "Module 2", IsActive = true });
             _modules.Add(new Module { Id = _nextModuleId++, ProductId = prod.Id, ModuleCode = "MODULE-003", Name = "Module 3", IsActive = true });
+
+            // Seed default settings to match GeneralSettingPage expectations
+            _settings["Duration_Demo_Days"] = "30";
+            _settings["Duration_Sub_Months"] = "12";
+            _settings["Duration_Perm_Years"] = "10";
         }
 
         // --- Users ---
@@ -143,6 +151,7 @@ namespace Autosoft_Licensing.Tools
                 ImportedOnUtc = m.ImportedOnUtc,
                 ImportedByUserId = m.ImportedByUserId,
                 RawAslBase64 = m.RawAslBase64,
+                Remarks = m.Remarks,
                 ModuleCodes = m.ModuleCodes == null ? new List<string>() : new List<string>(m.ModuleCodes)
             };
         }
@@ -334,6 +343,21 @@ namespace Autosoft_Licensing.Tools
             validToUtc = l.ValidToUtc;
             status = l.Status.ToString();
             return true;
+        }
+
+        // --- App Settings (global key/value) ---
+        public string GetSetting(string key, string defaultValue)
+        {
+            if (key == null) return defaultValue;
+            if (_settings.TryGetValue(key, out var val))
+                return val ?? defaultValue;
+            return defaultValue;
+        }
+
+        public void SaveSetting(string key, string value)
+        {
+            if (key == null) throw new ArgumentNullException(nameof(key));
+            _settings[key] = value;
         }
     }
 }
