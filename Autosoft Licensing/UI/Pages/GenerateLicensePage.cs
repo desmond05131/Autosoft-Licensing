@@ -92,6 +92,13 @@ namespace Autosoft_Licensing.UI.Pages
         {
             InitializeComponent();
 
+            // FORCE EVENT WIRING: Ensure buttons are connected to their handlers
+            // This fixes the issue where Designer.cs loses the subscriptions
+            if (btnUploadArl != null) btnUploadArl.Click += btnUploadArl_Click;
+            if (btnGenerateKey != null) btnGenerateKey.Click += btnGenerateKey_Click;
+            if (btnPreview != null) btnPreview.Click += btnPreview_Click;
+            if (btnDownload != null) btnDownload.Click += btnDownload_Click;
+
             try
             {
                 if (!DesignMode)
