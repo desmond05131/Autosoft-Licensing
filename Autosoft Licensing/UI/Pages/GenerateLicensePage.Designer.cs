@@ -487,6 +487,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.btnUploadArl.Size = new System.Drawing.Size(160, 36);
             this.btnUploadArl.TabIndex = 2;
             this.btnUploadArl.Text = "Upload License File";
+            this.btnUploadArl.Click += new System.EventHandler(this.btnUploadArl_Click);
             // 
             // grpInfo
             // 
