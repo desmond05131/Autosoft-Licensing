@@ -13,7 +13,7 @@ namespace Autosoft_Licensing.UI.Pages
     {
         private IContainer components = null;
 
-        // Header & nav (reused pattern from GenerateLicensePage)
+        // ... [Member variables omitted for brevity, identical to previous] ...
         private PanelControl headerPanel;
         private LabelControl lblHeaderTitle;
         private PanelControl navPanel;
@@ -30,18 +30,12 @@ namespace Autosoft_Licensing.UI.Pages
         private PanelControl btnNav_ManageUser;
         private PictureEdit picNav_User;
         private LabelControl lblNav_User;
-
-        // NEW: General Setting tab (match GeneralSettingPage)
         private PanelControl btnNav_GeneralSetting;
         private PictureEdit picNav_Setting;
         private LabelControl lblNav_Setting;
-
-        // UPDATED: Logout tab (standardized to match GeneralSettingPage)
         private PanelControl btnNav_Logout;
         private PictureEdit picNav_Logout;
         private LabelControl lblNav_Logout;
-
-        // Filtering section
         private GroupControl grpFiltering;
         private LabelControl lblCompanyName;
         private ComboBoxEdit cmbCompanyName;
@@ -67,8 +61,6 @@ namespace Autosoft_Licensing.UI.Pages
         private LabelControl lblCountdownDays;
         private SpinEdit numCountdownDays;
         private SimpleButton btnRefresh;
-
-        // Grid
         private GridControl grdLicenses;
         private GridView viewLicenses;
         private DevExpress.XtraGrid.Columns.GridColumn colCompanyName;
@@ -79,8 +71,6 @@ namespace Autosoft_Licensing.UI.Pages
         private DevExpress.XtraGrid.Columns.GridColumn colExpiryDate;
         private DevExpress.XtraGrid.Columns.GridColumn colStatus;
         private DevExpress.XtraGrid.Columns.GridColumn colCountdown;
-
-        // Action buttons
         private SimpleButton btnCreate;
         private SimpleButton btnView;
         private SimpleButton btnEdit;
@@ -474,7 +464,7 @@ namespace Autosoft_Licensing.UI.Pages
             // 
             // grpFiltering
             // 
-            this.grpFiltering.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.grpFiltering.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.grpFiltering.Appearance.BackColor = System.Drawing.Color.White;
             this.grpFiltering.Appearance.Options.UseBackColor = true;
@@ -734,8 +724,8 @@ namespace Autosoft_Licensing.UI.Pages
             // 
             // grdLicenses
             // 
-            this.grdLicenses.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            this.grdLicenses.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.grdLicenses.Location = new System.Drawing.Point(12, 345);
             this.grdLicenses.MainView = this.viewLicenses;
@@ -903,7 +893,8 @@ namespace Autosoft_Licensing.UI.Pages
             this.Controls.Add(this.navPanel);
             this.Controls.Add(this.headerPanel);
             this.Name = "LicenseRecordsPage";
-            this.Size = new System.Drawing.Size(999, 665);
+            // INCREASED HEIGHT to 760 to ensure buttons (at Y=710) are visible
+            this.Size = new System.Drawing.Size(1000, 760);
             ((System.ComponentModel.ISupportInitialize)(this.headerPanel)).EndInit();
             this.headerPanel.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.navPanel)).EndInit();

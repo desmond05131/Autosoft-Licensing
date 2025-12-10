@@ -843,7 +843,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.btnDownload.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.btnDownload.Appearance.BackColor = System.Drawing.Color.White;
             this.btnDownload.Appearance.Options.UseBackColor = true;
-            this.btnDownload.Location = new System.Drawing.Point(519, 520);
+            this.btnDownload.Location = new System.Drawing.Point(423, 520);
             this.btnDownload.LookAndFeel.UseDefaultLookAndFeel = false;
             this.btnDownload.Name = "btnDownload";
             this.btnDownload.Size = new System.Drawing.Size(160, 30);
@@ -871,7 +871,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.Controls.Add(this.lblLicenseKey);
             this.Controls.Add(this.txtLicenseKey);
             this.Controls.Add(this.btnGenerateKey);
-            this.Controls.Add(this.btnPreview);
+            //this.Controls.Add(this.btnPreview);
             this.Controls.Add(this.btnDownload);
             this.Name = "GenerateLicensePage";
             this.Size = new System.Drawing.Size(1019, 648);
