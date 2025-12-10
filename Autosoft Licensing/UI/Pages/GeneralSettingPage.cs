@@ -21,7 +21,10 @@ namespace Autosoft_Licensing.UI.Pages
                 if (btnNav_ManageProduct != null) BindNavigationEvent(btnNav_ManageProduct, "ManageProductPage");
                 if (btnNav_ManageUser != null) BindNavigationEvent(btnNav_ManageUser, "ManageUserPage");
                 if (btnNav_GeneralSetting != null) BindNavigationEvent(btnNav_GeneralSetting, "GeneralSettingPage");
-                if (btnLogout != null) BindNavigationEvent(btnLogout, "Logout");
+                // NEW: Logout nav bindings (panel + inner controls)
+                if (btnNav_Logout != null) BindNavigationEvent(btnNav_Logout, "Logout");
+                if (lblNav_Logout != null) BindNavigationEvent(lblNav_Logout, "Logout");
+                if (picNav_Logout != null) BindNavigationEvent(picNav_Logout, "Logout");
             }
             catch { /* best-effort */ }
 
@@ -56,23 +59,23 @@ namespace Autosoft_Licensing.UI.Pages
                 if (_dbService == null) return;
 
                 // Defaults if not present
-                int demo = SafeParseInt(_dbService.GetSetting("Duration_Demo_Months", "1"), 1);
-                int sub = SafeParseInt(_dbService.GetSetting("Duration_Sub_Months", "12"), 12);
-                int perm = SafeParseInt(_dbService.GetSetting("Duration_Perm_Years", "10"), 10);
+                int demoDays = SafeParseInt(_dbService.GetSetting("Duration_Demo_Days", "30"), 30);
+                int subMonths = SafeParseInt(_dbService.GetSetting("Duration_Sub_Months", "12"), 12);
+                int permYears = SafeParseInt(_dbService.GetSetting("Duration_Perm_Years", "10"), 10);
 
                 // Clamp within control limits
-                if (demo < 1) demo = 1; if (demo > 12) demo = 12;
-                if (sub < 1) sub = 1; if (sub > 120) sub = 120;
-                if (perm < 1) perm = 1; if (perm > 99) perm = 99;
+                if (demoDays < 1) demoDays = 1; if (demoDays > 365) demoDays = 365;
+                if (subMonths < 1) subMonths = 1; if (subMonths > 120) subMonths = 120;
+                if (permYears < 1) permYears = 1; if (permYears > 999) permYears = 999;
 
-                spinDemo.Value = demo;
-                spinSub.Value = sub;
-                spinPerm.Value = perm;
+                spinDemo.Value = demoDays;
+                spinSub.Value = subMonths;
+                spinPerm.Value = permYears;
             }
             catch
             {
                 // Keep safe defaults if DB read fails
-                spinDemo.Value = 1;
+                spinDemo.Value = 30;
                 spinSub.Value = 12;
                 spinPerm.Value = 10;
             }
@@ -94,7 +97,7 @@ namespace Autosoft_Licensing.UI.Pages
                     return;
                 }
 
-                _dbService.SaveSetting("Duration_Demo_Months", ((int)spinDemo.Value).ToString());
+                _dbService.SaveSetting("Duration_Demo_Days", ((int)spinDemo.Value).ToString());
                 _dbService.SaveSetting("Duration_Sub_Months", ((int)spinSub.Value).ToString());
                 _dbService.SaveSetting("Duration_Perm_Years", ((int)spinPerm.Value).ToString());
 
@@ -125,6 +128,9 @@ namespace Autosoft_Licensing.UI.Pages
 
                 // Save button only for Admin
                 if (btnSave != null) btnSave.Enabled = isAdmin;
+
+                // NEW: Logout always visible
+                if (btnNav_Logout != null) btnNav_Logout.Visible = true;
             }
             catch { /* ignore */ }
         }
