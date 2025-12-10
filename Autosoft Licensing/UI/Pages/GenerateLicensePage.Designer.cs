@@ -821,6 +821,8 @@ namespace Autosoft_Licensing.UI.Pages
             this.btnGenerateKey.Size = new System.Drawing.Size(160, 30);
             this.btnGenerateKey.TabIndex = 14;
             this.btnGenerateKey.Text = "Generate License Key";
+            // Fix for Generate Key Button
+            this.btnGenerateKey.Click += new System.EventHandler(this.btnGenerateKey_Click);
             // 
             // btnPreview
             // 
@@ -833,6 +835,8 @@ namespace Autosoft_Licensing.UI.Pages
             this.btnPreview.Size = new System.Drawing.Size(80, 30);
             this.btnPreview.TabIndex = 15;
             this.btnPreview.Text = "Preview";
+            // Fix for Preview Button
+            this.btnPreview.Click += new System.EventHandler(this.btnPreview_Click);
             // 
             // btnDownload
             // 
@@ -845,6 +849,8 @@ namespace Autosoft_Licensing.UI.Pages
             this.btnDownload.Size = new System.Drawing.Size(160, 30);
             this.btnDownload.TabIndex = 16;
             this.btnDownload.Text = "Download License";
+            // Fix for Download Button
+            this.btnDownload.Click += new System.EventHandler(this.btnDownload_Click);
             // 
             // GenerateLicensePage
             // 
