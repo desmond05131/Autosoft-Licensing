@@ -91,118 +91,25 @@ namespace Autosoft_Licensing.UI.Pages
         public GenerateLicensePage()
         {
             InitializeComponent();
-            try
-            {
-                // Navigation buttons -> FireNavigate
-                // REPLACED: use BindNavigationEvent to ensure clicks on child label/icon also trigger navigation.
-                if (btnNav_GenerateLicense != null) BindNavigationEvent(btnNav_GenerateLicense, "GenerateLicensePage");
-                if (btnNav_LicenseRecords != null) BindNavigationEvent(btnNav_LicenseRecords, "LicenseRecordsPage");
-                if (btnNav_ManageProduct != null) BindNavigationEvent(btnNav_ManageProduct, "ManageProductPage");
-                if (btnNav_ManageUser != null) BindNavigationEvent(btnNav_ManageUser, "ManageUserPage");
-
-                // NEW: General Setting + Logout consistent bindings
-                if (btnNav_GeneralSetting != null) BindNavigationEvent(btnNav_GeneralSetting, "GeneralSettingPage");
-                if (btnNav_Logout != null) BindNavigationEvent(btnNav_Logout, "Logout");
-
-                // Also bind inner label/picture clicks to same target
-                if (lblNav_Setting != null) BindNavigationEvent(lblNav_Setting, "GeneralSettingPage");
-                if (picNav_Setting != null) BindNavigationEvent(picNav_Setting, "GeneralSettingPage");
-
-                if (lblNav_Logout != null) BindNavigationEvent(lblNav_Logout, "Logout");
-                if (picNav_Logout != null) BindNavigationEvent(picNav_Logout, "Logout");
-            }
-            catch { /* best-effort, avoid exceptions in ctor */ }
 
             try
             {
                 if (!DesignMode)
                 {
-                    // Dates
-                    dtIssueDate.DateTime = DateTime.UtcNow.Date;
-                    dtExpireDate.DateTime = dtIssueDate.DateTime;
+                    // Standardized navigation wiring
+                    if (btnNav_GenerateLicense != null) BindNavigationEvent(btnNav_GenerateLicense, "GenerateLicensePage");
+                    if (btnNav_LicenseRecords != null) BindNavigationEvent(btnNav_LicenseRecords, "LicenseRecordsPage");
+                    if (btnNav_ManageProduct != null) BindNavigationEvent(btnNav_ManageProduct, "ManageProductPage");
+                    if (btnNav_ManageUser != null) BindNavigationEvent(btnNav_ManageUser, "ManageUserPage");
+                    if (btnNav_GeneralSetting != null) BindNavigationEvent(btnNav_GeneralSetting, "GeneralSettingPage");
 
-                    // Radio items
-                    rgLicenseType.Properties.Items.Clear();
-                    rgLicenseType.Properties.Items.AddRange(new DevExpress.XtraEditors.Controls.RadioGroupItem[]
-                    {
-                        new DevExpress.XtraEditors.Controls.RadioGroupItem("Demo", "Demo"),
-                        new DevExpress.XtraEditors.Controls.RadioGroupItem("Subscription", "Subscription"),
-                        new DevExpress.XtraEditors.Controls.RadioGroupItem("Permanent", "Permanent")
-                    });
-                    rgLicenseType.SelectedIndex = 1; // Subscription default
-
-                    // Numeric
-                    numSubscriptionMonths.Properties.IsFloatValue = false;
-                    numSubscriptionMonths.Properties.MinValue = 1;
-                    numSubscriptionMonths.Properties.MaxValue = 1200;
-                    numSubscriptionMonths.Value = 12;
-
-                    // Attach event handlers
-                    btnUploadArl.Click += btnUploadArl_Click;
-                    rgLicenseType.SelectedIndexChanged += rgLicenseType_SelectedIndexChanged;
-                    numSubscriptionMonths.ValueChanged += numSubscriptionMonths_ValueChanged;
-                    btnGenerateKey.Click += btnGenerateKey_Click;
-                    btnPreview.Click += btnPreview_Click;
-                    btnDownload.Click += btnDownload_Click;
-
-                    // Default states
-                    btnGenerateKey.Enabled = false;
-                    btnPreview.Enabled = false;
-                    btnDownload.Enabled = false;
-
-                    // Best-effort ServiceRegistry wiring (omitted here for brevity; unchanged)
-                    try { if (_arlReader == null) _arlReader = ServiceRegistry.ArlReader; } catch { }
-                    try { if (_aslService == null) _aslService = ServiceRegistry.AslGenerator; } catch { }
-                    try { if (_productService == null) _productService = ServiceRegistry.Product; } catch { }
-                    try
-                    {
-                        if (_dbService == null) _dbService = ServiceRegistry.Database;
-                    }
-                    catch
-                    {
-                        try
-                        {
-                            var memDb = new Autosoft_Licensing.Tools.InMemoryLicenseDatabaseService();
-                            ServiceRegistry.Database = memDb;
-                            _dbService = memDb;
-                        }
-                        catch
-                        {
-                            _dbService = null;
-                        }
-                    }
-                    try { if (_userService == null) _userService = ServiceRegistry.User; } catch { }
-
-                    // Ensure modules grid is editable
-                    try
-                    {
-                        var gv = grdModules.MainView as GridView;
-                        if (gv != null)
-                        {
-                            gv.OptionsBehavior.Editable = true;
-                            gv.OptionsView.ShowAutoFilterRow = false;
-                            gv.OptionsView.ShowGroupPanel = false;
-                        }
-                        if (colEnabled != null)
-                        {
-                            colEnabled.OptionsColumn.AllowEdit = true;
-                            try
-                            {
-                                var chk = new RepositoryItemCheckEdit();
-                                chk.NullStyle = DevExpress.XtraEditors.Controls.StyleIndeterminate.Unchecked;
-                                grdModules.RepositoryItems.Add(chk);
-                                colEnabled.ColumnEdit = chk;
-                            }
-                            catch { }
-                        }
-                    }
-                    catch { }
+                    // Logout (panel + inner label + picture)
+                    if (btnNav_Logout != null) BindNavigationEvent(btnNav_Logout, "Logout");
+                    if (lblNav_Logout != null) BindNavigationEvent(lblNav_Logout, "Logout");
+                    if (picNav_Logout != null) BindNavigationEvent(picNav_Logout, "Logout");
                 }
             }
-            catch (Exception ex)
-            {
-                try { System.Diagnostics.Debug.WriteLine($"GenerateLicensePage ctor suppressed exception: {ex}"); } catch { }
-            }
+            catch { /* best-effort */ }
         }
 
         /// <summary>

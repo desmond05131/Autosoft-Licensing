@@ -127,6 +127,8 @@ namespace Autosoft_Licensing
                      elementName.Equals("aceGenerateLicense", StringComparison.OrdinalIgnoreCase) ||
                      elementName.Equals("btnNav_GenerateLicense", StringComparison.OrdinalIgnoreCase))
                 key = "GenerateLicensePage";
+            else if (elementName.Equals("aceSettingsSecurity", StringComparison.OrdinalIgnoreCase))
+                key = "GeneralSettingPage";
 
             if (!_pageCache.TryGetValue(key, out var page))
             {
@@ -181,6 +183,18 @@ namespace Autosoft_Licensing
                     case "ManageUserPage":
                     {
                         var p = new ManageUserPage();
+                        try
+                        {
+                            p.Initialize(ServiceRegistry.Database);
+                        }
+                        catch { }
+                        page = p;
+                        break;
+                    }
+
+                    case "GeneralSettingPage":
+                    {
+                        var p = new GeneralSettingPage();
                         try
                         {
                             p.Initialize(ServiceRegistry.Database);

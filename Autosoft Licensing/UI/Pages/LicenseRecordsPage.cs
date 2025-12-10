@@ -48,54 +48,19 @@ namespace Autosoft_Licensing.UI.Pages
         {
             InitializeComponent();
 
-            try
+            if (!DesignMode)
             {
-                if (!DesignMode)
-                {
-                    // Wire services from ServiceRegistry (best-effort)
-                    try { if (_dbService == null) _dbService = ServiceRegistry.Database; } catch { }
-                    try { if (_userService == null) _userService = ServiceRegistry.User; } catch { }
+                // Standardized navigation wiring
+                if (btnNav_GenerateLicense != null) BindNavigationEvent(btnNav_GenerateLicense, "GenerateLicensePage");
+                if (btnNav_LicenseRecords != null) BindNavigationEvent(btnNav_LicenseRecords, "LicenseRecordsPage");
+                if (btnNav_ManageProduct != null) BindNavigationEvent(btnNav_ManageProduct, "ManageProductPage");
+                if (btnNav_ManageUser != null) BindNavigationEvent(btnNav_ManageUser, "ManageUserPage");
+                if (btnNav_GeneralSetting != null) BindNavigationEvent(btnNav_GeneralSetting, "GeneralSettingPage");
 
-                    // Initialize filter combos
-                    InitializeFilterCombos();
-
-                    // Wire event handlers
-                    btnRefresh.Click += btnRefresh_Click;
-                    cmbIssueDateMode.SelectedIndexChanged += DateModeCombo_SelectedIndexChanged;
-                    cmbExpiryDateMode.SelectedIndexChanged += DateModeCombo_SelectedIndexChanged;
-                    grdLicenses.DoubleClick += grdLicenses_DoubleClick;
-
-                    // Wire action buttons (Admin-only features)
-                    btnCreate.Click += btnCreate_Click;
-                    btnView.Click += btnView_Click;
-                    btnEdit.Click += btnEdit_Click;
-                    btnDelete.Click += btnDelete_Click;
-
-                    // Default filter values
-                    chkShowExpired.Checked = false;
-                    numCountdownDays.Value = 30;
-
-                    // Initial data load
-                    RefreshData();
-
-                    // Navigation buttons -> REPLACED with helper
-                    if (btnNav_GenerateLicense != null) BindNavigationEvent(btnNav_GenerateLicense, "GenerateLicensePage");
-                    if (btnNav_LicenseRecords != null) BindNavigationEvent(btnNav_LicenseRecords, "LicenseRecordsPage");
-                    if (btnNav_ManageProduct != null) BindNavigationEvent(btnNav_ManageProduct, "ManageProductPage");
-                    if (btnNav_ManageUser != null) BindNavigationEvent(btnNav_ManageUser, "ManageUserPage");
-                    // NEW: General Setting and Logout
-                    if (btnNav_GeneralSetting != null) BindNavigationEvent(btnNav_GeneralSetting, "GeneralSettingPage");
-                    if (btnNav_Logout != null)
-                    {
-                        BindNavigationEvent(btnNav_Logout, "Logout");
-                        if (lblNav_Logout != null) BindNavigationEvent(lblNav_Logout, "Logout");
-                        if (picNav_Logout != null) BindNavigationEvent(picNav_Logout, "Logout");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"LicenseRecordsPage ctor error: {ex}");
+                // Logout (panel + inner label + picture)
+                if (btnNav_Logout != null) BindNavigationEvent(btnNav_Logout, "Logout");
+                if (lblNav_Logout != null) BindNavigationEvent(lblNav_Logout, "Logout");
+                if (picNav_Logout != null) BindNavigationEvent(picNav_Logout, "Logout");
             }
         }
 
@@ -581,30 +546,11 @@ namespace Autosoft_Licensing.UI.Pages
         /// </summary>
         public override void InitializeForRole(User user)
         {
-            try
-            {
-                if (user == null) return;
+            if (user == null) return;
 
-                bool isAdmin = string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase);
-
-                // Edit/Delete/Create buttons enabled only for Admin
-                btnCreate.Enabled = isAdmin;
-                btnEdit.Enabled = isAdmin;
-                btnDelete.Enabled = isAdmin;
-                btnView.Enabled = true;
-
-                if (btnNav_GenerateLicense != null) btnNav_GenerateLicense.Visible = user.CanGenerateLicense;
-                if (btnNav_LicenseRecords != null) btnNav_LicenseRecords.Visible = user.CanViewRecords;
-                if (btnNav_ManageProduct != null) btnNav_ManageProduct.Visible = user.CanManageProduct;
-                if (btnNav_ManageUser != null) btnNav_ManageUser.Visible = user.CanManageUsers;
-
-                // NEW: General Setting visible for Admin only
-                if (btnNav_GeneralSetting != null) btnNav_GeneralSetting.Visible = isAdmin;
-
-                // NEW: Logout always visible
-                if (btnNav_Logout != null) btnNav_Logout.Visible = true;
-            }
-            catch { }
+            // Removed: btnNavLogoutText.Visible / pnlNavLogout.Visible
+            if (btnNav_Logout != null) btnNav_Logout.Visible = true;
+            if (btnNav_GeneralSetting != null) btnNav_GeneralSetting.Visible = string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
