@@ -15,5 +15,10 @@ namespace Autosoft_Licensing.Services
         /// Returns module DTOs for a product. Returns empty enumerable if none or on error.
         /// </summary>
         IEnumerable<ModuleDto> GetModulesByProductId(string productId);
+
+        /// <summary>
+        /// Returns true if the product exists and is marked as soft-deleted; false otherwise.
+        /// </summary>
+        bool IsProductDeleted(string productId);
     }
 }

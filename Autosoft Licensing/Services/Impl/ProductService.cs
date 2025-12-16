@@ -23,7 +23,6 @@ namespace Autosoft_Licensing.Services.Impl
             }
             catch
             {
-                // TODO: log the exception
                 return string.Empty;
             }
         }
@@ -32,14 +31,27 @@ namespace Autosoft_Licensing.Services.Impl
         {
             try
             {
-                // Pass-through now returns ModuleDto with Description populated by the DB service
                 var modules = _database.GetModulesForProduct(productId);
                 return modules ?? new List<ModuleDto>();
             }
             catch
             {
-                // TODO: log the exception
                 return new List<ModuleDto>();
+            }
+        }
+
+        // --- NEW METHOD: Check status ---
+        // Ensure you add "bool IsProductDeleted(string productId);" to your IProductService interface as well.
+        public bool IsProductDeleted(string productId)
+        {
+            try
+            {
+                var p = _database.GetProductByProductId(productId);
+                return p != null && p.IsDeleted;
+            }
+            catch
+            {
+                return false;
             }
         }
     }

@@ -74,6 +74,8 @@ namespace Autosoft_Licensing.UI.Pages
                     btnCreate.Click += btnCreate_Click;
                     btnView.Click += btnView_Click;
                     btnEdit.Click += btnEdit_Click;
+
+                    // Logic for Delete/Restore is handled in the handler now
                     btnDelete.Click += btnDelete_Click;
 
                     // NEW: Refresh button wires to RefreshData
@@ -86,6 +88,9 @@ namespace Autosoft_Licensing.UI.Pages
                         view.DoubleClick += Grid_DoubleClick;
                         // NEW: row styling
                         view.RowStyle += GridView_RowStyle;
+
+                        // --- FIX 2: Update Button Text on Row Change ---
+                        view.FocusedRowChanged += (s, e) => UpdateActionButtons();
                     }
 
                     // Search interactions
@@ -156,6 +161,9 @@ namespace Autosoft_Licensing.UI.Pages
 
                 // Logout always visible
                 if (btnNav_Logout != null) btnNav_Logout.Visible = true;
+
+                // Ensure button state reflects current selection
+                UpdateActionButtons();
             }
             catch { }
         }
@@ -211,6 +219,9 @@ namespace Autosoft_Licensing.UI.Pages
                     view?.BestFitColumns();
                 }
                 catch { }
+
+                // Update button label/state based on current selection
+                UpdateActionButtons();
             }
             catch (Exception ex)
             {
@@ -274,6 +285,41 @@ namespace Autosoft_Licensing.UI.Pages
             Navigate("ProductDetailsPage", row.Id, "Edit");
         }
 
+        // --- FIX 3: Dynamic Button Logic ---
+        private void UpdateActionButtons()
+        {
+            try
+            {
+                var row = GetFocusedRow();
+                if (row == null)
+                {
+                    btnDelete.Enabled = false;
+                    btnDelete.Text = "Delete";
+                    btnEdit.Enabled = false;
+                    return;
+                }
+
+                // Assuming permissions are already set via InitializeForRole
+                btnDelete.Enabled = btnDelete.Enabled; // keep current permission gating
+
+                if (row.IsDeleted)
+                {
+                    btnDelete.Text = "Restore";
+                    btnDelete.ImageOptions.Image = null; // Optional: swap icon for restore if available
+                    btnEdit.Enabled = false; // Cannot edit deleted items until restored
+                }
+                else
+                {
+                    btnDelete.Text = "Delete";
+                    btnEdit.Enabled = true;
+                }
+            }
+            catch
+            {
+                // Best-effort UI update; ignore errors
+            }
+        }
+
         private void btnDelete_Click(object sender, EventArgs e)
         {
             try
@@ -285,40 +331,72 @@ namespace Autosoft_Licensing.UI.Pages
                     return;
                 }
 
-                // Optional warning: check if licenses exist for this ProductID
-                int licenseCount = 0;
-                try
-                {
-                    if (_dbService != null)
-                        licenseCount = (_dbService.GetLicenses(row.ProductID) ?? Enumerable.Empty<LicenseMetadata>()).Count();
-                }
-                catch { /* ignore */ }
-
-                var warning = licenseCount > 0
-                    ? $"\n\nWarning: {licenseCount} existing license(s) reference this ProductID."
-                    : string.Empty;
-
-                var result = XtraMessageBox.Show(
-                    $"Are you sure you want to delete product '{row.ProductID}'?{warning}",
-                    "Confirm Delete",
-                    MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Warning);
-
-                if (result != DialogResult.Yes) return;
-
                 if (_dbService == null)
                 {
                     ShowError("Database service not initialized.");
                     return;
                 }
 
-                _dbService.DeleteProduct(row.Id);
-                ShowInfo("Product deleted.", "Success");
-                RefreshData();
+                // --- FIX 4: Handle Restore vs Delete ---
+                if (row.IsDeleted)
+                {
+                    // RESTORE LOGIC
+                    var result = XtraMessageBox.Show(
+                        $"Do you want to RESTORE product '{row.ProductID}'?\nIt will become active again.",
+                        "Confirm Restore",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Question);
+
+                    if (result != DialogResult.Yes) return;
+
+                    // 1. Fetch full product
+                    var product = _dbService.GetProductById(row.Id);
+                    if (product == null)
+                    {
+                        ShowError("Product not found.");
+                        return;
+                    }
+
+                    // 2. Un-delete
+                    product.IsDeleted = false;
+                    product.LastModifiedUtc = DateTime.UtcNow;
+
+                    // 3. Update
+                    _dbService.UpdateProduct(product);
+
+                    ShowInfo("Product restored successfully.", "Success");
+                    RefreshData();
+                }
+                else
+                {
+                    // DELETE LOGIC (Existing)
+                    int licenseCount = 0;
+                    try
+                    {
+                        licenseCount = (_dbService.GetLicenses(row.ProductID) ?? Enumerable.Empty<LicenseMetadata>()).Count();
+                    }
+                    catch { /* ignore */ }
+
+                    var warning = licenseCount > 0
+                        ? $"\n\nWarning: {licenseCount} existing license(s) reference this ProductID."
+                        : string.Empty;
+
+                    var result = XtraMessageBox.Show(
+                        $"Are you sure you want to delete product '{row.ProductID}'?{warning}",
+                        "Confirm Delete",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Warning);
+
+                    if (result != DialogResult.Yes) return;
+
+                    _dbService.DeleteProduct(row.Id);
+                    ShowInfo("Product deleted.", "Success");
+                    RefreshData();
+                }
             }
             catch (Exception ex)
             {
-                ShowError("Failed to delete product.");
+                ShowError($"Failed to update product status: {ex.Message}");
                 System.Diagnostics.Debug.WriteLine($"btnDelete_Click error: {ex}");
             }
         }

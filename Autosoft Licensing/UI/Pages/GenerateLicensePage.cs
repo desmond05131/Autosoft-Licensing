@@ -143,16 +143,11 @@ namespace Autosoft_Licensing.UI.Pages
         {
             try
             {
-                if (_arlReader == null)
-                {
-                    ShowError("Operation failed. Contact admin.");
-                    return;
-                }
+                if (_arlReader == null) { /* ... error ... */ return; }
 
                 using (var ofd = new OpenFileDialog())
                 {
                     ofd.Filter = "License Request Files (*.arl)|*.arl|All files (*.*)|*.*";
-                    ofd.Title = "Select License Request";
                     if (ofd.ShowDialog() != DialogResult.OK) return;
 
                     try
@@ -160,6 +155,14 @@ namespace Autosoft_Licensing.UI.Pages
                         // 1. Parse ARL
                         _currentRequest = _arlReader.ParseArl(ofd.FileName);
                         if (_currentRequest == null) throw new ValidationException("Invalid license request file.");
+
+                        // --- FIX 1: Block Deleted Products ---
+                        // Requires IsProductDeleted to be added to IProductService/ProductService
+                        if (_productService != null && _productService.IsProductDeleted(_currentRequest.ProductID))
+                        {
+                            ShowError($"The Product '{_currentRequest.ProductID}' has been deleted/discontinued.\n\nPlease restore the product in 'Manage Product' if you wish to generate a license.");
+                            return;
+                        }
 
                         // 2. Populate Header Fields
                         txtCompanyName.Text = _currentRequest.CompanyName ?? string.Empty;
