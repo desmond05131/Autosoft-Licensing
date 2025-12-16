@@ -586,6 +586,13 @@ namespace Autosoft_Licensing.UI.Pages
         {
             if (user == null) return;
 
+            // --- FIX START: Apply missing RBAC for navigation panel ---
+            if (btnNav_GenerateLicense != null) btnNav_GenerateLicense.Visible = user.CanGenerateLicense;
+            if (btnNav_LicenseRecords != null) btnNav_LicenseRecords.Visible = user.CanViewRecords;
+            if (btnNav_ManageProduct != null) btnNav_ManageProduct.Visible = user.CanManageProduct;
+            if (btnNav_ManageUser != null) btnNav_ManageUser.Visible = user.CanManageUsers;
+            // --- FIX END ---
+
             if (btnNav_Logout != null) btnNav_Logout.Visible = true;
             if (btnNav_GeneralSetting != null) btnNav_GeneralSetting.Visible = string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase);
 

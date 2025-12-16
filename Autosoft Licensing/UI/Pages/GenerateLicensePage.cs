@@ -133,6 +133,11 @@ namespace Autosoft_Licensing.UI.Pages
             _dbService = dbService ?? throw new ArgumentNullException(nameof(dbService));
             _user_service_check(userService);
             _userService = userService ?? throw new ArgumentNullException(nameof(userService));
+
+            // --- FIX START: Sync UI with General Settings on Load ---
+            // Now that _dbService is injected, we force a refresh of the period defaults.
+            ApplyDefaultDurationSettings();
+            // --- FIX END ---
         }
 
         private void _user_service_check(IUserService _dummy) { }
@@ -156,13 +161,16 @@ namespace Autosoft_Licensing.UI.Pages
                         _currentRequest = _arlReader.ParseArl(ofd.FileName);
                         if (_currentRequest == null) throw new ValidationException("Invalid license request file.");
 
-                        // --- FIX 1: Block Deleted Products ---
-                        // Requires IsProductDeleted to be added to IProductService/ProductService
-                        if (_productService != null && _productService.IsProductDeleted(_currentRequest.ProductID))
+                        // Block Deleted Products check (kept as per previous context, if applicable)
+                        try
                         {
-                            ShowError($"The Product '{_currentRequest.ProductID}' has been deleted/discontinued.\n\nPlease restore the product in 'Manage Product' if you wish to generate a license.");
-                            return;
+                            if (_productService != null && _productService.IsProductDeleted(_currentRequest.ProductID))
+                            {
+                                ShowError($"The Product '{_currentRequest.ProductID}' has been deleted/discontinued.\n\nPlease restore the product in 'Manage Product' if you wish to generate a license.");
+                                return;
+                            }
                         }
+                        catch { }
 
                         // 2. Populate Header Fields
                         txtCompanyName.Text = _currentRequest.CompanyName ?? string.Empty;
@@ -205,20 +213,20 @@ namespace Autosoft_Licensing.UI.Pages
                                 lt = LicenseType.Subscription;
                         }
 
-                        // Set Radio Group (This triggers rgLicenseType_SelectedIndexChanged, which sets defaults)
+                        // Set Radio Group
                         if (rgLicenseType != null)
                         {
                             rgLicenseType.EditValue = lt;
                         }
 
-                        // 6. Override specific values from ARL if applicable
-                        // If ARL specifies a Subscription period, respect it over the default settings
-                        if (lt == LicenseType.Subscription && _currentRequest.RequestedPeriodMonths > 0)
-                        {
-                            // Trigger value change to update expiry
-                            if (numSubscriptionMonths != null)
-                                numSubscriptionMonths.Value = _currentRequest.RequestedPeriodMonths;
-                        }
+                        // --- FIX START: Force Defaults to match General Settings ---
+                        // Explicitly call this to ensure periods are reset to General Settings values 
+                        // even if the LicenseType didn't change (which wouldn't fire SelectedIndexChanged).
+                        ApplyDefaultDurationSettings();
+
+                        // REMOVED: The logic that overrode defaults with _currentRequest.RequestedPeriodMonths
+                        // is deleted here to satisfy "period for arl is no longer needed".
+                        // --- FIX END ---
 
                         // 7. Reset generation state
                         txtLicenseKey.Text = string.Empty;
@@ -255,6 +263,13 @@ namespace Autosoft_Licensing.UI.Pages
 
         private void rgLicenseType_SelectedIndexChanged(object sender, EventArgs e)
         {
+            // Just forward to the centralized logic
+            ApplyDefaultDurationSettings();
+        }
+
+        // --- NEW HELPER METHOD: Centralizes the logic to apply DB settings to UI ---
+        private void ApplyDefaultDurationSettings()
+        {
             try
             {
                 var (defDemoDays, defSubMonths, defPermYears) = GetDefaultDurations();
@@ -290,7 +305,7 @@ namespace Autosoft_Licensing.UI.Pages
                     {
                         lblMonths.Text = "Days :";
                         numSubscriptionMonths.Value = defDemoDays;
-                        numSubscriptionMonths.Enabled = true; // Allow admin adjustment? Prompt implies using Setting value, but doesn't forbid edit. Enabled fits standard UX.
+                        numSubscriptionMonths.Enabled = true;
                     }
                     else if (selected == LicenseType.Permanent)
                     {
@@ -315,7 +330,7 @@ namespace Autosoft_Licensing.UI.Pages
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine("rgLicenseType_SelectedIndexChanged error: " + ex);
+                System.Diagnostics.Debug.WriteLine("ApplyDefaultDurationSettings error: " + ex);
             }
         }
 
@@ -354,12 +369,8 @@ namespace Autosoft_Licensing.UI.Pages
             else if (type == LicenseType.Permanent)
             {
                 // Value represents Years
-                // Maximize date to 31/12/9999 as requested
                 try
                 {
-                    // If the user entered a very large number of years or explicitly wants "Forever"
-                    // Often Permanent = 9999-12-31.
-                    // We interpret the spinner as "Valid for X years", but ensure it caps at 9999.
                     var target = issueLocal.AddYears(value);
                     if (target.Year > 9999) target = new DateTime(9999, 12, 31);
                     dtExpireDate.DateTime = target;

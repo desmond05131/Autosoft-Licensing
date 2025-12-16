@@ -87,6 +87,10 @@ namespace Autosoft_Licensing.UI.Pages
                         view.OptionsSelection.EnableAppearanceFocusedCell = false;
                         view.FocusRectStyle = DrawFocusRectStyle.RowFocus;
                     }
+                    if (btnSave != null)
+                    {
+                        btnSave.Click += btnSave_Click;
+                    }
                 }
             }
             catch { /* ignore design-time issues */ }
