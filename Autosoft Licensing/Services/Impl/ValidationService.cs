@@ -27,7 +27,7 @@ namespace Autosoft_Licensing.Services
             if (string.Equals(r.LicenseType, "Paid", StringComparison.Ordinal))
             {
                 var allowed = new[] { 3, 6, 12, 24 };
-                if (!allowed.Contains(r.RequestedPeriodMonths))
+                if (!r.RequestedPeriodMonths.HasValue || !allowed.Contains(r.RequestedPeriodMonths.Value))
                     return new ValidationResult("Subscription license must be 3, 6, 12 or 24 months.");
             }
 

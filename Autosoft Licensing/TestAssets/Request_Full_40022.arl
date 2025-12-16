@@ -1,0 +1,10 @@
+{
+  "CompanyName": "EFTranning",
+  "RequestedPeriodMonths": 12,
+  "DealerCode": "DEALER-001",
+  "ProductID": "40022",
+  "LicenseType": "Subscription",
+  "LicenseKey": "REQ-FULL-001",
+  "CurrencyCode": "MYR",
+  "RequestDateUtc": "2025-01-01T00:00:00Z",
+}

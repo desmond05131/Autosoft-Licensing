@@ -1,37 +1,33 @@
 ﻿using System;
-using System.ComponentModel.DataAnnotations;
 using Newtonsoft.Json;
 
 namespace Autosoft_Licensing.Models
 {
-    // Plaintext JSON (.ARL) — simplified to the new schema (no ModuleCodes).
     public class LicenseRequest
     {
-        [Required, MinLength(1)]
         public string CompanyName { get; set; }
-
-        [Required, Range(1, 1200)]
-        public int RequestedPeriodMonths { get; set; }
-
-        [Required, MinLength(1)]
         public string DealerCode { get; set; }
-
-        [Required, MinLength(1)]
         public string ProductID { get; set; }
-
-        // Now a string with allowed values "Demo" or "Paid" (case-sensitive)
-        [Required, MinLength(1)]
-        public string LicenseType { get; set; }
-
-        [Required, MinLength(1)]
+        public string CurrencyCode { get; set; }
+        public DateTime RequestDateUtc { get; set; }
         public string LicenseKey { get; set; }
 
-        public string CurrencyCode { get; set; }
+        // --- FIX IS HERE ---
 
-        [Required]
-        public DateTime RequestDateUtc { get; set; }
+        // 1. Allow this to be null
+        [JsonProperty(Required = Required.Default)]
+        public string LicenseType { get; set; }
 
-        public string ToJson() =>
-            JsonConvert.SerializeObject(this, Formatting.Indented);
+        // 2. Change 'int' to 'int?' (Nullable Integer)
+        // This allows the value "null" in the JSON file without crashing.
+        [JsonProperty(Required = Required.Default)]
+        public int? RequestedPeriodMonths { get; set; }
+
+        // Optional: Support the alias if your plugin sends "RequestedPeriod" instead
+        [JsonProperty("RequestedPeriod")]
+        private int? _requestedPeriodCompat
+        {
+            set { RequestedPeriodMonths = value; }
+        }
     }
 }

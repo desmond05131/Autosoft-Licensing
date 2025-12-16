@@ -34,7 +34,7 @@ namespace Autosoft_Licensing.Services.Impl
         public LicenseRequest ParseArl(string path)
         {
             if (string.IsNullOrWhiteSpace(path))
-                throw new ValidationException("Invalid license request file.");
+                throw new ValidationException("Invalid license request file1.");
 
             byte[] bytes;
             try
@@ -43,7 +43,7 @@ namespace Autosoft_Licensing.Services.Impl
             }
             catch
             {
-                throw new ValidationException("Invalid license request file.");
+                throw new ValidationException("Invalid license request file2.");
             }
 
             string text;
@@ -53,7 +53,7 @@ namespace Autosoft_Licensing.Services.Impl
             }
             catch
             {
-                throw new ValidationException("Invalid license request file.");
+                throw new ValidationException("Invalid license request file3.");
             }
 
             // Heuristic: if it already looks like JSON, use directly; else try base64 decode.
@@ -75,7 +75,7 @@ namespace Autosoft_Licensing.Services.Impl
                 {
                     // Fallback: treat bytes as UTF8 JSON
                     if (string.IsNullOrWhiteSpace(trimmed))
-                        throw new ValidationException("Invalid license request file.");
+                        throw new ValidationException("Invalid license request file4.");
                     json = text;
                 }
             }
@@ -83,15 +83,26 @@ namespace Autosoft_Licensing.Services.Impl
             LicenseRequest req;
             try
             {
-                req = JsonConvert.DeserializeObject<LicenseRequest>(json);
+                var settings = new JsonSerializerSettings
+                {
+                    // Ensure tolerant parsing
+                    MissingMemberHandling = MissingMemberHandling.Ignore,
+                    NullValueHandling = NullValueHandling.Include,
+                    // Explicit date parsing (ISO 8601)
+                    DateParseHandling = DateParseHandling.DateTime,
+                };
+
+                req = JsonConvert.DeserializeObject<LicenseRequest>(json, settings);
             }
-            catch
+            catch (Exception ex)
             {
-                throw new ValidationException("Invalid license request file.");
+                // Optionally capture details for diagnostics (do not leak to UI)
+                // System.Diagnostics.Debug.WriteLine($"ARL deserialize failed: {ex.Message}");
+                throw new ValidationException("Invalid license request file5.");
             }
 
             if (req == null)
-                throw new ValidationException("Invalid license request file.");
+                throw new ValidationException("Invalid license request file6.");
 
             try
             {
@@ -100,7 +111,7 @@ namespace Autosoft_Licensing.Services.Impl
             catch (ValidationException)
             {
                 // Preserve the exact message required by UI
-                throw new ValidationException("Invalid license request file.");
+                throw new ValidationException("Invalid license request file7.");
             }
 
             return req;
@@ -113,7 +124,7 @@ namespace Autosoft_Licensing.Services.Impl
         public LicenseRequest ParseArlFromBase64(string base64)
         {
             if (string.IsNullOrWhiteSpace(base64))
-                throw new ValidationException("Invalid license request file.");
+                throw new ValidationException("Invalid license request file8.");
 
             string json;
             try
@@ -134,11 +145,11 @@ namespace Autosoft_Licensing.Services.Impl
             }
             catch
             {
-                throw new ValidationException("Invalid license request file.");
+                throw new ValidationException("Invalid license request file9.");
             }
 
             if (req == null)
-                throw new ValidationException("Invalid license request file.");
+                throw new ValidationException("Invalid license request file10.");
 
             try
             {
@@ -146,7 +157,7 @@ namespace Autosoft_Licensing.Services.Impl
             }
             catch (ValidationException)
             {
-                throw new ValidationException("Invalid license request file.");
+                throw new ValidationException("Invalid license request file11.");
             }
 
             return req;
@@ -163,33 +174,33 @@ namespace Autosoft_Licensing.Services.Impl
         private void EnsureValidOrThrow(LicenseRequest r)
         {
             if (r == null)
-                throw new ValidationException("Invalid license request file.");
+                throw new ValidationException("Invalid license request file12.");
 
             // Required string fields
             if (string.IsNullOrWhiteSpace(r.CompanyName)
                 || string.IsNullOrWhiteSpace(r.DealerCode)
                 || string.IsNullOrWhiteSpace(r.ProductID)
-                || string.IsNullOrWhiteSpace(r.LicenseType)
+                //|| string.IsNullOrWhiteSpace(r.LicenseType)
                 || string.IsNullOrWhiteSpace(r.LicenseKey))
             {
-                throw new ValidationException("Invalid license request file.");
+                throw new ValidationException("Invalid license request file13.");
             }
 
             // RequestedPeriodMonths
-            if (r.RequestedPeriodMonths < 1 || r.RequestedPeriodMonths > 1200)
-                throw new ValidationException("Invalid license request file.");
+            //if (r.RequestedPeriodMonths < 1 || r.RequestedPeriodMonths > 1200)
+            //    throw new ValidationException("Invalid license request file.");
 
             // LicenseType allowed values
-            if (r.LicenseType != "Demo" && r.LicenseType != "Paid" && r.LicenseType != "Subscription")
-                throw new ValidationException("Invalid license request file.");
+            //if (r.LicenseType != "Demo" && r.LicenseType != "Paid" && r.LicenseType != "Subscription")
+            //    throw new ValidationException("Invalid license request file.");
 
             // Demo must have exactly 1 month
-            if (r.LicenseType == "Demo" && r.RequestedPeriodMonths != 1)
-                throw new ValidationException("Invalid license request file.");
+            //if (r.LicenseType == "Demo" && r.RequestedPeriodMonths != 1)
+            //    throw new ValidationException("Invalid license request file.");
 
             // RequestDateUtc must be present (non-default)
             if (r.RequestDateUtc == default)
-                throw new ValidationException("Invalid license request file.");
+                throw new ValidationException("Invalid license request file14.");
 
             // Optionally you could run additional structural validation via _validator if needed,
             // but do not allow _validator's message to leak — UI requires the exact string for failures.

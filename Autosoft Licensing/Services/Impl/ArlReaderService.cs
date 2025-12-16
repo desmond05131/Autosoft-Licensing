@@ -44,7 +44,7 @@ namespace Autosoft_Licensing.Services.Impl
                 ProductID = licenseRequest.ProductID,
                 ProductName = null,
                 DealerCode = licenseRequest.DealerCode,
-                RequestedPeriodMonths = licenseRequest.RequestedPeriodMonths,
+                RequestedPeriodMonths = licenseRequest.RequestedPeriodMonths ?? 0,
                 LicenseType = licenseRequest.LicenseType, // pass through string ("Demo" or "Paid")
                 LicenseKey = licenseRequest.LicenseKey,
                 CurrencyCode = licenseRequest.CurrencyCode,

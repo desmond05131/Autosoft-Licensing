@@ -1,0 +1,10 @@
+{
+  "CompanyName": "UAT Wrong Product Sdn Bhd",
+  "RequestedPeriodMonths": 12,
+  "DealerCode": "DEALER-001",
+  "ProductID": "ACC-2025",
+  "LicenseType": "Subscription",
+  "LicenseKey": "REQ-WRONG-003",
+  "CurrencyCode": "MYR",
+  "RequestDateUtc": "2025-01-01T00:00:00Z"
+}

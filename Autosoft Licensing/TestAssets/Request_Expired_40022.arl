@@ -1,0 +1,10 @@
+{
+  "CompanyName": "UAT Expired Sdn Bhd",
+  "RequestedPeriodMonths": 1,
+  "DealerCode": "DEALER-001",
+  "ProductID": "40022",
+  "LicenseType": "Subscription",
+  "LicenseKey": "REQ-EXP-004",
+  "CurrencyCode": "MYR",
+  "RequestDateUtc": "2023-01-01T00:00:00Z"
+}
