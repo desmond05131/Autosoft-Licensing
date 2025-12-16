@@ -14,12 +14,11 @@ namespace Autosoft_Licensing.Models
 
         // --- FIX IS HERE ---
 
-        // 1. Allow this to be null
+        // Fix 1: Ensure LicenseType handles nulls (explicitly marked optional)
         [JsonProperty(Required = Required.Default)]
         public string LicenseType { get; set; }
 
-        // 2. Change 'int' to 'int?' (Nullable Integer)
-        // This allows the value "null" in the JSON file without crashing.
+        // Fix 2: Change 'int' to 'int?' to accept 'null' from the JSON
         [JsonProperty(Required = Required.Default)]
         public int? RequestedPeriodMonths { get; set; }
 
