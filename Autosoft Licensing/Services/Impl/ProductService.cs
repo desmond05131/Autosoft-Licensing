@@ -42,6 +42,7 @@ namespace Autosoft_Licensing.Services.Impl
 
         // --- NEW METHOD: Check status ---
         // Ensure you add "bool IsProductDeleted(string productId);" to your IProductService interface as well.
+        // Add this method to the class
         public bool IsProductDeleted(string productId)
         {
             try

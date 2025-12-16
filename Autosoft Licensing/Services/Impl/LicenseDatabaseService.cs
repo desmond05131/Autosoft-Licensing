@@ -796,7 +796,7 @@ VALUES (@lid, @mid);", conn, tx);
 SELECT m.ModuleCode, m.Name, m.Description
 FROM dbo.Modules m
 JOIN dbo.Products p ON p.Id = m.ProductId
-WHERE p.ProductID = @pid
+WHERE p.ProductID = @pid AND m.IsActive = 1  -- FIX: Filter out soft-deleted modules
 ORDER BY m.ModuleCode;", conn);
                 cmd.Parameters.AddWithValue("@pid", (object)productId ?? DBNull.Value);
                 conn.Open();
@@ -813,7 +813,6 @@ ORDER BY m.ModuleCode;", conn);
             }
             catch
             {
-                // Fail safely: do not leak DB errors to UI. TODO: log exception.
                 return new List<ModuleDto>();
             }
             return list;
