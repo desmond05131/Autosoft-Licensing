@@ -340,16 +340,18 @@ namespace Autosoft_Licensing.UI.Pages
 
                     if (result != DialogResult.Yes) return;
 
-                    var product = _dbService.GetProductById(row.Id);
-                    if (product != null)
+                    // --- FIX START: Use dedicated RestoreProduct method ---
+                    try
                     {
-                        product.IsDeleted = false; // Undelete
-                        product.LastModifiedUtc = DateTime.UtcNow;
-                        _dbService.UpdateProduct(product);
-
+                        _dbService.RestoreProduct(row.Id);
                         ShowInfo("Product restored successfully.", "Success");
                         RefreshData();
                     }
+                    catch (Exception ex)
+                    {
+                        ShowError($"Failed to restore product: {ex.Message}");
+                    }
+                    // --- FIX END ---
                 }
                 else
                 {

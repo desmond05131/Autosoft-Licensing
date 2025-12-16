@@ -385,6 +385,16 @@ VALUES (@ProductId, @ModuleCode, @Name, @Description, @IsActive);", conn, tx))
             cmd.ExecuteNonQuery();
         }
 
+        public void RestoreProduct(int id)
+        {
+            using var conn = _factory.Create();
+            // Sets IsDeleted to 0 and updates the LastModified timestamp
+            using var cmd = new SqlCommand("UPDATE dbo.Products SET IsDeleted = 0, LastModifiedUtc = GETUTCDATE() WHERE Id = @Id;", conn);
+            cmd.Parameters.AddWithValue("@Id", id);
+            conn.Open();
+            cmd.ExecuteNonQuery();
+        }
+
         private static Product ReadProduct(IDataRecord r) => new Product
         {
             Id = r.GetInt32(0),

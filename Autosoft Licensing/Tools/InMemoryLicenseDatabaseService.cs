@@ -48,7 +48,7 @@ namespace Autosoft_Licensing.Tools
             _dealers.Add(new Dealer { Id = _nextDealerId++, DealerCode = "DEALER-001", Name = "Default Dealer", CreatedUtc = DateTime.UtcNow });
 
             // seed a sample product and modules to satisfy any lookup needs
-            var prod = new Product { Id = _nextProductId++, ProductID = "SAMPLE-PRODUCT", Name = "Sample Product" };
+            var prod = new Product { Id = _nextProductId++, ProductID = "SAMPLE-PRODUCT", Name = "Sample Product", IsDeleted = false, Modules = new List<Module>() };
             _products.Add(prod);
 
             _modules.Add(new Module { Id = _nextModuleId++, ProductId = prod.Id, ModuleCode = "MODULE-001", Name = "Module 1", IsActive = true });
@@ -220,6 +220,7 @@ namespace Autosoft_Licensing.Tools
                 CreatedBy = product.CreatedBy,
                 CreatedUtc = product.CreatedUtc,
                 LastModifiedUtc = product.LastModifiedUtc,
+                IsDeleted = product.IsDeleted,
                 Modules = product.Modules != null ? product.Modules.Select(m => new Module
                 {
                     ProductId = product.Id,
@@ -245,6 +246,7 @@ namespace Autosoft_Licensing.Tools
             existing.CreatedBy = product.CreatedBy;
             existing.CreatedUtc = product.CreatedUtc;
             existing.LastModifiedUtc = product.LastModifiedUtc;
+            existing.IsDeleted = product.IsDeleted;
 
             // replace modules
             existing.Modules = product.Modules != null ? product.Modules.Select(m => new Module
@@ -259,21 +261,39 @@ namespace Autosoft_Licensing.Tools
 
         public void DeleteProduct(int id)
         {
+            // Soft-delete to mirror SQL implementation (IsDeleted = 1)
             var existing = _products.FirstOrDefault(p => p.Id == id);
             if (existing != null)
-                _products.Remove(existing);
+            {
+                existing.IsDeleted = true;
+                existing.LastModifiedUtc = DateTime.UtcNow;
+            }
+        }
+
+        public void RestoreProduct(int id)
+        {
+            // Restore soft-deleted product (IsDeleted = 0)
+            var existing = _products.FirstOrDefault(p => p.Id == id);
+            if (existing != null)
+            {
+                existing.IsDeleted = false;
+                existing.LastModifiedUtc = DateTime.UtcNow;
+            }
         }
 
         public IEnumerable<ModuleDto> GetModulesForProduct(string productId)
         {
             var product = GetProductByProductId(productId);
             if (product?.Modules == null) return Enumerable.Empty<ModuleDto>();
-            return product.Modules.Select(m => new ModuleDto
-            {
-                ModuleCode = m.ModuleCode,
-                ModuleName = string.IsNullOrWhiteSpace(m.Name) ? m.ModuleCode : m.Name,
-                Description = m.Description
-            }).ToList();
+            return product.Modules
+                .Where(m => m.IsActive)
+                .Select(m => new ModuleDto
+                {
+                    ModuleCode = m.ModuleCode,
+                    ModuleName = string.IsNullOrWhiteSpace(m.Name) ? m.ModuleCode : m.Name,
+                    Description = m.Description
+                })
+                .ToList();
         }
 
         // --- Dealers ---

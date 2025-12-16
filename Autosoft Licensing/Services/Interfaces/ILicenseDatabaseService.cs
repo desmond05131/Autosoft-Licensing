@@ -37,6 +37,7 @@ namespace Autosoft_Licensing.Services
         int InsertProduct(Product product);
         void UpdateProduct(Product product);
         void DeleteProduct(int id);
+        void RestoreProduct(int id);
 
         // Dealers (admin CRUD)
         IEnumerable<Dealer> GetDealers();
