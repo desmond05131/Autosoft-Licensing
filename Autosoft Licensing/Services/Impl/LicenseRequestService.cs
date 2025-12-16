@@ -117,10 +117,10 @@ namespace Autosoft_Licensing.Services.Impl
 
                 return req;
             }
-            catch
+            catch (Exception ex)
             {
-                // If this hits, the JSON is malformed (not just type mismatch)
-                throw new ValidationException("Invalid license request file5.");
+                // Include the inner message to see if it's "file13" or a parsing error
+                throw new ValidationException($"Invalid license request file5. Details: {ex.Message}", ex);
             }
         }
 
