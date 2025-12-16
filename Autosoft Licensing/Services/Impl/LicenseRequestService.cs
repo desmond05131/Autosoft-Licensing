@@ -36,28 +36,21 @@ namespace Autosoft_Licensing.Services.Impl
             if (string.IsNullOrWhiteSpace(path))
                 throw new ValidationException("Invalid license request file1.");
 
-            byte[] bytes;
+            string text;
             try
             {
-                bytes = File.ReadAllBytes(path);
+                // FIX: Use ReadAllText instead of ReadAllBytes. 
+                // This automatically detects and STRIPS the Byte Order Mark (BOM) if present.
+                text = File.ReadAllText(path, Encoding.UTF8);
             }
             catch
             {
                 throw new ValidationException("Invalid license request file2.");
             }
 
-            string text;
-            try
-            {
-                text = Encoding.UTF8.GetString(bytes);
-            }
-            catch
-            {
-                throw new ValidationException("Invalid license request file3.");
-            }
-
             // Heuristic: if it already looks like JSON, use directly; else try base64 decode.
-            string trimmed = text?.Trim() ?? string.Empty;
+            // FIX: Trim explicitly removing BOM character just in case
+            string trimmed = text?.Trim(new char[] { '\uFEFF', ' ', '\r', '\n' }) ?? string.Empty;
             string json;
 
             if (trimmed.StartsWith("{") || trimmed.StartsWith("["))
@@ -73,7 +66,7 @@ namespace Autosoft_Licensing.Services.Impl
                 }
                 catch
                 {
-                    // Fallback: treat bytes as UTF8 JSON
+                    // Fallback: treat as UTF8 JSON
                     if (string.IsNullOrWhiteSpace(trimmed))
                         throw new ValidationException("Invalid license request file4.");
                     json = text;
@@ -94,7 +87,7 @@ namespace Autosoft_Licensing.Services.Impl
                     CurrencyCode = (string)jObj["CurrencyCode"],
                     LicenseKey = (string)jObj["LicenseKey"],
                     LicenseType = (string)jObj["LicenseType"], // Accepts null
-                    // Handle RequestDateUtc safely
+                                                               // Handle RequestDateUtc safely
                     RequestDateUtc = (DateTime?)jObj["RequestDateUtc"] ?? DateTime.UtcNow
                 };
 
@@ -106,7 +99,6 @@ namespace Autosoft_Licensing.Services.Impl
                 }
                 else
                 {
-                    // If token is not an integer, this cast can throw; rely on catch to surface uniform error
                     req.RequestedPeriodMonths = (int)periodToken;
                 }
 
@@ -119,7 +111,7 @@ namespace Autosoft_Licensing.Services.Impl
             }
             catch (Exception ex)
             {
-                // Include the inner message to see if it's "file13" or a parsing error
+                // Keep your detailed error reporting
                 throw new ValidationException($"Invalid license request file5. Details: {ex.Message}", ex);
             }
         }
