@@ -80,41 +80,48 @@ namespace Autosoft_Licensing.Services.Impl
                 }
             }
 
-            LicenseRequest req;
             try
             {
-                var settings = new JsonSerializerSettings
+                // 1. Parse to JObject first (tolerates nulls/missing fields)
+                var jObj = Newtonsoft.Json.Linq.JObject.Parse(json);
+
+                // 2. Manual Mapping - Safely handling the nulls
+                var req = new LicenseRequest
                 {
-                    // Ensure tolerant parsing
-                    MissingMemberHandling = MissingMemberHandling.Ignore,
-                    NullValueHandling = NullValueHandling.Include,
-                    // Explicit date parsing (ISO 8601)
-                    DateParseHandling = DateParseHandling.DateTime,
+                    CompanyName = (string)jObj["CompanyName"],
+                    DealerCode = (string)jObj["DealerCode"],
+                    ProductID = (string)jObj["ProductID"],
+                    CurrencyCode = (string)jObj["CurrencyCode"],
+                    LicenseKey = (string)jObj["LicenseKey"],
+                    LicenseType = (string)jObj["LicenseType"], // Accepts null
+                    // Handle RequestDateUtc safely
+                    RequestDateUtc = (DateTime?)jObj["RequestDateUtc"] ?? DateTime.UtcNow
                 };
 
-                req = JsonConvert.DeserializeObject<LicenseRequest>(json, settings);
+                // 3. Special handling for RequestedPeriodMonths
+                var periodToken = jObj["RequestedPeriodMonths"];
+                if (periodToken == null || periodToken.Type == Newtonsoft.Json.Linq.JTokenType.Null)
+                {
+                    req.RequestedPeriodMonths = null;
+                }
+                else
+                {
+                    // If token is not an integer, this cast can throw; rely on catch to surface uniform error
+                    req.RequestedPeriodMonths = (int)periodToken;
+                }
+
+                if (req == null)
+                    throw new ValidationException("Invalid license request file6.");
+
+                EnsureValidOrThrow(req);
+
+                return req;
             }
-            catch (Exception ex)
+            catch
             {
-                // Optionally capture details for diagnostics (do not leak to UI)
-                // System.Diagnostics.Debug.WriteLine($"ARL deserialize failed: {ex.Message}");
+                // If this hits, the JSON is malformed (not just type mismatch)
                 throw new ValidationException("Invalid license request file5.");
             }
-
-            if (req == null)
-                throw new ValidationException("Invalid license request file6.");
-
-            try
-            {
-                EnsureValidOrThrow(req);
-            }
-            catch (ValidationException)
-            {
-                // Preserve the exact message required by UI
-                throw new ValidationException("Invalid license request file7.");
-            }
-
-            return req;
         }
 
         /// <summary>
@@ -185,18 +192,6 @@ namespace Autosoft_Licensing.Services.Impl
             {
                 throw new ValidationException("Invalid license request file13.");
             }
-
-            // RequestedPeriodMonths
-            //if (r.RequestedPeriodMonths < 1 || r.RequestedPeriodMonths > 1200)
-            //    throw new ValidationException("Invalid license request file.");
-
-            // LicenseType allowed values
-            //if (r.LicenseType != "Demo" && r.LicenseType != "Paid" && r.LicenseType != "Subscription")
-            //    throw new ValidationException("Invalid license request file.");
-
-            // Demo must have exactly 1 month
-            //if (r.LicenseType == "Demo" && r.RequestedPeriodMonths != 1)
-            //    throw new ValidationException("Invalid license request file.");
 
             // RequestDateUtc must be present (non-default)
             if (r.RequestDateUtc == default)

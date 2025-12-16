@@ -18,7 +18,7 @@ namespace Autosoft_Licensing.Models
         [JsonProperty(Required = Required.Default)]
         public string LicenseType { get; set; }
 
-        // Fix 2: Change 'int' to 'int?' to accept 'null' from the JSON
+        // FIX: Change 'int' to 'int?' so it can accept 'null'
         [JsonProperty(Required = Required.Default)]
         public int? RequestedPeriodMonths { get; set; }
 
