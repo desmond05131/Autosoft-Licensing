@@ -503,7 +503,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.btnSave.Appearance.ForeColor = System.Drawing.Color.White;
             this.btnSave.Appearance.Options.UseBackColor = true;
             this.btnSave.Appearance.Options.UseForeColor = true;
-            this.btnSave.Location = new System.Drawing.Point(861, 869);
+            this.btnSave.Location = new System.Drawing.Point(861, 583);
             this.btnSave.LookAndFeel.UseDefaultLookAndFeel = false;
             this.btnSave.Name = "btnSave";
             this.btnSave.Size = new System.Drawing.Size(136, 30);
@@ -519,7 +519,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.Controls.Add(this.headerPanel);
             this.Controls.Add(this.btnSave);
             this.Name = "GeneralSettingPage";
-            this.Size = new System.Drawing.Size(997, 929);
+            this.Size = new System.Drawing.Size(997, 643);
             ((System.ComponentModel.ISupportInitialize)(this.headerPanel)).EndInit();
             this.headerPanel.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.navPanel)).EndInit();

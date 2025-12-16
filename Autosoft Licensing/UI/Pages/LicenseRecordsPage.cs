@@ -81,6 +81,11 @@ namespace Autosoft_Licensing.UI.Pages
                         view.DoubleClick += grdLicenses_DoubleClick;
                     }
 
+                    // FIX 3.5: Wire up Filter Date Mode Events (CRITICAL FIX)
+                    // This ensures the UI toggles between Single and Range mode when selection changes
+                    if (cmbIssueDateMode != null) cmbIssueDateMode.SelectedIndexChanged += DateModeCombo_SelectedIndexChanged;
+                    if (cmbExpiryDateMode != null) cmbExpiryDateMode.SelectedIndexChanged += DateModeCombo_SelectedIndexChanged;
+
                     // FIX 4: Load Data
                     InitializeFilterCombos();
                     RefreshData();
@@ -178,6 +183,7 @@ namespace Autosoft_Licensing.UI.Pages
                 // Issue Date / Expiry Date mode combos
                 cmbIssueDateMode.Properties.Items.Clear();
                 cmbIssueDateMode.Properties.Items.AddRange(new[] { "By date", "By range" });
+                // Setting Index here will trigger the newly wired event to UpdateDateControls()
                 cmbIssueDateMode.SelectedIndex = 0;
 
                 cmbExpiryDateMode.Properties.Items.Clear();
@@ -211,17 +217,23 @@ namespace Autosoft_Licensing.UI.Pages
                 // Issue Date
                 bool issueDateByRange = cmbIssueDateMode.SelectedIndex == 1;
                 dtIssueDateSingle.Visible = !issueDateByRange;
+
+                // Toggle "From" label and control
                 dtIssueDateFrom.Visible = issueDateByRange;
-                dtIssueDateTo.Visible = issueDateByRange;
                 lblIssueDateFrom.Visible = issueDateByRange;
+
+                // Toggle "To" label and control
+                dtIssueDateTo.Visible = issueDateByRange;
                 lblIssueDateTo.Visible = issueDateByRange;
 
                 // Expiry Date
                 bool expiryDateByRange = cmbExpiryDateMode.SelectedIndex == 1;
                 dtExpiryDateSingle.Visible = !expiryDateByRange;
+
                 dtExpiryDateFrom.Visible = expiryDateByRange;
-                dtExpiryDateTo.Visible = expiryDateByRange;
                 lblExpiryDateFrom.Visible = expiryDateByRange;
+
+                dtExpiryDateTo.Visible = expiryDateByRange;
                 lblExpiryDateTo.Visible = expiryDateByRange;
             }
             catch { }
@@ -283,15 +295,16 @@ namespace Autosoft_Licensing.UI.Pages
                 }
                 else // By range
                 {
-                    if (dtIssueDateFrom.EditValue != null && dtIssueDateTo.EditValue != null)
+                    // FIX: Improved range logic to allow partial ranges (From-only or To-only)
+                    if (dtIssueDateFrom.EditValue != null)
                     {
                         var from = dtIssueDateFrom.DateTime.Date;
+                        filtered = filtered.Where(l => l.ValidFromUtc.ToLocalTime().Date >= from);
+                    }
+                    if (dtIssueDateTo.EditValue != null)
+                    {
                         var to = dtIssueDateTo.DateTime.Date;
-                        filtered = filtered.Where(l =>
-                        {
-                            var localDate = l.ValidFromUtc.ToLocalTime().Date;
-                            return localDate >= from && localDate <= to;
-                        });
+                        filtered = filtered.Where(l => l.ValidFromUtc.ToLocalTime().Date <= to);
                     }
                 }
 
@@ -306,15 +319,16 @@ namespace Autosoft_Licensing.UI.Pages
                 }
                 else // By range
                 {
-                    if (dtExpiryDateFrom.EditValue != null && dtExpiryDateTo.EditValue != null)
+                    // FIX: Improved range logic to allow partial ranges
+                    if (dtExpiryDateFrom.EditValue != null)
                     {
                         var from = dtExpiryDateFrom.DateTime.Date;
+                        filtered = filtered.Where(l => l.ValidToUtc.ToLocalTime().Date >= from);
+                    }
+                    if (dtExpiryDateTo.EditValue != null)
+                    {
                         var to = dtExpiryDateTo.DateTime.Date;
-                        filtered = filtered.Where(l =>
-                        {
-                            var localDate = l.ValidToUtc.ToLocalTime().Date;
-                            return localDate >= from && localDate <= to;
-                        });
+                        filtered = filtered.Where(l => l.ValidToUtc.ToLocalTime().Date <= to);
                     }
                 }
 

@@ -2,6 +2,7 @@
 using DevExpress.XtraEditors;
 using Autosoft_Licensing.Services;
 using Autosoft_Licensing.Models;
+using System.Drawing;
 
 namespace Autosoft_Licensing.UI.Pages
 {
@@ -17,7 +18,20 @@ namespace Autosoft_Licensing.UI.Pages
             // By default DevExpress SpinEdits might be limited to 100 or decimal bounds.
             if (spinDemo != null) spinDemo.Properties.MaxValue = 9999;
             if (spinSub != null) spinSub.Properties.MaxValue = 9999;
-            if (spinPerm != null) spinPerm.Properties.MaxValue = 9999;
+            if (spinPerm != null)
+            {
+                spinPerm.Properties.MaxValue = 9999;
+
+                // Make permanent period uneditable (read-only) with grey visual cue
+                spinPerm.Properties.ReadOnly = true;
+                spinPerm.Properties.AppearanceReadOnly.BackColor = Color.LightGray;
+                spinPerm.Properties.AppearanceReadOnly.ForeColor = Color.Black;
+                spinPerm.Properties.AppearanceReadOnly.Options.UseBackColor = true;
+                spinPerm.Properties.AppearanceReadOnly.Options.UseForeColor = true;
+
+                // Optional: prevent focus border to reinforce non-editable look
+                spinPerm.Properties.AllowFocused = false;
+            }
 
             try
             {
@@ -110,6 +124,8 @@ namespace Autosoft_Licensing.UI.Pages
 
                 _dbService.SaveSetting("Duration_Demo_Days", ((int)spinDemo.Value).ToString());
                 _dbService.SaveSetting("Duration_Sub_Months", ((int)spinSub.Value).ToString());
+
+                // Permanent is read-only; still persist current value from DB or UI display
                 _dbService.SaveSetting("Duration_Perm_Years", ((int)spinPerm.Value).ToString());
 
                 ShowInfo("Settings saved successfully.", "Success");
