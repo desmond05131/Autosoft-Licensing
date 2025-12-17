@@ -42,6 +42,7 @@ namespace Autosoft_Licensing.UI.Pages
         private SimpleButton btnCreate;
         private SimpleButton btnEdit;
         private SimpleButton btnDelete;
+        private SimpleButton btnRefresh; // <--- ADDED
 
         // Grid
         private GridControl grdUsers;
@@ -85,6 +86,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.btnCreate = new DevExpress.XtraEditors.SimpleButton();
             this.btnEdit = new DevExpress.XtraEditors.SimpleButton();
             this.btnDelete = new DevExpress.XtraEditors.SimpleButton();
+            this.btnRefresh = new DevExpress.XtraEditors.SimpleButton(); // <--- ADDED
             this.grdUsers = new DevExpress.XtraGrid.GridControl();
             this.viewUsers = new DevExpress.XtraGrid.Views.Grid.GridView();
             this.colUsername = new DevExpress.XtraGrid.Columns.GridColumn();
@@ -396,6 +398,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.actionPanel.Controls.Add(this.btnCreate);
             this.actionPanel.Controls.Add(this.btnEdit);
             this.actionPanel.Controls.Add(this.btnDelete);
+            this.actionPanel.Controls.Add(this.btnRefresh); // <--- ADDED
             this.actionPanel.Dock = System.Windows.Forms.DockStyle.Top;
             this.actionPanel.Location = new System.Drawing.Point(0, 112);
             this.actionPanel.Name = "actionPanel";
@@ -443,6 +446,20 @@ namespace Autosoft_Licensing.UI.Pages
             this.btnDelete.Size = new System.Drawing.Size(80, 30);
             this.btnDelete.TabIndex = 3;
             this.btnDelete.Text = "Delete";
+            // 
+            // btnRefresh
+            // 
+            this.btnRefresh.Appearance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(108)))), ((int)(((byte)(117)))), ((int)(((byte)(125))))); // Secondary Gray
+            this.btnRefresh.Appearance.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+            this.btnRefresh.Appearance.ForeColor = System.Drawing.Color.White;
+            this.btnRefresh.Appearance.Options.UseBackColor = true;
+            this.btnRefresh.Appearance.Options.UseFont = true;
+            this.btnRefresh.Appearance.Options.UseForeColor = true;
+            this.btnRefresh.Location = new System.Drawing.Point(276, 8); // Offset 88px from Delete
+            this.btnRefresh.Name = "btnRefresh";
+            this.btnRefresh.Size = new System.Drawing.Size(80, 30);
+            this.btnRefresh.TabIndex = 4;
+            this.btnRefresh.Text = "Refresh";
             // 
             // grdUsers
             // 

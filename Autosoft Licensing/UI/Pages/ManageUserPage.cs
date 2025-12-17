@@ -2,45 +2,14 @@
 PAGE: ManageUserPage.cs
 ROLE: Dealer Admin (super-admin)
 PURPOSE:
-  Manage Dealer EXE user accounts and their access rights to the Dealer app (Generate License, License Records, Manage Product, Manage User).
-
-KEY UI ELEMENTS:
-  - GridControl: list of users (Username, DisplayName, IsActive, Roles)
-  - Buttons: Create, Edit, Delete (View removed)
-  - User form: Username, DisplayName, Password, ConfirmPassword, Role checkboxes (GenerateLicense, LicenseRecord, ManageProduct, ManageUser), IsActive checkbox
-  - Notes area: "Admin account cannot be deleted" hint
-
-BACKEND SERVICE CALLS:
-  - ServiceRegistry.Database.GetUsers(), InsertUser(user), UpdateUser(user), DeleteUser(id)
-
-VALIDATION & RULES:
-  - Username unique
-  - Cannot delete 'Admin' account (enforce in UI and service guard)
-  - Password rules per internal policy (min length; for prototype may be simple)
-  - At least one Admin must remain
-
-ACCESS CONTROL:
-  - Only Admin role may access ManageUser page
-  - Users with ManageUser permission can edit certain flags; only highest admin can assign ManageUser rights
-
-UX NOTES:
-  - Show a purple note "Admin cannot delete User Admin" per wireframe
-  - Confirm delete with modal; if attempting to delete Admin account show warning and block
-
-ACCEPTANCE CRITERIA:
-  - Create/Edit/Delete operate as expected with permission enforcement
-  - Admin account protected from deletion
-
-COPILOT PROMPTS:
-  - "// Implement LoadUsers to call ServiceRegistry.Database.GetUsers() and bind grid"
-  - "// Implement DeleteUser to check against default Admin and call ServiceRegistry.Database.DeleteUser(userId)"
+  Manage Dealer EXE user accounts and their access rights to the Dealer app.
 */
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
-using System.Windows.Forms; // Required for Control.MousePosition
+using System.Windows.Forms;
 using DevExpress.XtraEditors;
 using DevExpress.XtraGrid.Views.Grid;
 using Autosoft_Licensing.Services;
@@ -62,8 +31,6 @@ namespace Autosoft_Licensing.UI.Pages
 
         private BindingList<UserRow> _data = new BindingList<UserRow>();
 
-        // REMOVED: Shadowing navigation event and args; use PageBase.NavigateRequested with unified NavigateEventArgs
-
         public ManageUserPage()
         {
             InitializeComponent();
@@ -76,18 +43,18 @@ namespace Autosoft_Licensing.UI.Pages
 
                     // Wire actions
                     btnCreate.Click += btnCreate_Click;
-                    // btnView removed
                     btnEdit.Click += btnEdit_Click;
                     btnDelete.Click += btnDelete_Click;
+                    btnRefresh.Click += btnRefresh_Click; // <--- ADDED
 
-                    // Navigation buttons — identical to GenerateLicensePage
+                    // Navigation buttons
                     if (btnNav_GenerateLicense != null) BindNavigationEvent(btnNav_GenerateLicense, "GenerateLicensePage");
                     if (btnNav_LicenseRecords != null) BindNavigationEvent(btnNav_LicenseRecords, "LicenseRecordsPage");
                     if (btnNav_ManageProduct != null) BindNavigationEvent(btnNav_ManageProduct, "ManageProductPage");
                     if (btnNav_ManageUser != null) BindNavigationEvent(btnNav_ManageUser, "ManageUserPage");
                     if (btnNav_GeneralSetting != null) BindNavigationEvent(btnNav_GeneralSetting, "GeneralSettingPage");
 
-                    // Logout (panel + inner label + picture)
+                    // Logout
                     if (btnNav_Logout != null) BindNavigationEvent(btnNav_Logout, "Logout");
                     if (lblNav_Logout != null) BindNavigationEvent(lblNav_Logout, "Logout");
                     if (picNav_Logout != null) BindNavigationEvent(picNav_Logout, "Logout");
@@ -102,7 +69,7 @@ namespace Autosoft_Licensing.UI.Pages
                         view.FocusRectStyle = DrawFocusRectStyle.RowFocus;
                         view.BestFitColumns();
 
-                        // --- ADDED: Double Click Event ---
+                        // Double Click Event
                         view.DoubleClick += GrdUsers_DoubleClick;
                     }
 
@@ -130,13 +97,14 @@ namespace Autosoft_Licensing.UI.Pages
                 btnCreate.Enabled = canManage;
                 btnEdit.Enabled = canManage;
                 btnDelete.Enabled = canManage;
+                btnRefresh.Enabled = true; // Refresh always allowed if you can see the page
 
                 if (btnNav_GenerateLicense != null) btnNav_GenerateLicense.Visible = user?.CanGenerateLicense ?? false;
                 if (btnNav_LicenseRecords != null) btnNav_LicenseRecords.Visible = user?.CanViewRecords ?? false;
                 if (btnNav_ManageProduct != null) btnNav_ManageProduct.Visible = user?.CanManageProduct ?? false;
                 if (btnNav_ManageUser != null) btnNav_ManageUser.Visible = user?.CanManageUsers ?? false;
 
-                // Settings Admin-only (match GenerateLicensePage behavior)
+                // Settings Admin-only
                 if (btnNav_GeneralSetting != null)
                     btnNav_GeneralSetting.Visible = string.Equals(user?.Role, "Admin", StringComparison.OrdinalIgnoreCase);
 
@@ -189,11 +157,9 @@ namespace Autosoft_Licensing.UI.Pages
                 var view = grdUsers.MainView as GridView;
                 if (view == null) return null;
 
-                // Attempt strongly typed row first
                 var row = view.GetFocusedRow() as UserRow;
                 if (row != null) return row;
 
-                // Fallback if bound directly to Model.User in the future
                 var any = view.GetFocusedRow();
                 if (any == null) return null;
 
@@ -231,7 +197,11 @@ namespace Autosoft_Licensing.UI.Pages
             Navigate("UserDetailsPage", row.Id, "Edit");
         }
 
-        // --- ADDED: Double Click Handler ---
+        private void btnRefresh_Click(object sender, EventArgs e) // <--- ADDED
+        {
+            RefreshData();
+        }
+
         private void GrdUsers_DoubleClick(object sender, EventArgs e)
         {
             try
@@ -239,7 +209,6 @@ namespace Autosoft_Licensing.UI.Pages
                 var view = sender as GridView;
                 if (view == null) return;
 
-                // Robust hit detection to ensure we clicked a valid row
                 var pt = view.GridControl.PointToClient(Control.MousePosition);
                 var hit = view.CalcHitInfo(pt);
 
@@ -248,7 +217,6 @@ namespace Autosoft_Licensing.UI.Pages
                     var row = GetFocusedRow();
                     if (row != null)
                     {
-                        // Navigate to details; the destination page will handle ReadOnly permissions automatically
                         Navigate("UserDetailsPage", row.Id, "Edit");
                     }
                 }
@@ -270,7 +238,6 @@ namespace Autosoft_Licensing.UI.Pages
                     return;
                 }
 
-                // Guard default admin
                 if (string.Equals(row.Username, "admin", StringComparison.OrdinalIgnoreCase))
                 {
                     ShowError("The default Administrator account cannot be deleted.");
@@ -302,12 +269,10 @@ namespace Autosoft_Licensing.UI.Pages
             }
         }
 
-        // Helper to raise navigation event
         private void Navigate(string targetPage, int? userId = null, string mode = null)
         {
             try
             {
-                // FIX: pass the selected user's Id to the unified navigation args
                 FireNavigate(targetPage, userId);
             }
             catch (Exception ex)
