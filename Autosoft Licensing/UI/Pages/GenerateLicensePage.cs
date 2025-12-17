@@ -35,6 +35,10 @@ namespace Autosoft_Licensing.UI.Pages
         private ILicenseDatabaseService _dbService;
         private IUserService _userService;
 
+        // --- FIX START: Add field to store current user ---
+        private User _loggedInUser;
+        // --- FIX END ---
+
         // Current state
         private ArlRequest _currentRequest;
         private AslPayload _currentPayload;
@@ -595,6 +599,11 @@ namespace Autosoft_Licensing.UI.Pages
                             ValidToUtc = _currentPayload.ValidToUtc,
                             LicenseType = Enum.TryParse<LicenseType>(_currentPayload.LicenseType, true, out var lt3) ? lt3 : LicenseType.Subscription,
                             ImportedOnUtc = ServiceRegistry.Clock.UtcNow,
+
+                            // --- FIX START: Assign the User ID ---
+                            ImportedByUserId = _loggedInUser?.Id,
+                            // --- FIX END ---
+
                             RawAslBase64 = base64Asl,
                             Remarks = memRemark?.Text,
                             ModuleCodes = _currentPayload.ModuleCodes?.ToList() ?? new List<string>(),
@@ -729,6 +738,10 @@ namespace Autosoft_Licensing.UI.Pages
             try
             {
                 if (user == null) return;
+
+                // --- FIX START: Capture the logged-in user ---
+                _loggedInUser = user;
+                // --- FIX END ---
 
                 if (btnNav_GenerateLicense != null) btnNav_GenerateLicense.Visible = user.CanGenerateLicense;
                 if (btnNav_LicenseRecords != null) btnNav_LicenseRecords.Visible = user.CanViewRecords;

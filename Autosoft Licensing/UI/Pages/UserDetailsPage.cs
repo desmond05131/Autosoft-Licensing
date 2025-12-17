@@ -1,51 +1,52 @@
-/*
-PAGE: UserDetailsPage.cs
-ROLE: Dealer Admin
-PURPOSE:
-  Create or edit a single user account and assign access rights for Dealer app capabilities.
 
-KEY UI ELEMENTS:
-  - TextBox: Username (readonly for edit), DisplayName
-  - Password and Confirm Password fields (for create or change)
-  - Checkbox list: Access rights (Generate License, License record, Manage Product, Manage User)
-  - Buttons: Save, Cancel
+    /*
+    PAGE: UserDetailsPage.cs
+    ROLE: Dealer Admin
+    PURPOSE:
+      Create or edit a single user account and assign access rights for Dealer app capabilities.
 
-BACKEND SERVICE CALLS:
-  - On load (edit): ServiceRegistry.Database.GetUserById(id) or ServiceRegistry.Database.GetUserByUsername(username)
-  - On Save: ServiceRegistry.Database.InsertUser(user) or ServiceRegistry.Database.UpdateUser(user)
+    KEY UI ELEMENTS:
+      - TextBox: Username (readonly for edit), DisplayName
+      - Password and Confirm Password fields (for create or change)
+      - Checkbox list: Access rights (Generate License, License record, Manage Product, Manage User)
+      - Buttons: Save, Cancel
 
-VALIDATION & RULES:
-  - Require non-empty username and displayname
-  - Password required for new users; for updates optional unless changing password
-  - Only Admin can assign ManageUser right
-  - Prevent deleting or demoting the default Admin (this logic enforced in ManageUserPage Delete; here just prevent editing default admin to remove all admin roles)
+    BACKEND SERVICE CALLS:
+      - On load (edit): ServiceRegistry.Database.GetUserById(id) or ServiceRegistry.Database.GetUserByUsername(username)
+      - On Save: ServiceRegistry.Database.InsertUser(user) or ServiceRegistry.Database.UpdateUser(user)
 
-ACCESS CONTROL:
-  - Only users with ManageUser permission can use/save this form
+    VALIDATION & RULES:
+      - Require non-empty username and displayname
+      - Password required for new users; for updates optional unless changing password
+      - Only Admin can assign ManageUser right
+      - Prevent deleting or demoting the default Admin (this logic enforced in ManageUserPage Delete; here just prevent editing default admin to remove all admin roles)
 
-UX NOTES:
-  - If password fields left blank on edit, keep existing password
-  - Show message on success (UI transient toast)
+    ACCESS CONTROL:
+      - Only users with ManageUser permission can use/save this form
 
-ACCEPTANCE CRITERIA:
-  - New users created in DB and appear on ManageUserPage
-  - Edits persist and role changes reflected in app permissions
+    UX NOTES:
+      - If password fields left blank on edit, keep existing password
+      - Show message on success (UI transient toast)
 
-COPILOT PROMPTS:
-  - "// Implement SaveUser -> validate fields, optionally hash password, and call ServiceRegistry.Database.InsertUser(user) for new users or ServiceRegistry.Database.UpdateUser(user) for updates."
-*/
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Windows.Forms; // <-- add this
-using DevExpress.Utils;
-using DevExpress.XtraEditors;
-using DevExpress.XtraEditors.Controls;
-using DevExpress.XtraGrid.Views.Grid;
-using Autosoft_Licensing.Models;
-using Autosoft_Licensing.Services;
+    ACCEPTANCE CRITERIA:
+      - New users created in DB and appear on ManageUserPage
+      - Edits persist and role changes reflected in app permissions
+
+    COPILOT PROMPTS:
+      - "// Implement SaveUser -> validate fields, optionally hash password, and call ServiceRegistry.Database.InsertUser(user) for new users or ServiceRegistry.Database.UpdateUser(user) for updates."
+    */
+    using System;
+    using System.Collections.Generic;
+    using System.ComponentModel;
+    using System.Linq;
+    using System.Text;
+    using System.Windows.Forms; // <-- add this
+    using DevExpress.Utils;
+    using DevExpress.XtraEditors;
+    using DevExpress.XtraEditors.Controls;
+    using DevExpress.XtraGrid.Views.Grid;
+    using Autosoft_Licensing.Models;
+    using Autosoft_Licensing.Services;
 
 namespace Autosoft_Licensing.UI.Pages
 {
@@ -91,6 +92,13 @@ namespace Autosoft_Licensing.UI.Pages
                     {
                         btnSave.Click += btnSave_Click;
                     }
+
+                    // --- FIX START: Allow typing in Role combobox ---
+                    if (cmbRole != null)
+                    {
+                        cmbRole.Properties.TextEditStyle = TextEditStyles.Standard;
+                    }
+                    // --- FIX END ---
                 }
             }
             catch { /* ignore design-time issues */ }
@@ -459,8 +467,8 @@ namespace Autosoft_Licensing.UI.Pages
                 user.CanManageUsers = GetPerm("USER");
 
                 // Role mapping from UI combo
-                // CRITICAL: enforce role?permissions consistency
                 var roleFromUi = string.IsNullOrWhiteSpace(selectedRole) ? "Support" : selectedRole;
+
                 if (string.Equals(roleFromUi, "Admin", StringComparison.OrdinalIgnoreCase))
                 {
                     user.Role = "Admin";
@@ -468,8 +476,11 @@ namespace Autosoft_Licensing.UI.Pages
                 }
                 else
                 {
-                    user.Role = "Support";
-                    user.CanManageUsers = false; // Support cannot manage users
+                    // --- FIX START: Accept custom role text and respect checkbox state ---
+                    user.Role = roleFromUi;
+                    // Previous logic forced user.CanManageUsers = false; 
+                    // Now we allow the grid selection (GetPerm("USER")) to persist for custom roles.
+                    // --- FIX END ---
                 }
 
                 // Guard: at least one Admin must remain (covers self or others)

@@ -2,7 +2,7 @@
 PAGE: LicenseRecordsPage.cs
 ROLE: Dealer Admin / Support
 PURPOSE:
-  Master view and search/filter UI for previously generated license records. Supports filtering, color-coded status display, and actions: View, Edit, Delete, Create.
+  Master view and search/filter UI for previously generated license records. Supports filtering, color-coded status display, and actions: View, Delete, Create.
 */
 
 using System;
@@ -69,11 +69,14 @@ namespace Autosoft_Licensing.UI.Pages
                     if (picNav_Logout != null) BindNavigationEvent(picNav_Logout, "Logout");
 
                     // FIX 2: Wire up Action Buttons
+                    // 'Edit' button removed as requested
                     if (btnRefresh != null) btnRefresh.Click += btnRefresh_Click;
                     if (btnCreate != null) btnCreate.Click += btnCreate_Click;
                     if (btnView != null) btnView.Click += btnView_Click;
-                    if (btnEdit != null) btnEdit.Click += btnEdit_Click;
                     if (btnDelete != null) btnDelete.Click += btnDelete_Click;
+
+                    // NEW: Clear All Button Wiring
+                    if (btnClearAll != null) btnClearAll.Click += btnClearAll_Click;
 
                     // FIX 3: Wire up Grid Events
                     if (grdLicenses != null && grdLicenses.MainView is GridView view)
@@ -82,7 +85,6 @@ namespace Autosoft_Licensing.UI.Pages
                     }
 
                     // FIX 3.5: Wire up Filter Date Mode Events (CRITICAL FIX)
-                    // This ensures the UI toggles between Single and Range mode when selection changes
                     if (cmbIssueDateMode != null) cmbIssueDateMode.SelectedIndexChanged += DateModeCombo_SelectedIndexChanged;
                     if (cmbExpiryDateMode != null) cmbExpiryDateMode.SelectedIndexChanged += DateModeCombo_SelectedIndexChanged;
 
@@ -439,6 +441,54 @@ namespace Autosoft_Licensing.UI.Pages
 
         #region Event Handlers
 
+        // NEW: Clear All Logic
+        private void btnClearAll_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // Reset standard filters to "All" if available
+                if (cmbCompanyName != null && cmbCompanyName.Properties.Items.Count > 0)
+                    cmbCompanyName.SelectedIndex = 0;
+
+                if (cmbProductCode != null && cmbProductCode.Properties.Items.Count > 0)
+                    cmbProductCode.SelectedIndex = 0;
+
+                if (cmbLicenseType != null && cmbLicenseType.Properties.Items.Count > 0)
+                    cmbLicenseType.SelectedIndex = 0;
+
+                // Reset expired checkbox
+                if (chkShowExpired != null)
+                    chkShowExpired.Checked = false;
+
+                // Reset countdown spinner to default 30
+                if (numCountdownDays != null)
+                    numCountdownDays.Value = 30;
+
+                // Reset date modes
+                if (cmbIssueDateMode != null) cmbIssueDateMode.SelectedIndex = 0; // By date
+                if (cmbExpiryDateMode != null) cmbExpiryDateMode.SelectedIndex = 0; // By date
+
+                // Clear date editors
+                if (dtIssueDateSingle != null) dtIssueDateSingle.EditValue = null;
+                if (dtIssueDateFrom != null) dtIssueDateFrom.EditValue = null;
+                if (dtIssueDateTo != null) dtIssueDateTo.EditValue = null;
+                if (dtExpiryDateSingle != null) dtExpiryDateSingle.EditValue = null;
+                if (dtExpiryDateFrom != null) dtExpiryDateFrom.EditValue = null;
+                if (dtExpiryDateTo != null) dtExpiryDateTo.EditValue = null;
+
+                // Ensure visibility aligns with modes
+                UpdateDateControls();
+
+                // Refresh data immediately
+                RefreshData();
+            }
+            catch (Exception ex)
+            {
+                ShowError("Failed to clear filters.");
+                System.Diagnostics.Debug.WriteLine($"btnClearAll_Click error: {ex}");
+            }
+        }
+
         private void btnRefresh_Click(object sender, EventArgs e)
         {
             RefreshData();
@@ -502,29 +552,7 @@ namespace Autosoft_Licensing.UI.Pages
             }
         }
 
-        private void btnEdit_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                var view = grdLicenses.MainView as GridView;
-                if (view == null) return;
-
-                var row = view.GetFocusedRow() as LicenseRecordRow;
-                if (row == null)
-                {
-                    ShowError("Please select a license record.");
-                    return;
-                }
-
-                // Navigate to LicenseRecordDetailsPage with edit mode
-                Navigate("LicenseRecordDetailsPage", row.LicenseId, isReadOnly: false);
-            }
-            catch (Exception ex)
-            {
-                ShowError("Failed to edit license.");
-                System.Diagnostics.Debug.WriteLine($"btnEdit_Click error: {ex}");
-            }
-        }
+        // --- EDIT BUTTON REMOVED ---
 
         private void btnDelete_Click(object sender, EventArgs e)
         {
@@ -586,12 +614,11 @@ namespace Autosoft_Licensing.UI.Pages
         {
             if (user == null) return;
 
-            // --- FIX START: Apply missing RBAC for navigation panel ---
+            // Apply missing RBAC for navigation panel
             if (btnNav_GenerateLicense != null) btnNav_GenerateLicense.Visible = user.CanGenerateLicense;
             if (btnNav_LicenseRecords != null) btnNav_LicenseRecords.Visible = user.CanViewRecords;
             if (btnNav_ManageProduct != null) btnNav_ManageProduct.Visible = user.CanManageProduct;
             if (btnNav_ManageUser != null) btnNav_ManageUser.Visible = user.CanManageUsers;
-            // --- FIX END ---
 
             if (btnNav_Logout != null) btnNav_Logout.Visible = true;
             if (btnNav_GeneralSetting != null) btnNav_GeneralSetting.Visible = string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase);

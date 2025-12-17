@@ -40,6 +40,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Linq;
+using System.Windows.Forms; // Required for Control.MousePosition
 using DevExpress.XtraEditors;
 using DevExpress.XtraGrid.Views.Grid;
 using Autosoft_Licensing.Services;
@@ -100,6 +101,9 @@ namespace Autosoft_Licensing.UI.Pages
                         view.OptionsView.ShowIndicator = false;
                         view.FocusRectStyle = DrawFocusRectStyle.RowFocus;
                         view.BestFitColumns();
+
+                        // --- ADDED: Double Click Event ---
+                        view.DoubleClick += GrdUsers_DoubleClick;
                     }
 
                     // Initial load
@@ -237,6 +241,34 @@ namespace Autosoft_Licensing.UI.Pages
                 return;
             }
             Navigate("UserDetailsPage", row.Id, "Edit");
+        }
+
+        // --- ADDED: Double Click Handler ---
+        private void GrdUsers_DoubleClick(object sender, EventArgs e)
+        {
+            try
+            {
+                var view = sender as GridView;
+                if (view == null) return;
+
+                // Robust hit detection to ensure we clicked a valid row
+                var pt = view.GridControl.PointToClient(Control.MousePosition);
+                var hit = view.CalcHitInfo(pt);
+
+                if (hit.InRow || hit.InRowCell)
+                {
+                    var row = GetFocusedRow();
+                    if (row != null)
+                    {
+                        // Navigate to details; the destination page will handle ReadOnly permissions automatically
+                        Navigate("UserDetailsPage", row.Id, "Edit");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GrdUsers_DoubleClick error: {ex}");
+            }
         }
 
         private void btnDelete_Click(object sender, EventArgs e)

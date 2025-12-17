@@ -61,6 +61,7 @@ namespace Autosoft_Licensing.UI.Pages
         private LabelControl lblCountdownDays;
         private SpinEdit numCountdownDays;
         private SimpleButton btnRefresh;
+        private SimpleButton btnClearAll;
         private GridControl grdLicenses;
         private GridView viewLicenses;
         private DevExpress.XtraGrid.Columns.GridColumn colCompanyName;
@@ -73,7 +74,7 @@ namespace Autosoft_Licensing.UI.Pages
         private DevExpress.XtraGrid.Columns.GridColumn colCountdown;
         private SimpleButton btnCreate;
         private SimpleButton btnView;
-        private SimpleButton btnEdit;
+        // REMOVED: private SimpleButton btnEdit;
         private SimpleButton btnDelete;
 
         protected override void Dispose(bool disposing)
@@ -132,6 +133,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.lblExpiryDateTo = new DevExpress.XtraEditors.LabelControl();
             this.dtExpiryDateTo = new DevExpress.XtraEditors.DateEdit();
             this.btnRefresh = new DevExpress.XtraEditors.SimpleButton();
+            this.btnClearAll = new DevExpress.XtraEditors.SimpleButton();
             this.grdLicenses = new DevExpress.XtraGrid.GridControl();
             this.viewLicenses = new DevExpress.XtraGrid.Views.Grid.GridView();
             this.colCompanyName = new DevExpress.XtraGrid.Columns.GridColumn();
@@ -144,7 +146,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.colCountdown = new DevExpress.XtraGrid.Columns.GridColumn();
             this.btnCreate = new DevExpress.XtraEditors.SimpleButton();
             this.btnView = new DevExpress.XtraEditors.SimpleButton();
-            this.btnEdit = new DevExpress.XtraEditors.SimpleButton();
+            // REMOVED: this.btnEdit = new DevExpress.XtraEditors.SimpleButton();
             this.btnDelete = new DevExpress.XtraEditors.SimpleButton();
             ((System.ComponentModel.ISupportInitialize)(this.headerPanel)).BeginInit();
             this.headerPanel.SuspendLayout();
@@ -722,6 +724,17 @@ namespace Autosoft_Licensing.UI.Pages
             this.btnRefresh.TabIndex = 3;
             this.btnRefresh.Text = "Refresh";
             // 
+            // btnClearAll
+            // 
+            this.btnClearAll.Appearance.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
+            this.btnClearAll.Appearance.Options.UseFont = true;
+            this.btnClearAll.Location = new System.Drawing.Point(138, 299); // Positioned next to Refresh
+            this.btnClearAll.LookAndFeel.UseDefaultLookAndFeel = false;
+            this.btnClearAll.Name = "btnClearAll";
+            this.btnClearAll.Size = new System.Drawing.Size(120, 36);
+            this.btnClearAll.TabIndex = 4;
+            this.btnClearAll.Text = "Clear All";
+            //
             // grdLicenses
             // 
             this.grdLicenses.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
@@ -834,7 +847,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.btnCreate.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnCreate.Appearance.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.btnCreate.Appearance.Options.UseFont = true;
-            this.btnCreate.Location = new System.Drawing.Point(404, 710);
+            this.btnCreate.Location = new System.Drawing.Point(538, 710);
             this.btnCreate.LookAndFeel.UseDefaultLookAndFeel = false;
             this.btnCreate.Name = "btnCreate";
             this.btnCreate.Size = new System.Drawing.Size(120, 36);
@@ -846,24 +859,12 @@ namespace Autosoft_Licensing.UI.Pages
             this.btnView.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnView.Appearance.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.btnView.Appearance.Options.UseFont = true;
-            this.btnView.Location = new System.Drawing.Point(538, 710);
+            this.btnView.Location = new System.Drawing.Point(672, 710);
             this.btnView.LookAndFeel.UseDefaultLookAndFeel = false;
             this.btnView.Name = "btnView";
             this.btnView.Size = new System.Drawing.Size(120, 36);
             this.btnView.TabIndex = 6;
             this.btnView.Text = "View";
-            // 
-            // btnEdit
-            // 
-            this.btnEdit.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnEdit.Appearance.Font = new System.Drawing.Font("Segoe UI", 10F);
-            this.btnEdit.Appearance.Options.UseFont = true;
-            this.btnEdit.Location = new System.Drawing.Point(672, 710);
-            this.btnEdit.LookAndFeel.UseDefaultLookAndFeel = false;
-            this.btnEdit.Name = "btnEdit";
-            this.btnEdit.Size = new System.Drawing.Size(120, 36);
-            this.btnEdit.TabIndex = 7;
-            this.btnEdit.Text = "Edit";
             // 
             // btnDelete
             // 
@@ -884,16 +885,15 @@ namespace Autosoft_Licensing.UI.Pages
             this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.Controls.Add(this.btnDelete);
-            this.Controls.Add(this.btnEdit);
             this.Controls.Add(this.btnView);
             this.Controls.Add(this.btnCreate);
             this.Controls.Add(this.grdLicenses);
+            this.Controls.Add(this.btnClearAll);
             this.Controls.Add(this.btnRefresh);
             this.Controls.Add(this.grpFiltering);
             this.Controls.Add(this.navPanel);
             this.Controls.Add(this.headerPanel);
             this.Name = "LicenseRecordsPage";
-            // INCREASED HEIGHT to 760 to ensure buttons (at Y=710) are visible
             this.Size = new System.Drawing.Size(1000, 760);
             ((System.ComponentModel.ISupportInitialize)(this.headerPanel)).EndInit();
             this.headerPanel.ResumeLayout(false);
