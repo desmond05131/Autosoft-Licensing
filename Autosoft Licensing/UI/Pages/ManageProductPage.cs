@@ -6,7 +6,7 @@ PURPOSE:
 
 KEY UI ELEMENTS:
   - GridControl: list of products (ProductID, ProductName, CreatedBy, DateCreated, LastModified)
-  - Buttons: Create, View, Edit, Delete, Search
+  - Buttons: Create, Edit, Delete, Search
 
 BACKEND SERVICE CALLS:
   - ServiceRegistry.Database.GetProducts(), GetProductById(id)/GetProductByProductId(productId), InsertProduct(product), UpdateProduct(product), DeleteProduct(id)
@@ -72,7 +72,7 @@ namespace Autosoft_Licensing.UI.Pages
 
                     // Wire events
                     btnCreate.Click += btnCreate_Click;
-                    btnView.Click += btnView_Click;
+                    // REMOVED: View button wiring
                     btnEdit.Click += btnEdit_Click;
 
                     // Logic for Delete/Restore is handled in the handler now
@@ -148,7 +148,7 @@ namespace Autosoft_Licensing.UI.Pages
                 btnCreate.Enabled = canEdit;
                 btnEdit.Enabled = canEdit;
                 btnDelete.Enabled = canEdit;
-                btnView.Enabled = true;
+                // REMOVED: btnView.Enabled = true; (Button removed)
 
                 if (btnNav_GenerateLicense != null) btnNav_GenerateLicense.Visible = user.CanGenerateLicense;
                 if (btnNav_LicenseRecords != null) btnNav_LicenseRecords.Visible = user.CanViewRecords;
@@ -263,16 +263,7 @@ namespace Autosoft_Licensing.UI.Pages
             Navigate("ProductDetailsPage", null, "Create");
         }
 
-        private void btnView_Click(object sender, EventArgs e)
-        {
-            var row = GetFocusedRow();
-            if (row == null)
-            {
-                ShowError("Please select a product.");
-                return;
-            }
-            Navigate("ProductDetailsPage", row.Id, "View");
-        }
+        // REMOVED: btnView_Click
 
         private void btnEdit_Click(object sender, EventArgs e)
         {

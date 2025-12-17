@@ -43,7 +43,7 @@ namespace Autosoft_Licensing.UI.Pages
 
         // Action bar
         private SimpleButton btnCreate;
-        private SimpleButton btnView;
+        // REMOVED: private SimpleButton btnView;
         private SimpleButton btnEdit;
         private SimpleButton btnDelete;
 
@@ -98,7 +98,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.picNav_Logout = new DevExpress.XtraEditors.PictureEdit();
             this.lblNav_Logout = new DevExpress.XtraEditors.LabelControl();
             this.btnCreate = new DevExpress.XtraEditors.SimpleButton();
-            this.btnView = new DevExpress.XtraEditors.SimpleButton();
+            // REMOVED: this.btnView = new DevExpress.XtraEditors.SimpleButton();
             this.btnEdit = new DevExpress.XtraEditors.SimpleButton();
             this.btnDelete = new DevExpress.XtraEditors.SimpleButton();
             this.btnRefresh = new DevExpress.XtraEditors.SimpleButton();
@@ -434,26 +434,14 @@ namespace Autosoft_Licensing.UI.Pages
             this.btnCreate.TabIndex = 5;
             this.btnCreate.Text = "Create";
             // 
-            // btnView
-            // 
-            this.btnView.Appearance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(98)))), ((int)(((byte)(75)))), ((int)(((byte)(255)))));
-            this.btnView.Appearance.ForeColor = System.Drawing.Color.White;
-            this.btnView.Appearance.Options.UseBackColor = true;
-            this.btnView.Appearance.Options.UseForeColor = true;
-            this.btnView.Location = new System.Drawing.Point(146, 124);
-            this.btnView.LookAndFeel.UseDefaultLookAndFeel = false;
-            this.btnView.Name = "btnView";
-            this.btnView.Size = new System.Drawing.Size(120, 36);
-            this.btnView.TabIndex = 6;
-            this.btnView.Text = "View";
-            // 
             // btnEdit
             // 
             this.btnEdit.Appearance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(98)))), ((int)(((byte)(75)))), ((int)(((byte)(255)))));
             this.btnEdit.Appearance.ForeColor = System.Drawing.Color.White;
             this.btnEdit.Appearance.Options.UseBackColor = true;
             this.btnEdit.Appearance.Options.UseForeColor = true;
-            this.btnEdit.Location = new System.Drawing.Point(280, 124);
+            // WAS: 280, 124 (moved left to fill gap)
+            this.btnEdit.Location = new System.Drawing.Point(146, 124);
             this.btnEdit.LookAndFeel.UseDefaultLookAndFeel = false;
             this.btnEdit.Name = "btnEdit";
             this.btnEdit.Size = new System.Drawing.Size(120, 36);
@@ -462,11 +450,12 @@ namespace Autosoft_Licensing.UI.Pages
             // 
             // btnDelete
             // 
-            this.btnDelete.Appearance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(98)))), ((int)(((byte)(75)))), ((int)(((byte)(255)))));
+            this.btnDelete.Appearance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(220)))), ((int)(((byte)(53)))), ((int)(((byte)(69)))));
             this.btnDelete.Appearance.ForeColor = System.Drawing.Color.White;
             this.btnDelete.Appearance.Options.UseBackColor = true;
             this.btnDelete.Appearance.Options.UseForeColor = true;
-            this.btnDelete.Location = new System.Drawing.Point(414, 124);
+            // WAS: 414, 124 (moved left to fill gap)
+            this.btnDelete.Location = new System.Drawing.Point(280, 124);
             this.btnDelete.LookAndFeel.UseDefaultLookAndFeel = false;
             this.btnDelete.Name = "btnDelete";
             this.btnDelete.Size = new System.Drawing.Size(120, 36);
@@ -510,8 +499,8 @@ namespace Autosoft_Licensing.UI.Pages
             // 
             // grdProducts
             // 
-            this.grdProducts.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            this.grdProducts.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.grdProducts.Location = new System.Drawing.Point(12, 176);
             this.grdProducts.MainView = this.viewProducts;
@@ -596,7 +585,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.Controls.Add(this.txtSearch);
             this.Controls.Add(this.btnDelete);
             this.Controls.Add(this.btnEdit);
-            this.Controls.Add(this.btnView);
+            // REMOVED: this.Controls.Add(this.btnView);
             this.Controls.Add(this.btnCreate);
             this.Controls.Add(this.navPanel);
             this.Controls.Add(this.headerPanel);

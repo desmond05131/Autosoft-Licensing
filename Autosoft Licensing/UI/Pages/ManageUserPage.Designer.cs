@@ -40,7 +40,6 @@ namespace Autosoft_Licensing.UI.Pages
         // Action bar
         private PanelControl actionPanel;
         private SimpleButton btnCreate;
-        private SimpleButton btnView;
         private SimpleButton btnEdit;
         private SimpleButton btnDelete;
 
@@ -84,7 +83,6 @@ namespace Autosoft_Licensing.UI.Pages
             this.lblNav_Logout = new DevExpress.XtraEditors.LabelControl();
             this.actionPanel = new DevExpress.XtraEditors.PanelControl();
             this.btnCreate = new DevExpress.XtraEditors.SimpleButton();
-            this.btnView = new DevExpress.XtraEditors.SimpleButton();
             this.btnEdit = new DevExpress.XtraEditors.SimpleButton();
             this.btnDelete = new DevExpress.XtraEditors.SimpleButton();
             this.grdUsers = new DevExpress.XtraGrid.GridControl();
@@ -396,7 +394,6 @@ namespace Autosoft_Licensing.UI.Pages
             this.actionPanel.Appearance.Options.UseBackColor = true;
             this.actionPanel.BorderStyle = DevExpress.XtraEditors.Controls.BorderStyles.NoBorder;
             this.actionPanel.Controls.Add(this.btnCreate);
-            this.actionPanel.Controls.Add(this.btnView);
             this.actionPanel.Controls.Add(this.btnEdit);
             this.actionPanel.Controls.Add(this.btnDelete);
             this.actionPanel.Dock = System.Windows.Forms.DockStyle.Top;
@@ -419,20 +416,6 @@ namespace Autosoft_Licensing.UI.Pages
             this.btnCreate.TabIndex = 0;
             this.btnCreate.Text = "Create";
             // 
-            // btnView
-            // 
-            this.btnView.Appearance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(98)))), ((int)(((byte)(75)))), ((int)(((byte)(255)))));
-            this.btnView.Appearance.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
-            this.btnView.Appearance.ForeColor = System.Drawing.Color.White;
-            this.btnView.Appearance.Options.UseBackColor = true;
-            this.btnView.Appearance.Options.UseFont = true;
-            this.btnView.Appearance.Options.UseForeColor = true;
-            this.btnView.Location = new System.Drawing.Point(100, 8);
-            this.btnView.Name = "btnView";
-            this.btnView.Size = new System.Drawing.Size(80, 30);
-            this.btnView.TabIndex = 1;
-            this.btnView.Text = "View";
-            // 
             // btnEdit
             // 
             this.btnEdit.Appearance.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(98)))), ((int)(((byte)(75)))), ((int)(((byte)(255)))));
@@ -441,7 +424,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.btnEdit.Appearance.Options.UseBackColor = true;
             this.btnEdit.Appearance.Options.UseFont = true;
             this.btnEdit.Appearance.Options.UseForeColor = true;
-            this.btnEdit.Location = new System.Drawing.Point(188, 8);
+            this.btnEdit.Location = new System.Drawing.Point(100, 8);
             this.btnEdit.Name = "btnEdit";
             this.btnEdit.Size = new System.Drawing.Size(80, 30);
             this.btnEdit.TabIndex = 2;
@@ -455,7 +438,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.btnDelete.Appearance.Options.UseBackColor = true;
             this.btnDelete.Appearance.Options.UseFont = true;
             this.btnDelete.Appearance.Options.UseForeColor = true;
-            this.btnDelete.Location = new System.Drawing.Point(276, 8);
+            this.btnDelete.Location = new System.Drawing.Point(188, 8);
             this.btnDelete.Name = "btnDelete";
             this.btnDelete.Size = new System.Drawing.Size(80, 30);
             this.btnDelete.TabIndex = 3;
@@ -463,8 +446,8 @@ namespace Autosoft_Licensing.UI.Pages
             // 
             // grdUsers
             // 
-            this.grdUsers.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            this.grdUsers.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.grdUsers.Location = new System.Drawing.Point(12, 168);
             this.grdUsers.MainView = this.viewUsers;

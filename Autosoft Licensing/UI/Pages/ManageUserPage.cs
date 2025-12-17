@@ -6,7 +6,7 @@ PURPOSE:
 
 KEY UI ELEMENTS:
   - GridControl: list of users (Username, DisplayName, IsActive, Roles)
-  - Buttons: Create, View, Edit, Delete
+  - Buttons: Create, Edit, Delete (View removed)
   - User form: Username, DisplayName, Password, ConfirmPassword, Role checkboxes (GenerateLicense, LicenseRecord, ManageProduct, ManageUser), IsActive checkbox
   - Notes area: "Admin account cannot be deleted" hint
 
@@ -76,7 +76,7 @@ namespace Autosoft_Licensing.UI.Pages
 
                     // Wire actions
                     btnCreate.Click += btnCreate_Click;
-                    btnView.Click += btnView_Click;
+                    // btnView removed
                     btnEdit.Click += btnEdit_Click;
                     btnDelete.Click += btnDelete_Click;
 
@@ -130,7 +130,6 @@ namespace Autosoft_Licensing.UI.Pages
                 btnCreate.Enabled = canManage;
                 btnEdit.Enabled = canManage;
                 btnDelete.Enabled = canManage;
-                btnView.Enabled = true;
 
                 if (btnNav_GenerateLicense != null) btnNav_GenerateLicense.Visible = user?.CanGenerateLicense ?? false;
                 if (btnNav_LicenseRecords != null) btnNav_LicenseRecords.Visible = user?.CanViewRecords ?? false;
@@ -219,17 +218,6 @@ namespace Autosoft_Licensing.UI.Pages
         private void btnCreate_Click(object sender, EventArgs e)
         {
             Navigate("UserDetailsPage", null, "Create");
-        }
-
-        private void btnView_Click(object sender, EventArgs e)
-        {
-            var row = GetFocusedRow();
-            if (row == null)
-            {
-                ShowError("Please select a user.");
-                return;
-            }
-            Navigate("UserDetailsPage", row.Id, "View");
         }
 
         private void btnEdit_Click(object sender, EventArgs e)
