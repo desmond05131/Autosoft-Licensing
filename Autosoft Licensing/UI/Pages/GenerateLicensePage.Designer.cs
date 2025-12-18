@@ -856,6 +856,11 @@ namespace Autosoft_Licensing.UI.Pages
             // 
             this.Appearance.BackColor = System.Drawing.Color.White;
             this.Appearance.Options.UseBackColor = true;
+
+            // Ensure DPI autoscaling so layout appears same across machines with different display scaling.
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+
             this.Controls.Add(this.navPanel);
             this.Controls.Add(this.headerPanel);
             this.Controls.Add(this.btnUploadArl);
@@ -923,7 +928,6 @@ namespace Autosoft_Licensing.UI.Pages
             ((System.ComponentModel.ISupportInitialize)(this.txtLicenseKey.Properties)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
-
         }
 
         private PanelControl underline;

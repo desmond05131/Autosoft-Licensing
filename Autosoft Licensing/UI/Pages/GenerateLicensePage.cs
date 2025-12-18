@@ -57,7 +57,7 @@ namespace Autosoft_Licensing.UI.Pages
             // Safe defaults
             int defDemoDays = 30;
             int defSubMonths = 12;
-            int defPermYears = 10;
+            int defPermYears = 9999;
 
             try
             {
@@ -66,7 +66,7 @@ namespace Autosoft_Licensing.UI.Pages
                     // Read settings from DB, fallback to safe defaults if missing or invalid
                     defDemoDays = SafeParseInt(_dbService.GetSetting("Duration_Demo_Days", "30"), 30);
                     defSubMonths = SafeParseInt(_dbService.GetSetting("Duration_Sub_Months", "12"), 12);
-                    defPermYears = SafeParseInt(_dbService.GetSetting("Duration_Perm_Years", "10"), 10);
+                    defPermYears = SafeParseInt(_dbService.GetSetting("Duration_Perm_Years", "9999"), 9999);
                 }
             }
             catch

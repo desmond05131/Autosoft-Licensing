@@ -106,7 +106,7 @@ namespace Autosoft_Licensing.UI.Pages
                 // Keep safe defaults if DB read fails
                 spinDemo.Value = 30;
                 spinSub.Value = 12;
-                spinPerm.Value = 10;
+                spinPerm.Value = 9999;
             }
         }
 

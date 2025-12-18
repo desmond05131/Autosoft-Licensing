@@ -179,6 +179,7 @@ GO
 
 IF NOT EXISTS (SELECT 1 FROM dbo.AppSettings WHERE [Key] = 'Duration_Perm_Years')
 BEGIN
-    INSERT INTO dbo.AppSettings ([Key], [Value]) VALUES ('Duration_Perm_Years', '10');
+    -- Changed default from '10' to '9999'
+    INSERT INTO dbo.AppSettings ([Key], [Value]) VALUES ('Duration_Perm_Years', '9999');
 END
 GO

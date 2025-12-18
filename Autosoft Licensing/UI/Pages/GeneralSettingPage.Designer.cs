@@ -514,6 +514,11 @@ namespace Autosoft_Licensing.UI.Pages
             // 
             this.Appearance.BackColor = System.Drawing.Color.White;
             this.Appearance.Options.UseBackColor = true;
+
+            // Ensure DPI autoscaling so layout appears same across machines with different display scaling.
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+
             this.Controls.Add(this.grpDefaults);
             this.Controls.Add(this.navPanel);
             this.Controls.Add(this.headerPanel);
