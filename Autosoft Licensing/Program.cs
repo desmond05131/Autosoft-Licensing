@@ -59,11 +59,15 @@ namespace Autosoft_Licensing
 
             // ... (Rest of your existing startup logic for styles/forms) ...
 
-            // Launch Logic
+            // ---------------------------------------------------------
+            // 3. LAUNCH LOGIC
+            // ---------------------------------------------------------
             var launchPage = ConfigurationManager.AppSettings["LaunchPage"] ?? "Login";
             var launchAsAdmin = string.Equals(ConfigurationManager.AppSettings["LaunchAsAdmin"], "true", StringComparison.OrdinalIgnoreCase);
 
             var mainForm = new MainForm();
+
+            // Handle Admin/Debug Auto-Login
             if (launchAsAdmin)
             {
                 try
@@ -71,12 +75,19 @@ namespace Autosoft_Licensing
                     var admin = ServiceRegistry.Database.GetUserByUsername("admin");
                     if (admin != null) mainForm.SetLoggedInUser(admin);
                 }
-                catch { }
+                catch { /* Ignore if admin missing */ }
             }
 
+            // NAVIGATION LOGIC (The Fix)
+            // If we are in Admin mode AND a specific page is requested (e.g. "LicenseRecords"), go there.
             if (launchAsAdmin && !string.Equals(launchPage, "Login", StringComparison.OrdinalIgnoreCase))
             {
                 mainForm.NavigateToPage(launchPage);
+            }
+            else
+            {
+                // FOR NORMAL USERS: ALWAYS START AT LOGIN
+                mainForm.NavigateToPage("Login");
             }
 
             Application.Run(mainForm);

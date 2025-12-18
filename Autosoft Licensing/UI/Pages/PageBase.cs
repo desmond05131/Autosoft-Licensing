@@ -44,7 +44,7 @@ namespace Autosoft_Licensing.UI.Pages
                 // Keep constructor minimal and side-effect free.
                 if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
                 {
-                    this.Dock = DockStyle.Fill;
+                    // Do NOT set Dock = Fill here; MainForm controls layout.
                     return;
                 }
             }
@@ -71,8 +71,8 @@ namespace Autosoft_Licensing.UI.Pages
                 // best-effort: do not throw from constructor
             }
 
-            // Normal runtime behaviour
-            this.Dock = DockStyle.Fill;
+            // NOTE: Intentionally do NOT set this.Dock = DockStyle.Fill here.
+            // MainForm.LoadPage is responsible for docking and layout.
         }
 
         private void Application_ThreadException(object sender, System.Threading.ThreadExceptionEventArgs e)

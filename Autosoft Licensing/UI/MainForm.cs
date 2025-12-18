@@ -51,26 +51,44 @@ namespace Autosoft_Licensing.UI
 
         public void LoadPage(UserControl page)
         {
-            if (_currentPage != null)
+            try
             {
-                _currentPage.Dispose();
+                // Dispose previous page if any
+                if (_currentPage != null)
+                {
+                    try { _currentPage.Dispose(); } catch { /* ignore dispose errors */ }
+                    _currentPage = null;
+                }
+
+                // Clear existing controls from the desktop container
+                panelDesktop.Controls.Clear();
+
+                // CRITICAL: Force the page to fill the entire container
+                page.Dock = DockStyle.Fill;
+
+                // Add the new page
+                panelDesktop.Controls.Add(page);
+
+                // Track current page for disposal/navigation purposes
+                _currentPage = page as PageBase;
+
+                // Ensure the container repaints so the page is visible immediately
+                panelDesktop.Refresh();
+
+                // Bring the new page to front
+                page.BringToFront();
+
+                // Update Form Title if the page exposes a Title
+                if (page is PageBase pb)
+                {
+                    try { lblTitle.Text = pb.Title; } catch { /* ignore if no title control */ }
+                    this.Text = $"Autosoft Licensing - {pb.Title}";
+                }
             }
-
-            // CRITICAL: Ensure the page fills the desktop panel
-            page.Dock = DockStyle.Fill;
-
-            _currentPage = page as PageBase;
-            panelDesktop.Controls.Clear();
-            panelDesktop.Controls.Add(page);
-            panelDesktop.Tag = page;
-            page.BringToFront();
-
-            // Update Form Title
-            if (page is PageBase pb)
+            catch (Exception ex)
             {
-                lblTitle.Text = pb.Title; // Note: lblTitle might have been in the navbar. 
-                                          // If lblTitle was deleted, remove this line or add a new title label to panelDesktop.
-                this.Text = $"Autosoft Licensing - {pb.Title}"; // Update Window Title instead
+                System.Diagnostics.Debug.WriteLine($"LoadPage error: {ex}");
+                // Best-effort: avoid throwing from UI navigation helper
             }
         }
 
