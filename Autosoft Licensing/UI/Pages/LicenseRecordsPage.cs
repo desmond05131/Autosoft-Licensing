@@ -26,6 +26,9 @@ namespace Autosoft_Licensing.UI.Pages
         private ILicenseDatabaseService _dbService;
         private IUserService _userService;
 
+        // Track the currently applied user so UI controls can reflect permissions
+        private User _currentUser;
+
         // Internal data
         private List<LicenseRecordRow> _dataSource;
 
@@ -253,6 +256,20 @@ namespace Autosoft_Licensing.UI.Pages
         {
             try
             {
+                // FIX: ensure Create button state reflects current user's permission every refresh
+                try
+                {
+                    if (btnCreate != null)
+                    {
+                        bool canCreate = _currentUser?.CanGenerateLicense ?? false;
+                        btnCreate.Visible = canCreate;
+                        btnCreate.Enabled = canCreate;
+                    }
+                }
+                catch { /* ignore UI toggling errors */ }
+
+                if (_db_service_check()) { } // placeholder to keep the try/catch structure stable
+
                 if (_dbService == null)
                 {
                     ShowError("Database service not initialized.");
@@ -403,6 +420,9 @@ namespace Autosoft_Licensing.UI.Pages
             }
         }
 
+        // small helper to keep structure, no-op at runtime
+        private bool _db_service_check() => true;
+
         /// <summary>
         /// Apply row coloring: Expired = Red, Soon-to-expire (≤ selected countdown days) = Yellow, Active = Normal.
         /// </summary>
@@ -518,6 +538,13 @@ namespace Autosoft_Licensing.UI.Pages
         {
             try
             {
+                // Extra guard: ensure current user can generate before navigating
+                if (_currentUser == null || !_currentUser.CanGenerateLicense)
+                {
+                    ShowError("You do not have permission to generate licenses.");
+                    return;
+                }
+
                 // Navigate to GenerateLicensePage
                 Navigate("GenerateLicensePage");
             }
@@ -614,20 +641,34 @@ namespace Autosoft_Licensing.UI.Pages
         {
             if (user == null) return;
 
-            // Apply missing RBAC for navigation panel
-            if (btnNav_GenerateLicense != null) btnNav_GenerateLicense.Visible = user.CanGenerateLicense;
-            if (btnNav_LicenseRecords != null) btnNav_LicenseRecords.Visible = user.CanViewRecords;
-            if (btnNav_ManageProduct != null) btnNav_ManageProduct.Visible = user.CanManageProduct;
-            if (btnNav_ManageUser != null) btnNav_ManageUser.Visible = user.CanManageUsers;
-
-            if (btnNav_Logout != null) btnNav_Logout.Visible = true;
-            if (btnNav_GeneralSetting != null) btnNav_GeneralSetting.Visible = string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase);
-
-            // Delete only allowed for Admin
-            if (btnDelete != null)
+            try
             {
-                btnDelete.Enabled = string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase);
+                // Capture current user for internal checks and RefreshData
+                _currentUser = user;
+
+                // Apply missing RBAC for navigation panel
+                if (btnNav_GenerateLicense != null) btnNav_GenerateLicense.Visible = user.CanGenerateLicense;
+                if (btnNav_LicenseRecords != null) btnNav_LicenseRecords.Visible = user.CanViewRecords;
+                if (btnNav_ManageProduct != null) btnNav_ManageProduct.Visible = user.CanManageProduct;
+                if (btnNav_ManageUser != null) btnNav_ManageUser.Visible = user.CanManageUsers;
+
+                if (btnNav_Logout != null) btnNav_Logout.Visible = true;
+                if (btnNav_GeneralSetting != null) btnNav_GeneralSetting.Visible = string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase);
+
+                // Delete only allowed for Admin
+                if (btnDelete != null)
+                {
+                    btnDelete.Enabled = string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase);
+                }
+
+                // FIX: Ensure Create button reflects permission immediately when role is applied
+                if (btnCreate != null)
+                {
+                    btnCreate.Visible = user.CanGenerateLicense;
+                    btnCreate.Enabled = user.CanGenerateLicense;
+                }
             }
+            catch { /* ignore */ }
         }
 
         /// <summary>

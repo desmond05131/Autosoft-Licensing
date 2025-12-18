@@ -25,18 +25,26 @@ namespace Autosoft_Licensing
         {
             // Idempotent guard: if already built, don't add duplicates
             if (this.accordion != null && this.contentPanel != null &&
-                this.Controls.Contains(this.accordion) && this.Controls.Contains(this.contentPanel))
+                this.Controls.Contains(this.contentPanel))
             {
                 UpdateRoleVisibility();
                 return;
             }
 
-            // Create and configure accordion (left)
+            // Create and configure accordion instance and elements but DO NOT add it to the form.
+            // Keeping the accordion object in-memory preserves existing navigation helpers
+            // while preventing any visible navigation UI from appearing in the app.
             this.accordion = new AccordionControl();
-            this.accordion.Dock = DockStyle.Left;
-            this.accordion.ViewType = AccordionControlViewType.HamburgerMenu;
+            // Do not add to Controls -> remains invisible to the user
             this.accordion.Name = "accordion";
             this.accordion.Width = 260;
+            // Keep it disabled/hidden by default so it never renders
+            try
+            {
+                this.accordion.Visible = false;
+                this.accordion.Enabled = false;
+            }
+            catch { }
 
             AccordionControlElement navGroup = new AccordionControlElement
             {
@@ -75,21 +83,18 @@ namespace Autosoft_Licensing
 
             this.accordion.Elements.Add(navGroup);
 
-            // Create the right-side host panel for pages
+            // Create the right-side host panel for pages and add it to the form (visible)
             this.contentPanel = new PanelControl();
             this.contentPanel.Dock = DockStyle.Fill;
             this.contentPanel.Name = "contentPanel";
 
-            // Add host panel and accordion to the form and ensure docking order (accordion at left, panel fills)
             this.SuspendLayout();
+            // Only add the contentPanel to the form. Intentionally DO NOT add the accordion control
+            // so there is no visible navigation bar in the running application.
             this.Controls.Add(this.contentPanel);
-            this.Controls.Add(this.accordion);
-
-            // Ensure the accordion remains at z-order 0 so it docks left and panel fills remaining space
-            this.Controls.SetChildIndex(this.accordion, 0);
             this.ResumeLayout(performLayout: false);
 
-            // Wire navigation clicks directly to loader
+            // Wire navigation clicks (kept for programmatic navigation; user cannot click since control isn't added)
             this.accordion.ElementClick += Accordion_ElementClick;
 
             // Update role-based visibility (best-effort; SetLoggedInUser may be called later)
@@ -157,8 +162,8 @@ namespace Autosoft_Licensing
         /// </summary>
         public AccordionControlElement[] GetNavigationElements()
         {
-            // Ensure accordion exists
-            if (this.accordion == null || !this.Controls.Contains(this.accordion))
+            // Ensure accordion exists (created in-memory even when not visible)
+            if (this.accordion == null)
             {
                 BuildAccordion();
             }
@@ -192,7 +197,7 @@ namespace Autosoft_Licensing
                 return;
 
             // Ensure runtime UI exists
-            if (this.accordion == null || !this.Controls.Contains(this.accordion) || this.contentPanel == null)
+            if (this.accordion == null || this.contentPanel == null)
             {
                 BuildAccordion();
             }

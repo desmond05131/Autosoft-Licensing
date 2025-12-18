@@ -133,6 +133,7 @@ namespace Autosoft_Licensing.UI.Pages
         {
             _arlReader = arlReader ?? throw new ArgumentNullException(nameof(arlReader));
             _aslService = aslService ?? throw new ArgumentNullException(nameof(aslService));
+            _product_service_check(productService);
             _productService = productService ?? throw new ArgumentNullException(nameof(productService));
             _dbService = dbService ?? throw new ArgumentNullException(nameof(dbService));
             _user_service_check(userService);
@@ -145,6 +146,7 @@ namespace Autosoft_Licensing.UI.Pages
         }
 
         private void _user_service_check(IUserService _dummy) { }
+        private void _product_service_check(IProductService _dummy) { }
 
         #region Event handlers
 
@@ -310,27 +312,60 @@ namespace Autosoft_Licensing.UI.Pages
                         lblMonths.Text = "Days :";
                         numSubscriptionMonths.Value = defDemoDays;
                         numSubscriptionMonths.Enabled = true;
+
+                        // ensure expiry control is editable for demo
+                        try { dtExpireDate.Enabled = true; } catch { }
                     }
                     else if (selected == LicenseType.Permanent)
                     {
+                        // For Permanent licenses force the expiry to the maximum allowed date
                         lblMonths.Text = "Years :";
+
+                        // Set spinner to DB default (for display) but lock it so user cannot change the permanent indicator.
+                        // Keep a visual indicator (use a large sentinel value only if supported); prefer DB default for UI consistency.
                         numSubscriptionMonths.Value = defPermYears;
-                        numSubscriptionMonths.Enabled = true;
+                        numSubscriptionMonths.Enabled = false;
+
+                        // Explicitly set expiration to SQL-safe max and lock the date control.
+                        try
+                        {
+                            dtExpireDate.DateTime = new DateTime(9999, 12, 31);
+                            dtExpireDate.Enabled = false;
+                        }
+                        catch
+                        {
+                            // If setting fails, fall back to RecalculateExpiry which will cap values.
+                            RecalculateExpiry(LicenseType.Permanent);
+                            try { dtExpireDate.Enabled = false; } catch { }
+                        }
                     }
                     else // Subscription
                     {
                         lblMonths.Text = "Months :";
                         numSubscriptionMonths.Value = defSubMonths;
                         numSubscriptionMonths.Enabled = true;
+
+                        // ensure expiry is editable
+                        try { dtExpireDate.Enabled = true; } catch { }
                     }
 
                     numSubscriptionMonths.ValueChanged += numSubscriptionMonths_ValueChanged;
                 }
 
-                // Force date recalculation immediately
-                RecalculateExpiry(selected);
-
-                if (_currentPayload != null) _currentPayload.LicenseType = selected.ToString();
+                // Force date recalculation immediately for non-Permanent types.
+                if (selected != LicenseType.Permanent)
+                {
+                    RecalculateExpiry(selected);
+                    if (_currentPayload != null) _currentPayload.LicenseType = selected.ToString();
+                }
+                else
+                {
+                    if (_currentPayload != null)
+                    {
+                        _currentPayload.LicenseType = selected.ToString();
+                        _currentPayload.ValidToUtc = ToUtc(dtExpireDate.DateTime.Date);
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -369,25 +404,36 @@ namespace Autosoft_Licensing.UI.Pages
             {
                 // Value represents Days
                 dtExpireDate.DateTime = issueLocal.AddDays(value);
+                try { dtExpireDate.Enabled = true; } catch { }
             }
             else if (type == LicenseType.Permanent)
             {
-                // Value represents Years
+                // For permanent licenses we explicitly set the expiry to the max allowed and keep control locked.
                 try
-                {
-                    var target = issueLocal.AddYears(value);
-                    if (target.Year > 9999) target = new DateTime(9999, 12, 31);
-                    dtExpireDate.DateTime = target;
-                }
-                catch
                 {
                     dtExpireDate.DateTime = new DateTime(9999, 12, 31);
                 }
+                catch
+                {
+                    // If DateTime assignment fails, attempt to approximate by adding a large number of years and cap.
+                    try
+                    {
+                        var target = issueLocal.AddYears(value);
+                        if (target.Year > 9999) target = new DateTime(9999, 12, 31);
+                        dtExpireDate.DateTime = target;
+                    }
+                    catch
+                    {
+                        dtExpireDate.DateTime = new DateTime(9999, 12, 31);
+                    }
+                }
+                try { dtExpireDate.Enabled = false; } catch { }
             }
             else // Subscription
             {
                 // Value represents Months
                 dtExpireDate.DateTime = issueLocal.AddMonths(value);
+                try { dtExpireDate.Enabled = true; } catch { }
             }
         }
 

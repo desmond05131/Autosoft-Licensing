@@ -1,8 +1,9 @@
-﻿using System;
-using DevExpress.XtraEditors;
+﻿using Autosoft_Licensing.Models;
 using Autosoft_Licensing.Services;
-using Autosoft_Licensing.Models;
+using DevExpress.XtraEditors;
+using System;
 using System.Drawing;
+using System.Windows.Forms;
 
 namespace Autosoft_Licensing.UI.Pages
 {
@@ -13,6 +14,9 @@ namespace Autosoft_Licensing.UI.Pages
         public GeneralSettingPage()
         {
             InitializeComponent();
+
+            this.Dock = DockStyle.Fill;
+            this.AutoSize = false; // Ensure AutoSize doesn't shrink it
 
             // Override Spinner Limits (Fix for Max Value Issues)
             // By default DevExpress SpinEdits might be limited to 100 or decimal bounds.
@@ -78,7 +82,7 @@ namespace Autosoft_Licensing.UI.Pages
                 // Defaults if not present
                 int demoDays = SafeParseInt(_dbService.GetSetting("Duration_Demo_Days", "30"), 30);
                 int subMonths = SafeParseInt(_dbService.GetSetting("Duration_Sub_Months", "12"), 12);
-                int permYears = SafeParseInt(_dbService.GetSetting("Duration_Perm_Years", "10"), 10);
+                int permYears = SafeParseInt(_dbService.GetSetting("Duration_Perm_Years", "9999"), 9999);
 
                 // Relaxed clamping (Fix for limited Demo/Perm periods)
                 // Demo days: 1 to 9999

@@ -5,6 +5,8 @@ using DevExpress.XtraEditors;
 using Autosoft_Licensing.Models;
 using Autosoft_Licensing.Services;
 using Autosoft_Licensing.UI.Pages;
+using System.Linq;
+using DevExpress.XtraBars.Navigation;
 
 namespace Autosoft_Licensing
 {
@@ -35,9 +37,61 @@ namespace Autosoft_Licensing
 
         public void SetLoggedInUser(User user)
         {
+            // Update the hosting state and role visibility first
             LoggedInUser = user;
             _currentUser = user;
-            UpdateRoleVisibility();
+
+            try
+            {
+                // Update navigation / accordion visibility based on the new user
+                UpdateRoleVisibility();
+            }
+            catch { /* best-effort */ }
+
+            try
+            {
+                // Enforce "blank slate" behaviour:
+                // - If the user has at least one permission, navigate to the highest-priority allowed page.
+                // - If the user has no permissions, DO NOT leave the previous page visible; show a safe blank/welcome page.
+                if (user == null)
+                {
+                    // No user - show login
+                    ShowLogin();
+                    return;
+                }
+
+                bool canAny = user.CanGenerateLicense || user.CanViewRecords || user.CanManageProduct || user.CanManageUsers;
+                if (!canAny)
+                {
+                    ShowBlankState("Welcome", "You do not have access to any modules.");
+                    return;
+                }
+
+                // If host code explicitly sets a user (Program.cs launch-as-admin), navigate to appropriate start page.
+                if (user.CanGenerateLicense)
+                {
+                    NavigateToPage("GenerateLicensePage");
+                }
+                else if (user.CanViewRecords)
+                {
+                    NavigateToPage("LicenseRecordsPage");
+                }
+                else if (user.CanManageProduct)
+                {
+                    NavigateToPage("ManageProductPage");
+                }
+                else if (user.CanManageUsers)
+                {
+                    NavigateToPage("ManageUserPage");
+                }
+            }
+            catch (Exception ex)
+            {
+                if (!_suppressMessageBoxes)
+                {
+                    XtraMessageBox.Show("Failed to set logged in user: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
         }
 
         // NEW: Public navigation method for external callers (e.g., Program.cs)
@@ -88,12 +142,27 @@ namespace Autosoft_Licensing
                 _currentUser = user;
                 LoggedInUser = user;
 
+                // Ensure navigation/visibility is updated immediately
+                UpdateRoleVisibility();
+
+                // Decide start page according to permissions. If none -> show blank slate.
+                if (user == null)
+                {
+                    ShowLogin();
+                    return;
+                }
+
                 string startPage = null;
                 if (user.CanGenerateLicense) startPage = "GenerateLicensePage";
                 else if (user.CanViewRecords) startPage = "LicenseRecordsPage";
                 else if (user.CanManageProduct) startPage = "ManageProductPage";
                 else if (user.CanManageUsers) startPage = "ManageUserPage";
-                else startPage = "LicenseRecordsPage";
+                else
+                {
+                    // CRITICAL FIX: user has no permissions -> present blank/welcome state instead of leaving previous page visible.
+                    ShowBlankState("Welcome", "You do not have access to any modules.");
+                    return;
+                }
 
                 LoadPage(startPage, startPage);
             }
@@ -337,13 +406,106 @@ namespace Autosoft_Licensing
         {
             try
             {
-                if (this.accordion != null)
+                // If accordion isn't ready yet, ensure BuildAccordion will configure visibility later.
+                if (this.accordion == null)
                 {
-                    this.accordion.Visible = false;
-                    this.accordion.Enabled = false;
+                    // Nothing to update now
+                    return;
                 }
+
+                // If no user logged in, hide/disable navigation
+                if (_currentUser == null)
+                {
+                    try
+                    {
+                        this.accordion.Visible = false;
+                        this.accordion.Enabled = false;
+                    }
+                    catch { }
+                    return;
+                }
+
+                // Ensure accordion shown for logged in users
+                try
+                {
+                    this.accordion.Visible = true;
+                    this.accordion.Enabled = true;
+                }
+                catch { }
+
+                // Locate navigation group and its elements (best-effort)
+                try
+                {
+                    var navGroup = this.accordion.Elements.FirstOrDefault(e => string.Equals(e.Name, "aceNavigation", StringComparison.OrdinalIgnoreCase));
+                    if (navGroup != null)
+                    {
+                        // Helper to set element visibility by element name
+                        void SetVisible(string elementName, bool visible)
+                        {
+                            try
+                            {
+                                var el = navGroup.Elements.FirstOrDefault(x => string.Equals(x.Name, elementName, StringComparison.OrdinalIgnoreCase));
+                                if (el != null) el.Visible = visible;
+                            }
+                            catch { /* ignore element-level failures */ }
+                        }
+
+                        SetVisible("aceGenerateRequest", _currentUser.CanGenerateLicense);
+                        SetVisible("aceLicenseList", _currentUser.CanViewRecords);
+                        SetVisible("aceManageProduct", _currentUser.CanManageProduct);
+                        SetVisible("aceUserManagement", _currentUser.CanManageUsers);
+                        SetVisible("aceSettingsSecurity", string.Equals(_currentUser.Role, "Admin", StringComparison.OrdinalIgnoreCase));
+
+                        // Always keep Dashboard visible as a neutral landing page
+                        SetVisible("aceDashboard", true);
+                    }
+                }
+                catch { /* ignore */ }
             }
             catch { }
+        }
+
+        /// <summary>
+        /// Show a minimal blank/welcome page and hide interactive navigation to enforce a "blank slate" for users with no permissions.
+        /// </summary>
+        private void ShowBlankState(string title, string message)
+        {
+            try
+            {
+                if (this.contentPanel == null)
+                {
+                    BuildAccordion();
+                }
+
+                // Hide/disable the accordion so there is no visible navigation to other pages
+                try
+                {
+                    if (this.accordion != null)
+                    {
+                        this.accordion.Visible = false;
+                        this.accordion.Enabled = false;
+                    }
+                }
+                catch { }
+
+                contentPanel.Controls.Clear();
+
+                // Use GenericPage to present a neutral page. Put the message in the page title for clarity.
+                var welcomeTitle = string.IsNullOrWhiteSpace(message) ? title ?? "Welcome" : $"{title} - {message}";
+                var page = new GenericPage(welcomeTitle);
+                page.Dock = DockStyle.Fill;
+                contentPanel.Controls.Add(page);
+
+                // Apply role information (if any) so page can decide what to show
+                try { page.InitializeForRole(_currentUser); } catch { }
+            }
+            catch (Exception ex)
+            {
+                if (!_suppressMessageBoxes)
+                {
+                    XtraMessageBox.Show("Failed to show blank state: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
         }
     }
 }

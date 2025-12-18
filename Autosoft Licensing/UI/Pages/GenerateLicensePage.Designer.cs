@@ -655,7 +655,7 @@ namespace Autosoft_Licensing.UI.Pages
             this.numSubscriptionMonths.Properties.IsFloatValue = false;
             this.numSubscriptionMonths.Properties.MaskSettings.Set("mask", "N00");
             this.numSubscriptionMonths.Properties.MaxValue = new decimal(new int[] {
-            1200,
+            9999,
             0,
             0,
             0});
