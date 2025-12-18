@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows.Forms;
 using DevExpress.XtraEditors;
 using Autosoft_Licensing.Models;
@@ -37,7 +38,43 @@ namespace Autosoft_Licensing
         {
             LoggedInUser = user;
             _currentUser = user;
+
+            // Update navigation visibility immediately
             UpdateRoleVisibility();
+
+            // Enforce "blank slate" for users with no permissions
+            try
+            {
+                bool hasAnyPermission = _currentUser != null &&
+                                        (_currentUser.CanGenerateLicense ||
+                                         _currentUser.CanViewRecords ||
+                                         _currentUser.CanManageProduct ||
+                                         _currentUser.CanManageUsers ||
+                                         string.Equals(_currentUser.Role, "Admin", StringComparison.OrdinalIgnoreCase));
+
+                if (!hasAnyPermission)
+                {
+                    // Clear any cached pages that might expose UI
+                    _pageCache.Clear();
+
+                    // Hide/disable navigation
+                    try
+                    {
+                        if (this.accordion != null)
+                        {
+                            this.accordion.Visible = false;
+                            this.accordion.Enabled = false;
+                        }
+                    }
+                    catch { }
+
+                    // Show a safe blank/welcome page
+                    var blank = new GenericPage("Welcome - You do not have access to any modules.");
+                    ShowPage(blank);
+                    try { blank.InitializeForRole(_currentUser); } catch { }
+                }
+            }
+            catch { /* best-effort */ }
         }
 
         // NEW: Public navigation method for external callers (e.g., Program.cs)
@@ -88,14 +125,57 @@ namespace Autosoft_Licensing
                 _currentUser = user;
                 LoggedInUser = user;
 
-                string startPage = null;
-                if (user.CanGenerateLicense) startPage = "GenerateLicensePage";
-                else if (user.CanViewRecords) startPage = "LicenseRecordsPage";
-                else if (user.CanManageProduct) startPage = "ManageProductPage";
-                else if (user.CanManageUsers) startPage = "ManageUserPage";
-                else startPage = "LicenseRecordsPage";
+                // Update role visibility on UI
+                UpdateRoleVisibility();
 
-                LoadPage(startPage, startPage);
+                // Decide start page based on permissions.
+                // CRITICAL: If the user has no permissions, show a blank/welcome page instead of the default records view.
+                bool hasGenerate = user?.CanGenerateLicense ?? false;
+                bool hasView = user?.CanViewRecords ?? false;
+                bool hasManageProduct = user?.CanManageProduct ?? false;
+                bool hasManageUsers = user?.CanManageUsers ?? false;
+                bool isAdmin = string.Equals(user?.Role, "Admin", StringComparison.OrdinalIgnoreCase);
+
+                if (hasGenerate)
+                {
+                    LoadPage("GenerateLicensePage", "Generate License");
+                }
+                else if (hasView)
+                {
+                    LoadPage("LicenseRecordsPage", "License List");
+                }
+                else if (hasManageProduct)
+                {
+                    LoadPage("ManageProductPage", "Manage Product");
+                }
+                else if (hasManageUsers)
+                {
+                    LoadPage("ManageUserPage", "User Management");
+                }
+                else if (isAdmin)
+                {
+                    // Admin fallback - show ManageUser to allow user admin actions
+                    LoadPage("ManageUserPage", "User Management");
+                }
+                else
+                {
+                    // No permissions: enforce blank slate
+                    _pageCache.Clear();
+
+                    try
+                    {
+                        if (this.accordion != null)
+                        {
+                            this.accordion.Visible = false;
+                            this.accordion.Enabled = false;
+                        }
+                    }
+                    catch { }
+
+                    var blank = new GenericPage("Welcome - You do not have access to any modules.");
+                    ShowPage(blank);
+                    try { blank.InitializeForRole(_currentUser); } catch { }
+                }
             }
             catch (Exception ex)
             {
@@ -337,10 +417,67 @@ namespace Autosoft_Licensing
         {
             try
             {
-                if (this.accordion != null)
+                if (this.accordion == null)
+                    return;
+
+                // When no user is set, hide navigation entirely
+                if (_currentUser == null)
                 {
-                    this.accordion.Visible = false;
-                    this.accordion.Enabled = false;
+                    try
+                    {
+                        this.accordion.Visible = false;
+                        this.accordion.Enabled = false;
+                    }
+                    catch { }
+                    return;
+                }
+
+                // Find the Navigation group and adjust each element's visibility by permission
+                try
+                {
+                    var navGroup = this.accordion.Elements
+                        .FirstOrDefault(e => string.Equals(e.Name, "aceNavigation", StringComparison.OrdinalIgnoreCase));
+
+                    if (navGroup == null)
+                    {
+                        // Fallback: make accordion visible if user has any rights
+                        this.accordion.Visible = (_currentUser.CanGenerateLicense || _currentUser.CanViewRecords ||
+                                                  _currentUser.CanManageProduct || _currentUser.CanManageUsers ||
+                                                  string.Equals(_currentUser.Role, "Admin", StringComparison.OrdinalIgnoreCase));
+                        this.accordion.Enabled = this.accordion.Visible;
+                        return;
+                    }
+
+                    // Helper to set element visibility safely
+                    void SetVisible(string elementName, bool visible)
+                    {
+                        try
+                        {
+                            var el = navGroup.Elements
+                                .FirstOrDefault(x => string.Equals(x.Name, elementName, StringComparison.OrdinalIgnoreCase));
+                            if (el != null) el.Visible = visible;
+                        }
+                        catch { }
+                    }
+
+                    SetVisible("aceGenerateRequest", _currentUser.CanGenerateLicense);
+                    SetVisible("aceGenerateLicense", _currentUser.CanGenerateLicense);
+                    SetVisible("aceLicenseList", _currentUser.CanViewRecords);
+                    SetVisible("aceLicenseDetails", _currentUser.CanViewRecords);
+                    SetVisible("aceManageProduct", _currentUser.CanManageProduct);
+                    SetVisible("aceUserManagement", _currentUser.CanManageUsers);
+                    SetVisible("aceSettingsSecurity", string.Equals(_currentUser.Role, "Admin", StringComparison.OrdinalIgnoreCase));
+                    SetVisible("aceDashboard", (_currentUser.CanGenerateLicense || _currentUser.CanViewRecords || _currentUser.CanManageProduct || _currentUser.CanManageUsers));
+
+                    // Finally, show/hide the accordion based on whether any items are visible
+                    bool anyVisible = navGroup.Elements.Any(x => x.Style == DevExpress.XtraBars.Navigation.ElementStyle.Item && x.Visible);
+                    this.accordion.Visible = anyVisible;
+                    this.accordion.Enabled = anyVisible;
+                }
+                catch
+                {
+                    // If any failure occurs, fallback to hiding accordion to avoid exposing UI
+                    try { this.accordion.Visible = false; this.accordion.Enabled = false; } catch { }
                 }
             }
             catch { }

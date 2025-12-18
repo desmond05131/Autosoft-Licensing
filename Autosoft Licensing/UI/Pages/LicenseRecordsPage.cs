@@ -388,6 +388,27 @@ namespace Autosoft_Licensing.UI.Pages
                 // Bind to grid
                 grdLicenses.DataSource = _dataSource;
 
+                // Secure the Create button: ensure it's hidden/disabled when the logged-in user lacks permission.
+                try
+                {
+                    bool canCreate = false;
+                    // Prefer explicit role passed to page via InitializeForRole; fallback to host MainForm's LoggedInUser.
+                    var hostForm = this.FindForm() as MainForm;
+                    var logged = hostForm?.LoggedInUser;
+
+                    if (logged != null)
+                        canCreate = logged.CanGenerateLicense;
+                    else
+                        canCreate = false; // default deny when uncertain
+
+                    if (btnCreate != null)
+                    {
+                        btnCreate.Visible = canCreate;
+                        btnCreate.Enabled = canCreate;
+                    }
+                }
+                catch { /* swallow to avoid breaking UI refresh */ }
+
                 // Apply row coloring
                 var view = grdLicenses.MainView as GridView;
                 if (view != null)
@@ -518,6 +539,15 @@ namespace Autosoft_Licensing.UI.Pages
         {
             try
             {
+                // Double-check permission at click-time (defense-in-depth)
+                var hostForm = this.FindForm() as MainForm;
+                var logged = hostForm?.LoggedInUser;
+                if (logged == null || !logged.CanGenerateLicense)
+                {
+                    ShowError("You do not have permission to generate licenses.");
+                    return;
+                }
+
                 // Navigate to GenerateLicensePage
                 Navigate("GenerateLicensePage");
             }
@@ -604,30 +634,50 @@ namespace Autosoft_Licensing.UI.Pages
         public void Initialize(ILicenseDatabaseService dbService, IUserService userService)
         {
             _dbService = dbService ?? throw new ArgumentNullException(nameof(dbService));
+            _user_service_check(userService);
             _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         }
+
+        private void _user_service_check(IUserService _dummy) { }
 
         /// <summary>
         /// Apply role-based visibility (Admin vs Support).
         /// </summary>
         public override void InitializeForRole(User user)
         {
-            if (user == null) return;
-
-            // Apply missing RBAC for navigation panel
-            if (btnNav_GenerateLicense != null) btnNav_GenerateLicense.Visible = user.CanGenerateLicense;
-            if (btnNav_LicenseRecords != null) btnNav_LicenseRecords.Visible = user.CanViewRecords;
-            if (btnNav_ManageProduct != null) btnNav_ManageProduct.Visible = user.CanManageProduct;
-            if (btnNav_ManageUser != null) btnNav_ManageUser.Visible = user.CanManageUsers;
-
-            if (btnNav_Logout != null) btnNav_Logout.Visible = true;
-            if (btnNav_GeneralSetting != null) btnNav_GeneralSetting.Visible = string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase);
-
-            // Delete only allowed for Admin
-            if (btnDelete != null)
+            try
             {
-                btnDelete.Enabled = string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase);
+                if (user == null) return;
+
+                // --- FIX: Ensure Create button visibility/enabled state respects permission ---
+                if (btnCreate != null)
+                {
+                    btnCreate.Visible = user.CanGenerateLicense;
+                    btnCreate.Enabled = user.CanGenerateLicense;
+                }
+
+                // Apply missing RBAC for navigation panel
+                if (btnNav_GenerateLicense != null) btnNav_GenerateLicense.Visible = user.CanGenerateLicense;
+                if (btnNav_LicenseRecords != null) btnNav_LicenseRecords.Visible = user.CanViewRecords;
+                if (btnNav_ManageProduct != null) btnNav_ManageProduct.Visible = user.CanManageProduct;
+                if (btnNav_ManageUser != null) btnNav_ManageUser.Visible = user.CanManageUsers;
+
+                if (btnNav_GeneralSetting != null)
+                    btnNav_GeneralSetting.Visible = string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase);
+
+                if (btnNav_Logout != null) btnNav_Logout.Visible = true;
             }
+            catch { /* ignore */ }
+
+            try
+            {
+                // Delete only allowed for Admin
+                if (btnDelete != null)
+                {
+                    btnDelete.Enabled = string.Equals(user.Role, "Admin", StringComparison.OrdinalIgnoreCase);
+                }
+            }
+            catch { /* ignore */ }
         }
 
         /// <summary>
