@@ -654,8 +654,9 @@ namespace Autosoft_Licensing.UI.Pages
             this.numSubscriptionMonths.Name = "numSubscriptionMonths";
             this.numSubscriptionMonths.Properties.IsFloatValue = false;
             this.numSubscriptionMonths.Properties.MaskSettings.Set("mask", "N00");
+            // Increased maximum to allow very large durations (supports Permanent mode and high custom values)
             this.numSubscriptionMonths.Properties.MaxValue = new decimal(new int[] {
-            1200,
+            99999,
             0,
             0,
             0});

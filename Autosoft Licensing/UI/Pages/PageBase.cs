@@ -18,6 +18,23 @@ namespace Autosoft_Licensing.UI.Pages
         // Shared navigation event for all pages
         public event EventHandler<NavigateEventArgs> NavigateRequested;
 
+        // NEW: Provide a Title property pages and host can use to set UI text.
+        // Default implementation derives a readable title from the type name (e.g. "GenerateLicensePage" -> "GenerateLicense").
+        public virtual string Title => GetDefaultTitle();
+
+        private string GetDefaultTitle()
+        {
+            try
+            {
+                var t = this.GetType().Name;
+                if (string.IsNullOrWhiteSpace(t)) return string.Empty;
+                if (t.EndsWith("Page", StringComparison.OrdinalIgnoreCase))
+                    return t.Substring(0, t.Length - "Page".Length);
+                return t;
+            }
+            catch { return string.Empty; }
+        }
+
         public PageBase()
         {
             // Protect design-time: any code that might access runtime-only services should be avoided here.

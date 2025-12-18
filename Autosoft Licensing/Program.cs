@@ -7,6 +7,7 @@ using System.IO;
 using System.Text.RegularExpressions;
 using Autosoft_Licensing.Services;
 using Autosoft_Licensing.UI.Pages;
+using Autosoft_Licensing.UI; // <-- added to reference MainForm
 using DevExpress.LookAndFeel;
 using DevExpress.XtraEditors;
 

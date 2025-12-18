@@ -85,6 +85,7 @@ namespace Autosoft_Licensing.UI.Pages
         public GenerateLicensePage()
         {
             InitializeComponent();
+            this.Dock = DockStyle.Fill;
 
             try
             {
@@ -183,7 +184,7 @@ namespace Autosoft_Licensing.UI.Pages
                         string productName = string.Empty;
                         if (_productService != null && !string.IsNullOrEmpty(_currentRequest.ProductID))
                         {
-                            productName = _productService.GetProductName(_currentRequest.ProductID);
+                            productName = _product_service_check_return_value_or_empty(_currentRequest.ProductID);
                         }
                         txtProductName.Text = productName;
 
@@ -265,6 +266,20 @@ namespace Autosoft_Licensing.UI.Pages
             }
         }
 
+        private string _current_request_license_type_helper(string raw)
+        {
+            return raw;
+        }
+
+        private string _product_service_check_return_value_or_empty(string pid)
+        {
+            try
+            {
+                return _productService.GetProductName(pid) ?? string.Empty;
+            }
+            catch { return string.Empty; }
+        }
+
         private void rgLicenseType_SelectedIndexChanged(object sender, EventArgs e)
         {
             // Just forward to the centralized logic
@@ -308,18 +323,35 @@ namespace Autosoft_Licensing.UI.Pages
                     if (selected == LicenseType.Demo)
                     {
                         lblMonths.Text = "Days :";
+                        numSubscriptionMonths.Properties.MaxValue = 9999;
                         numSubscriptionMonths.Value = defDemoDays;
                         numSubscriptionMonths.Enabled = true;
                     }
                     else if (selected == LicenseType.Permanent)
                     {
+                        // Permanent should present as an "end of time" expiry and numeric should reflect that.
                         lblMonths.Text = "Years :";
-                        numSubscriptionMonths.Value = defPermYears;
+
+                        // Ensure spinner can accept large values if needed
+                        try { numSubscriptionMonths.Properties.MaxValue = 99999; } catch { }
+
+                        // Compute a human-friendly years value from current issue date so the numeric field
+                        // matches the displayed expiry (31/12/9999). Use issue date for accuracy.
+                        var issueLocal = dtIssueDate?.DateTime.Date ?? DateTime.Now.Date;
+                        int yearsToForever = 9999 - issueLocal.Year;
+                        if (yearsToForever < 1) yearsToForever = 1;
+
+                        // Set spinner to years to forever. Keep enabled so user can see the computed value.
+                        numSubscriptionMonths.Value = yearsToForever;
                         numSubscriptionMonths.Enabled = true;
+
+                        // Set expiry explicitly to the End of Time to avoid ambiguous AddYears behavior.
+                        dtExpireDate.DateTime = new DateTime(9999, 12, 31);
                     }
                     else // Subscription
                     {
                         lblMonths.Text = "Months :";
+                        numSubscriptionMonths.Properties.MaxValue = 9999;
                         numSubscriptionMonths.Value = defSubMonths;
                         numSubscriptionMonths.Enabled = true;
                     }
@@ -372,22 +404,22 @@ namespace Autosoft_Licensing.UI.Pages
             }
             else if (type == LicenseType.Permanent)
             {
-                // Value represents Years
-                try
-                {
-                    var target = issueLocal.AddYears(value);
-                    if (target.Year > 9999) target = new DateTime(9999, 12, 31);
-                    dtExpireDate.DateTime = target;
-                }
-                catch
-                {
-                    dtExpireDate.DateTime = new DateTime(9999, 12, 31);
-                }
+                // For Permanent we explicitly set the expiry to the "end of time".
+                // This keeps the date precise and avoids any overflow or ambiguous month/year conversions.
+                dtExpireDate.DateTime = new DateTime(9999, 12, 31);
             }
             else // Subscription
             {
                 // Value represents Months
-                dtExpireDate.DateTime = issueLocal.AddMonths(value);
+                try
+                {
+                    dtExpireDate.DateTime = issueLocal.AddMonths(value);
+                }
+                catch
+                {
+                    // Fallback to a safe date if AddMonths fails for any reason
+                    dtExpireDate.DateTime = issueLocal.AddMonths(Math.Min(value, 9999));
+                }
             }
         }
 
@@ -482,7 +514,7 @@ namespace Autosoft_Licensing.UI.Pages
                     ProductID = _currentPayload.ProductID,
                     DealerCode = _currentPayload.DealerCode,
                     ValidFromUtc = _currentPayload.ValidFromUtc,
-                    ValidToUtc = _currentPayload.ValidToUtc,
+                    ValidToUtc = _current_payload_validtoutc_helper(_currentPayload.ValidToUtc),
                     LicenseKey = _currentPayload.LicenseKey ?? string.Empty,
                     ModuleCodes = _currentPayload.ModuleCodes?.ToList() ?? new List<string>(),
                     CurrencyCode = txtCurrency.Text ?? null
@@ -504,6 +536,8 @@ namespace Autosoft_Licensing.UI.Pages
                 ShowError("Operation failed. Contact admin.");
             }
         }
+
+        private DateTime _current_payload_validtoutc_helper(DateTime dt) => dt;
 
         private void btnDownload_Click(object sender, EventArgs e)
         {
