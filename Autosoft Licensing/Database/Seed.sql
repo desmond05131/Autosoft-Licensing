@@ -1,25 +1,24 @@
 -- Database/Seed.sql
 
 -- 1. Ensure Admin Exists
-IF NOT EXISTS (SELECT 1 FROM Users WHERE Username = 'admin')
+IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE Username = 'admin')
 BEGIN
-    INSERT INTO Users (Username, DisplayName, Role, Email, PasswordHash, CreatedUtc, IsActive, CanGenerateLicense, CanViewRecords, CanManageProduct, CanManageUsers)
+    INSERT INTO dbo.Users (
+        Username, DisplayName, Role, Email, PasswordHash, CreatedUtc, 
+        IsActive, CanGenerateLicense, CanViewRecords, CanManageProduct, CanManageUsers
+    )
     VALUES (
-        'admin', 
-        'System Administrator', 
-        'Admin', 
-        'admin@example.com', 
-        'jGl25bVBBBW96Qi9Te4V37Fnqchz/Eu4qB9vKrRIqRg=', -- Correct Base64 Hash for "admin"
-        SYSUTCDATETIME(), 
-        1, 1, 1, 1, 1
+        'admin', 'System Administrator', 'Admin', 'admin@example.com',
+        '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', -- LOWERCASE HEX for "admin"
+        SYSUTCDATETIME(), 1, 1, 1, 1, 1
     );
 END
 
--- 2. FORCE UPDATE (Self-Healing)
--- This line is CRITICAL. It overwrites the incorrect "Hex" hash currently in your DB with the correct "Base64" hash.
-UPDATE Users
-SET 
-    PasswordHash = 'jGl25bVBBBW96Qi9Te4V37Fnqchz/Eu4qB9vKrRIqRg=', 
+-- 2. SELF-HEALING: Force Update Existing Admin
+-- This overwrites the old Base64 or Uppercase hash with the correct Lowercase Hex
+UPDATE dbo.Users
+SET
+    PasswordHash = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', 
     IsActive = 1,
     CanGenerateLicense = 1,
     CanViewRecords = 1,
