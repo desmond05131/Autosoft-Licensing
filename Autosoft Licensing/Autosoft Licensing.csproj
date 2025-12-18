@@ -256,7 +256,6 @@
       <DependentUpon>UserDetailsPage.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="TestAssets\sample_invalid.arl" />
-    <None Include="TestAssets\sample_valid.arl" />
     <Compile Include="Tests\Helpers\UiTestHost.cs" />
     <Compile Include="Tools\AslTestHelper.cs" />
     <Compile Include="Tools\CanonicalJsonTests.cs" />
@@ -480,8 +479,12 @@
     <Content Include="Assets\user.png" />
     <Content Include="Assets\user_clicked.png" />
     <Content Include="AutosoftLicensing.txt" />
-    <Content Include="Database\Schema.sql" />
-    <Content Include="Database\Seed.sql" />
+    <Content Include="Database\Schema.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Database\Seed.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="UIGuide.txt" />
   </ItemGroup>
   <ItemGroup>

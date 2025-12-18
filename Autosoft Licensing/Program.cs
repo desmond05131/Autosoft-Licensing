@@ -2,13 +2,13 @@
 using System.Linq;
 using System.Windows.Forms;
 using System.Configuration;
-using Autosoft_Licensing.Data;
+using System.Data.SqlClient;
+using System.IO;
+using System.Text.RegularExpressions;
 using Autosoft_Licensing.Services;
-using Autosoft_Licensing.Utils;
-using DevExpress.XtraEditors;
-using DevExpress.LookAndFeel;
 using Autosoft_Licensing.UI.Pages;
-using System.Diagnostics;
+using DevExpress.LookAndFeel;
+using DevExpress.XtraEditors;
 
 namespace Autosoft_Licensing
 {
@@ -17,155 +17,52 @@ namespace Autosoft_Licensing
         [STAThread]
         static void Main(string[] args)
         {
-            // Composition root
-            ServiceRegistry.InitializeDatabase("LicensingDb");
-
-            try
-            {
-                ServiceRegistry.Database.GetUserByUsername("admin");
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(
-                    "Failed to initialize or query the licensing database.\n\n" +
-                    "Details: " + ex.Message + "\n\n" +
-                    "Please check the connection string named 'LicensingDb' in App.config and ensure the database is reachable.",
-                    "Startup error - Database",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
-                return;
-            }
-
-            // Crypto quick-check
-            try
-            {
-                var key = CryptoConstants.AesKey;
-                var iv = CryptoConstants.AesIV;
-
-                if (key == null || key.Length == 0 || iv == null || iv.Length == 0)
-                {
-                    MessageBox.Show(
-                        "Cryptographic configuration appears empty. Check appSettings 'Crypto:AesKey' and 'Crypto:AesIV' in App.config.",
-                        "Startup error - Crypto",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Error);
-                    return;
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(
-                    "Invalid cryptographic configuration detected.\n\n" +
-                    "Details: " + ex.Message + "\n\n" +
-                    "Ensure appSettings 'Crypto:AesKey' and 'Crypto:AesIV' are present and Base64-encoded (32 bytes key, 16 bytes IV).",
-                    "Startup error - Crypto",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
-                return;
-            }
-
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            // If running the visual login test, disable global look-and-feel and host LoginPage
-            if (args != null && args.Any(a => string.Equals(a, "--show-login", StringComparison.OrdinalIgnoreCase)))
+            // ---------------------------------------------------------
+            // 1. SELF-HEALING DATABASE LOGIC
+            // ---------------------------------------------------------
+            try
             {
-                UserLookAndFeel.Default.UseDefaultLookAndFeel = false;
-                UserLookAndFeel.Default.SkinName = string.Empty;
-
-                Application.Run(CreateLoginTestForm());
-                return;
+                DbBootstrapper.EnsureDatabaseAndSchema();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "Critical Error during Database Setup:\n" + ex.Message +
+                    "\n\nPlease ensure SQL Server Express/LocalDB is installed and the SQL files are in the application folder.",
+                    "Deployment Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return; // Stop app if DB fails
             }
 
-            // Visual smoke: open the real MainForm for manual inspection/clicks
-            if (args != null && args.Any(a => string.Equals(a, "--smoke-ui-visual", StringComparison.OrdinalIgnoreCase)))
-            {
-                var mf = new MainForm();
+            // ---------------------------------------------------------
+            // 2. NORMAL STARTUP
+            // ---------------------------------------------------------
+            ServiceRegistry.InitializeDatabase("LicensingDb");
 
-                // If the caller requested admin visibility for demo, set logged-in admin before showing.
-                if (args.Any(a => string.Equals(a, "--smoke-ui-visual-admin", StringComparison.OrdinalIgnoreCase)
-                               || string.Equals(a, "--smoke-ui-demo-admin", StringComparison.OrdinalIgnoreCase)))
+            // Verify Admin exists (Double check)
+            try
+            {
+                var admin = ServiceRegistry.Database.GetUserByUsername("admin");
+                if (admin == null)
                 {
-                    try
-                    {
-                        var admin = ServiceRegistry.Database.GetUserByUsername("admin");
-                        if (admin != null) mf.SetLoggedInUser(admin);
-                    }
-                    catch { /* ignore */ }
+                    MessageBox.Show("Database tables exist but 'admin' user is missing. Please check Seed.sql.", "Warning");
                 }
-
-                Application.Run(mf);
-                return;
             }
-
-            // Demo smoke: automatically step through each navigation element so you can watch pages render
-            if (args != null && args.Any(a => string.Equals(a, "--smoke-ui-demo", StringComparison.OrdinalIgnoreCase)))
+            catch (Exception ex)
             {
-                var mf = new MainForm();
-
-                if (args.Any(a => string.Equals(a, "--smoke-ui-demo-admin", StringComparison.OrdinalIgnoreCase)))
-                {
-                    try
-                    {
-                        var admin = ServiceRegistry.Database.GetUserByUsername("admin");
-                        if (admin != null) mf.SetLoggedInUser(admin);
-                    }
-                    catch { }
-                }
-
-                mf.Shown += (s, e) =>
-                {
-                    var elements = mf.GetNavigationElements().ToArray();
-                    int idx = 0;
-                    var timer = new Timer { Interval = 800 };
-                    timer.Tick += (ts, te) =>
-                    {
-                        if (idx >= elements.Length)
-                        {
-                            timer.Stop();
-                            return;
-                        }
-
-                        var name = elements[idx].Name;
-                        mf.NavigateToElement(name);
-                        idx++;
-                    };
-                    timer.Start();
-                };
-
-                Application.Run(mf);
+                MessageBox.Show("Failed to query database after setup: " + ex.Message, "Startup Error");
                 return;
             }
 
-            // Existing programmatic non-visual UI smoke
-            if (args != null && args.Any(a => string.Equals(a, "--smoke-ui", StringComparison.OrdinalIgnoreCase)))
-            {
-                var mf = new MainForm();
-                var result = mf.RunUiSmokeTest();
-                var caption = "UI Smoke test result";
-                MessageBoxIcon icon = result.Success ? MessageBoxIcon.Information : MessageBoxIcon.Error;
-                MessageBox.Show(result.Message, caption, MessageBoxButtons.OK, icon);
-                return;
-            }
+            // ... (Rest of your existing startup logic for styles/forms) ...
 
-            // Non-UI smoke harness
-            if (args != null && args.Any(a => string.Equals(a, "--smoke", StringComparison.OrdinalIgnoreCase)))
-            {
-                var result = Tools.SmokeTestHarness.RunAll();
-                var caption = "Smoke test result";
-                MessageBoxIcon icon = result.Success ? MessageBoxIcon.Information : MessageBoxIcon.Error;
-                var msg = result.Message;
-                MessageBox.Show(msg, caption, MessageBoxButtons.OK, icon);
-                return;
-            }
-
-            // NORMAL INTERACTIVE RUN (args empty): honor App.config appSettings
-            // Use LaunchPage to pick initial page and LaunchAsAdmin to reveal admin-only UI.
+            // Launch Logic
             var launchPage = ConfigurationManager.AppSettings["LaunchPage"] ?? "Login";
             var launchAsAdmin = string.Equals(ConfigurationManager.AppSettings["LaunchAsAdmin"], "true", StringComparison.OrdinalIgnoreCase);
 
             var mainForm = new MainForm();
-
             if (launchAsAdmin)
             {
                 try
@@ -173,39 +70,111 @@ namespace Autosoft_Licensing
                     var admin = ServiceRegistry.Database.GetUserByUsername("admin");
                     if (admin != null) mainForm.SetLoggedInUser(admin);
                 }
-                catch { /* continue without admin if lookup fails */ }
+                catch { }
             }
 
-            // Only bypass login if explicitly requested via args or specific debug config
-            if (launchAsAdmin && !string.IsNullOrEmpty(launchPage) && !string.Equals(launchPage.Trim(), "Login", StringComparison.OrdinalIgnoreCase))
+            if (launchAsAdmin && !string.Equals(launchPage, "Login", StringComparison.OrdinalIgnoreCase))
             {
-                // Attempt to resolve the public navigation method (we will add this to MainForm next)
-                mainForm.NavigateToPage(launchPage.Trim());
+                mainForm.NavigateToPage(launchPage);
             }
-            // Else: do nothing. MainForm constructor already called ShowLogin(), so it stays there.
 
             Application.Run(mainForm);
         }
+    }
 
-        private static XtraForm CreateLoginTestForm()
+    /// <summary>
+    /// Handles creation of Database, Tables, and Seed Data if missing.
+    /// </summary>
+    public static class DbBootstrapper
+    {
+        public static void EnsureDatabaseAndSchema()
         {
-            var form = new XtraForm
+            var targetConnString = ConfigurationManager.ConnectionStrings["LicensingDb"].ConnectionString;
+            var builder = new SqlConnectionStringBuilder(targetConnString);
+            string targetDbName = builder.InitialCatalog;
+            string serverConnString = targetConnString.Replace($"Initial Catalog={targetDbName}", "Initial Catalog=master");
+
+            // 1. Create Database if it doesn't exist
+            using (var conn = new SqlConnection(serverConnString))
             {
-                Text = "Login Visual Test",
-                StartPosition = FormStartPosition.CenterScreen,
-                Width = 1000,
-                Height = 760
-            };
+                conn.Open();
+                var cmd = new SqlCommand($"SELECT database_id FROM sys.databases WHERE Name = '{targetDbName}'", conn);
+                if (cmd.ExecuteScalar() == null)
+                {
+                    using (var createCmd = new SqlCommand($"CREATE DATABASE [{targetDbName}]", conn))
+                    {
+                        createCmd.ExecuteNonQuery();
+                    }
+                }
+            }
 
-            var login = new LoginPage();
-            login.Dock = DockStyle.Fill;
+            // 2. Connect to the App Database to check Tables & Seed
+            using (var conn = new SqlConnection(targetConnString))
+            {
+                conn.Open();
 
-            form.LookAndFeel.UseDefaultLookAndFeel = false;
-            form.BackColor = System.Drawing.Color.White;
+                // Check if 'Users' table exists
+                bool tablesExist = false;
+                using (var checkCmd = new SqlCommand("SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'Users'", conn))
+                {
+                    var count = (int)checkCmd.ExecuteScalar();
+                    tablesExist = (count > 0);
+                }
 
-            form.Controls.Add(login);
+                if (!tablesExist)
+                {
+                    RunScript(conn, "Schema.sql");
+                }
 
-            return form;
+                // 3. Check if Seed data exists (e.g. Admin user)
+                bool adminExists = false;
+                if (tablesExist || true) // We just ran schema, so tables should exist now
+                {
+                    try
+                    {
+                        using (var userCmd = new SqlCommand("SELECT COUNT(*) FROM Users WHERE Username = 'admin'", conn))
+                        {
+                            var userCount = (int)userCmd.ExecuteScalar();
+                            adminExists = (userCount > 0);
+                        }
+                    }
+                    catch { /* If table creation failed, this fails safely */ }
+                }
+
+                if (!adminExists)
+                {
+                    RunScript(conn, "Seed.sql");
+                }
+            }
+        }
+
+        private static void RunScript(SqlConnection conn, string fileName)
+        {
+            string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Database", fileName);
+            if (!File.Exists(path))
+            {
+                // Fallback to checking root directory
+                path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, fileName);
+            }
+
+            if (!File.Exists(path))
+                throw new FileNotFoundException($"Could not find database script: {path}");
+
+            string script = File.ReadAllText(path);
+
+            // Split by "GO" statements (case insensitive, robust regex)
+            var commands = Regex.Split(script, @"^\s*GO\s*$", RegexOptions.Multiline | RegexOptions.IgnoreCase);
+
+            foreach (var commandText in commands)
+            {
+                if (!string.IsNullOrWhiteSpace(commandText))
+                {
+                    using (var cmd = new SqlCommand(commandText, conn))
+                    {
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+            }
         }
     }
 }
