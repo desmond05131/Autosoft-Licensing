@@ -47,17 +47,6 @@ namespace Autosoft_Licensing.UI
             {
                 string connStr = BuildConnectionString();
 
-                // --- ADD THIS DEBUG BLOCK ---
-                var builder = new SqlConnectionStringBuilder(connStr);
-                DialogResult result = MessageBox.Show(
-                    $"Attempting to connect to:\n\nServer: {builder.DataSource}\nDatabase: {builder.InitialCatalog}\nUser: {builder.UserID}\n\nIs this the correct Remote IP?",
-                    "Verify Connection Details",
-                    MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Question);
-
-                if (result == DialogResult.No) return;
-                // -----------------------------
-
                 using (var conn = new SqlConnection(connStr))
                 {
                     conn.Open();
@@ -91,7 +80,7 @@ namespace Autosoft_Licensing.UI
                 Settings.Default.DbServer = txtServer.Text.Trim();
                 Settings.Default.DbName = txtDatabase.Text.Trim();
                 Settings.Default.DbUser = txtUsername.Text.Trim();
-                Settings.Default.DbPassword = txtPassword.Text.Trim(); // Note: In high security apps, encrypt this.
+                Settings.Default.DbPassword = txtPassword.Text.Trim();
                 Settings.Default.Save();
 
                 this.DialogResult = DialogResult.OK;

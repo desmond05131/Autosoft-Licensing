@@ -180,6 +180,16 @@ namespace Autosoft_Licensing
             if (string.IsNullOrEmpty(elementName))
                 return;
 
+            // --- ADD THIS BLOCK ---
+            // If the requested page is "Login", delegate to the specific ShowLogin() method
+            // which handles the specialized event wiring that the generic loader does not.
+            if (string.Equals(elementName, "Login", StringComparison.OrdinalIgnoreCase))
+            {
+                ShowLogin();
+                return;
+            }
+            // ----------------------
+
             if (this.contentPanel == null)
             {
                 BuildAccordion();
