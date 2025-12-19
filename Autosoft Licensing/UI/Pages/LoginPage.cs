@@ -57,10 +57,10 @@ namespace Autosoft_Licensing.UI.Pages
             lblError.Visible = false;
 
             // Default username shown in wireframe
-            if (txtUsername != null)
-            {
-                txtUsername.Text = "ADMIN";
-            }
+            //if (txtUsername != null)
+            //{
+            //    txtUsername.Text = "ADMIN";
+            //}
 
             // Wire events explicitly (designer wires Load and others)
             if (btnLogin != null)
