@@ -24,10 +24,16 @@ namespace Autosoft_Licensing
                 try
                 {
                     // Get connection string from Factory (checks Settings first, then App.config fallback)
-                    string connString = SqlConnectionFactory.GetConnectionString();
+                    string connString = Autosoft_Licensing.Data.SqlConnectionFactory.GetConnectionString();
+
+                    // 1. DIAGNOSTIC POPUP (Add this)
+                    // This will reveal the "Real" connection string the app is using.
+                    var builder = new System.Data.SqlClient.SqlConnectionStringBuilder(connString);
+                    MessageBox.Show($"Debug Info:\n\nTarget Server: {builder.DataSource}\nDatabase: {builder.InitialCatalog}\nUser: {builder.UserID}", 
+                                    "Verifying Connection Target");
 
                     // If no settings exist yet (and no valid fallback), force error to open settings form
-                    if (string.IsNullOrWhiteSpace(connString) || (string.IsNullOrWhiteSpace(Properties.Settings.Default.DbServer) && string.IsNullOrWhiteSpace(connString)))
+                    if (string.IsNullOrWhiteSpace(connString) || string.IsNullOrWhiteSpace(Properties.Settings.Default.DbServer))
                         throw new Exception("No connection settings configured.");
 
                     // Try to connect (Test Connection) to ensure Server is reachable

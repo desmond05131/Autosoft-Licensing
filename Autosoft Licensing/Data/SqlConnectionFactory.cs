@@ -8,9 +8,9 @@ namespace Autosoft_Licensing.Data
     {
         public static string GetConnectionString()
         {
-            // 1. Check if we have dynamic settings saved
             string server = Settings.Default.DbServer;
 
+            // STRICT CHECK: Only return a string if we actually have user settings.
             if (!string.IsNullOrWhiteSpace(server))
             {
                 var builder = new SqlConnectionStringBuilder();
@@ -18,13 +18,13 @@ namespace Autosoft_Licensing.Data
                 builder.InitialCatalog = Settings.Default.DbName;
                 builder.UserID = Settings.Default.DbUser;
                 builder.Password = Settings.Default.DbPassword;
-                builder.IntegratedSecurity = false; // Always SQL Auth for remote
+                builder.IntegratedSecurity = false;
                 return builder.ConnectionString;
             }
 
-            // 2. Fallback to App.config (Local Dev or first run fallback)
-            // Note: This might return null/error if App.config is empty, handled in Program.cs
-            return ConfigurationManager.ConnectionStrings["LicensingDb"]?.ConnectionString;
+            // CRITICAL CHANGE: Return NULL instead of fallback.
+            // This forces Program.cs to throw the "No settings" exception and show the Settings Form.
+            return null;
         }
     }
 }
