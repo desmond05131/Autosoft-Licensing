@@ -10,17 +10,14 @@ namespace Autosoft_Licensing.Services
 {
     public class LicenseDatabaseService : ILicenseDatabaseService
     {
-        private readonly SqlConnectionFactory _factory;
-
-        public LicenseDatabaseService(SqlConnectionFactory factory)
+        public LicenseDatabaseService()
         {
-            _factory = factory;
         }
 
         // ---------- Users ----------
         public User GetUserByUsername(string username)
         {
-            using var conn = _factory.Create();
+            using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
             using var cmd = new SqlCommand(@"
 SELECT TOP(1)
     Id, Username, DisplayName, Role, Email, PasswordHash, CreatedUtc,
@@ -35,7 +32,7 @@ FROM dbo.Users WHERE Username = @u;", conn);
 
         public User GetUserById(int id)
         {
-            using var conn = _factory.Create();
+            using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
             using var cmd = new SqlCommand(@"
 SELECT TOP(1)
     Id, Username, DisplayName, Role, Email, PasswordHash, CreatedUtc,
@@ -52,7 +49,7 @@ FROM dbo.Users WHERE Id = @id;", conn);
         public IEnumerable<User> GetUsers()
         {
             var list = new List<User>();
-            using var conn = _factory.Create();
+            using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
             using var cmd = new SqlCommand(@"
 SELECT
     Id, Username, DisplayName, Role, Email, PasswordHash, CreatedUtc,
@@ -68,7 +65,7 @@ ORDER BY Username;", conn);
         // Admin: insert user (returns new Id)
         public int InsertUser(User user)
         {
-            using var conn = _factory.Create();
+            using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
             using var cmd = new SqlCommand(@"
 INSERT INTO dbo.Users
 (Username, DisplayName, Role, Email, PasswordHash, CreatedUtc,
@@ -97,7 +94,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT);", conn);
         // Admin: update user
         public void UpdateUser(User user)
         {
-            using var conn = _factory.Create();
+            using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
             using var cmd = new SqlCommand(@"
 UPDATE dbo.Users
 SET Username = @Username,
@@ -131,7 +128,7 @@ WHERE Id = @Id;", conn);
         // Admin: delete user
         public void DeleteUser(int id)
         {
-            using var conn = _factory.Create();
+            using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
             using var cmd = new SqlCommand("DELETE FROM dbo.Users WHERE Id = @Id;", conn);
             cmd.Parameters.AddWithValue("@Id", id);
             conn.Open();
@@ -158,7 +155,7 @@ WHERE Id = @Id;", conn);
         public IEnumerable<Product> GetProducts()
         {
             var list = new List<Product>();
-            using var conn = _factory.Create();
+            using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
             using var cmd = new SqlCommand(@"
 SELECT Id, ProductID, Name, Description, ReleaseNotes, CreatedBy, CreatedUtc, LastModifiedUtc, IsDeleted
 FROM dbo.Products
@@ -171,7 +168,7 @@ ORDER BY ProductID;", conn); // REMOVED: WHERE IsDeleted = 0
 
         public Product GetProductById(int id)
         {
-            using var conn = _factory.Create();
+            using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
             using var cmd = new SqlCommand(@"
 SELECT TOP(1) Id, ProductID, Name, Description, ReleaseNotes, CreatedBy, CreatedUtc, LastModifiedUtc, IsDeleted
 FROM dbo.Products WHERE Id = @id;", conn);
@@ -184,7 +181,7 @@ FROM dbo.Products WHERE Id = @id;", conn);
 
         public Product GetProductByProductId(string productId)
         {
-            using var conn = _factory.Create();
+            using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
             using var cmd = new SqlCommand(@"
 SELECT TOP(1) Id, ProductID, Name, Description, ReleaseNotes, CreatedBy, CreatedUtc, LastModifiedUtc, IsDeleted
 FROM dbo.Products WHERE ProductID = @pid;", conn);
@@ -197,7 +194,7 @@ FROM dbo.Products WHERE ProductID = @pid;", conn);
 
         public Product GetProductByName(string name)
         {
-            using var conn = _factory.Create();
+            using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
             using var cmd = new SqlCommand(@"
 SELECT TOP(1) Id, ProductID, Name, Description, ReleaseNotes, CreatedBy, CreatedUtc, LastModifiedUtc, IsDeleted
 FROM dbo.Products
@@ -211,7 +208,7 @@ WHERE Name = @name AND IsDeleted = 0;", conn);
 
         public int InsertProduct(Product product)
         {
-            using var conn = _factory.Create();
+            using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
             conn.Open();
             using var tx = conn.BeginTransaction();
             try
@@ -260,7 +257,7 @@ VALUES (@ProductId, @ModuleCode, @Name, @Description, @IsActive);", conn, tx);
 
         public void UpdateProduct(Product product)
         {
-            using var conn = _factory.Create();
+            using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
             conn.Open();
             using var tx = conn.BeginTransaction();
             try
@@ -378,7 +375,7 @@ VALUES (@ProductId, @ModuleCode, @Name, @Description, @IsActive);", conn, tx))
 
         public void DeleteProduct(int id)
         {
-            using var conn = _factory.Create();
+            using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
             using var cmd = new SqlCommand("UPDATE dbo.Products SET IsDeleted = 1 WHERE Id = @Id;", conn);
             cmd.Parameters.AddWithValue("@Id", id);
             conn.Open();
@@ -387,7 +384,7 @@ VALUES (@ProductId, @ModuleCode, @Name, @Description, @IsActive);", conn, tx))
 
         public void RestoreProduct(int id)
         {
-            using var conn = _factory.Create();
+            using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
             // Sets IsDeleted to 0 and updates the LastModified timestamp
             using var cmd = new SqlCommand("UPDATE dbo.Products SET IsDeleted = 0, LastModifiedUtc = GETUTCDATE() WHERE Id = @Id;", conn);
             cmd.Parameters.AddWithValue("@Id", id);
@@ -413,7 +410,7 @@ VALUES (@ProductId, @ModuleCode, @Name, @Description, @IsActive);", conn, tx))
         public IEnumerable<Dealer> GetDealers()
         {
             var list = new List<Dealer>();
-            using var conn = _factory.Create();
+            using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
             using var cmd = new SqlCommand(@"
 SELECT Id, DealerCode, Name
 FROM dbo.Dealers
@@ -426,7 +423,7 @@ ORDER BY DealerCode;", conn);
 
         public Dealer GetDealerById(int id)
         {
-            using var conn = _factory.Create();
+            using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
             using var cmd = new SqlCommand(@"
 SELECT TOP(1) Id, DealerCode, Name
 FROM dbo.Dealers WHERE Id = @id;", conn);
@@ -439,7 +436,7 @@ FROM dbo.Dealers WHERE Id = @id;", conn);
 
         public Dealer GetDealerByCode(string dealerCode)
         {
-            using var conn = _factory.Create();
+            using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
             using var cmd = new SqlCommand(@"
 SELECT TOP(1) Id, DealerCode, Name
 FROM dbo.Dealers WHERE DealerCode = @code;", conn);
@@ -452,7 +449,7 @@ FROM dbo.Dealers WHERE DealerCode = @code;", conn);
 
         public int InsertDealer(Dealer dealer)
         {
-            using var conn = _factory.Create();
+            using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
             using var cmd = new SqlCommand(@"
 INSERT INTO dbo.Dealers (DealerCode, Name)
 VALUES (@DealerCode, @Name);
@@ -465,7 +462,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT);", conn);
 
         public void UpdateDealer(Dealer dealer)
         {
-            using var conn = _factory.Create();
+            using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
             using var cmd = new SqlCommand(@"
 UPDATE dbo.Dealers
 SET DealerCode = @DealerCode,
@@ -480,7 +477,7 @@ WHERE Id = @Id;", conn);
 
         public void DeleteDealer(int id)
         {
-            using var conn = _factory.Create();
+            using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
             using var cmd = new SqlCommand("DELETE FROM dbo.Dealers WHERE Id = @Id;", conn);
             cmd.Parameters.AddWithValue("@Id", id);
             conn.Open();
@@ -497,7 +494,7 @@ WHERE Id = @Id;", conn);
         // ---------- License Requests ----------
         public int InsertLicenseRequest(LicenseRequestRecord record)
         {
-            using var conn = _factory.Create();
+            using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
             conn.Open();
             using var cmd = new SqlCommand(@"
 INSERT INTO dbo.LicenseRequests
@@ -521,7 +518,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT);", conn);
 
         public LicenseRequestRecord GetLicenseRequestById(int id)
         {
-            using var conn = _factory.Create();
+            using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
             conn.Open();
             LicenseRequestRecord rec = null;
 
@@ -559,7 +556,7 @@ FROM dbo.LicenseRequests WHERE Id = @id;", conn))
         public IEnumerable<LicenseRequestRecord> GetLicenseRequests(string productId = null)
         {
             var list = new List<LicenseRequestRecord>();
-            using var conn = _factory.Create();
+            using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
             conn.Open();
 
             using (var cmd = new SqlCommand(@"
@@ -599,7 +596,7 @@ ORDER BY RequestDateUtc DESC, Id DESC;", conn))
         // ---------- Licenses ----------
         public int InsertLicense(LicenseMetadata meta)
         {
-            using var conn = _factory.Create();
+            using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
             conn.Open();
             using var tx = conn.BeginTransaction();
 
@@ -642,7 +639,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT);", conn, tx))
 
         public LicenseMetadata GetLicenseById(int id)
         {
-            using var conn = _factory.Create();
+            using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
             conn.Open();
 
             LicenseMetadata meta = null;
@@ -663,7 +660,7 @@ FROM dbo.Licenses WHERE Id = @id;", conn))
 
         public LicenseMetadata GetActiveLicense(string productId, string companyName)
         {
-            using var conn = _factory.Create();
+            using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
             conn.Open();
 
             LicenseMetadata meta = null;
@@ -688,7 +685,7 @@ ORDER BY ImportedOnUtc DESC, Id DESC;", conn))
         public IEnumerable<LicenseMetadata> GetLicenses(string productId = null)
         {
             var list = new List<LicenseMetadata>();
-            using var conn = _factory.Create();
+            using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
             conn.Open();
             using (var cmd = new SqlCommand(@"
 SELECT Id, CompanyName, ProductID, DealerCode, LicenseKey, LicenseType, ValidFromUtc, ValidToUtc, CurrencyCode, Status, ImportedOnUtc, ImportedByUserId, RawAslBase64, Remarks
@@ -709,7 +706,7 @@ ORDER BY ImportedOnUtc DESC, Id DESC;", conn))
 
         public void SetRequestModules(int requestId, IEnumerable<string> moduleCodes)
         {
-            using var conn = _factory.Create();
+            using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
             conn.Open();
             using var tx = conn.BeginTransaction();
             try
@@ -753,7 +750,7 @@ VALUES (@rid, @mid);", conn, tx);
 
         public void SetLicenseModules(int licenseId, IEnumerable<string> moduleCodes)
         {
-            using var conn = _factory.Create();
+            using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
             conn.Open();
             using var tx = conn.BeginTransaction();
             try
@@ -801,7 +798,7 @@ VALUES (@lid, @mid);", conn, tx);
             var list = new List<ModuleDto>();
             try
             {
-                using var conn = _factory.Create();
+                using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
                 using var cmd = new SqlCommand(@"
 SELECT m.ModuleCode, m.Name, m.Description
 FROM dbo.Modules m
@@ -832,7 +829,7 @@ ORDER BY m.ModuleCode;", conn);
         {
             try
             {
-                using var conn = _factory.Create();
+                using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
                 using var cmd = new SqlCommand(@"
 SELECT TOP(1) 1
 FROM dbo.Licenses
@@ -860,7 +857,7 @@ WHERE ProductID = @pid
         {
             try
             {
-                using var conn = _factory.Create();
+                using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
                 using var cmd = new SqlCommand("SELECT TOP(1) 1 FROM dbo.Licenses WHERE LicenseKey = @k;", conn);
                 cmd.Parameters.AddWithValue("@k", (object)licenseKey ?? DBNull.Value);
                 conn.Open();
@@ -876,7 +873,7 @@ WHERE ProductID = @pid
 
         public void UpdateLicenseStatus(int licenseId, string status)
         {
-            using var conn = _factory.Create();
+            using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
             using var cmd = new SqlCommand("UPDATE dbo.Licenses SET Status=@s WHERE Id=@id;", conn);
             cmd.Parameters.AddWithValue("@s", status);
             cmd.Parameters.AddWithValue("@id", licenseId);
@@ -892,7 +889,7 @@ WHERE ProductID = @pid
             validToUtc = DateTime.MinValue;
             status = string.Empty;
 
-            using var conn = _factory.Create();
+            using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
             conn.Open();
             using var cmd = new SqlCommand(@"
 SELECT TOP(1) LicenseType, ValidFromUtc, ValidToUtc, Status
@@ -1003,7 +1000,7 @@ VALUES (@lid, @mid);", conn, tx);
         // ---------- App Settings ----------
         public string GetSetting(string key, string defaultValue)
         {
-            using var conn = _factory.Create();
+            using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
             using var cmd = new SqlCommand("SELECT TOP(1) [Value] FROM dbo.AppSettings WHERE [Key] = @k;", conn);
             cmd.Parameters.AddWithValue("@k", key ?? (object)DBNull.Value);
             conn.Open();
@@ -1014,7 +1011,7 @@ VALUES (@lid, @mid);", conn, tx);
 
         public void SaveSetting(string key, string value)
         {
-            using var conn = _factory.Create();
+            using var conn = new SqlConnection(SqlConnectionFactory.GetConnectionString());
             using var cmd = new SqlCommand(@"
 MERGE dbo.AppSettings AS target
 USING (SELECT @Key AS [Key]) AS source

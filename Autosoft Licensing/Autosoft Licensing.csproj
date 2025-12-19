@@ -269,6 +269,12 @@
     <Compile Include="Tools\ProductPagesIntegrationTests.cs" />
     <Compile Include="Tools\SmokeTestHarness.cs" />
     <Compile Include="Tools\UserPagesIntegrationTests.cs" />
+    <Compile Include="UI\ConnectionSettingsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\ConnectionSettingsForm.Designer.cs">
+      <DependentUpon>ConnectionSettingsForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="UI\HostFactory.cs" />
     <Compile Include="UI\MainForm.cs">
       <SubType>Form</SubType>

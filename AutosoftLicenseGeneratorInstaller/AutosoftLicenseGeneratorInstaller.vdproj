@@ -681,12 +681,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_444DE0D3F0244651A89C607BCD52152B"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_44B66745E197BCFDAAF1B6A57BB745DA"
         "OwnerKey" = "8:_243D3C6421D948399B48769AA45E1B7B"
         "MsmSig" = "8:_UNDEFINED"
@@ -1589,12 +1583,6 @@
         {
         "MsmKey" = "8:_77137130320285BAE77A11FDC2A12324"
         "OwnerKey" = "8:_93ED9EA70A3632274B9838A04ACB55E6"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_78B59FB65C994CD7B6A6EB762C35A379"
-        "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -5855,26 +5843,6 @@
             "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_444DE0D3F0244651A89C607BCD52152B"
-            {
-            "SourcePath" = "8:..\\Autosoft Licensing\\Database\\Schema.sql"
-            "TargetName" = "8:Schema.sql"
-            "Tag" = "8:"
-            "Folder" = "8:_8387CDEDE0F142CB8DEB58FDB8A20EE5"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_44B66745E197BCFDAAF1B6A57BB745DA"
             {
             "AssemblyRegister" = "3:1"
@@ -7206,26 +7174,6 @@
             "Register" = "3:1"
             "Exclude" = "11:FALSE"
             "IsDependency" = "11:TRUE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_78B59FB65C994CD7B6A6EB762C35A379"
-            {
-            "SourcePath" = "8:..\\Autosoft Licensing\\Database\\Seed.sql"
-            "TargetName" = "8:Seed.sql"
-            "Tag" = "8:"
-            "Folder" = "8:_8387CDEDE0F142CB8DEB58FDB8A20EE5"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
             "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_78D15ACD50105C6F79E903ADD67F3F8A"
@@ -10375,17 +10323,6 @@
             "Property" = "8:TARGETDIR"
                 "Folders"
                 {
-                    "{9EF0B969-E518-4E46-987F-47570745A589}:_8387CDEDE0F142CB8DEB58FDB8A20EE5"
-                    {
-                    "Name" = "8:Database"
-                    "AlwaysCreate" = "11:FALSE"
-                    "Condition" = "8:"
-                    "Transitive" = "11:FALSE"
-                    "Property" = "8:_BD6AC66727F947B09D656F411B9753B0"
-                        "Folders"
-                        {
-                        }
-                    }
                 }
             }
             "{1525181F-901A-416C-8A58-119130FE478E}:_65B9229F4FE446C78142E2A88FC00E68"
@@ -10416,7 +10353,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:AutosoftLicenseGeneratorInstaller"
         "ProductCode" = "8:{2FBAB8EF-522B-4139-8DE2-DFD6DBA71B69}"
-        "PackageCode" = "8:{973BE496-A106-445D-9716-63D2B3CE1C1A}"
+        "PackageCode" = "8:{2EE5A246-EBD4-4733-BE8E-B338221D1ECE}"
         "UpgradeCode" = "8:{2F143446-F525-40D7-8ECF-F5147DF294D5}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"

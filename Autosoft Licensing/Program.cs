@@ -1,180 +1,81 @@
 ﻿using System;
-using System.Linq;
 using System.Windows.Forms;
-using System.Configuration;
-using System.Data.SqlClient;
-using System.IO;
-using System.Text.RegularExpressions;
 using Autosoft_Licensing.Services;
-using Autosoft_Licensing.UI.Pages;
-using DevExpress.LookAndFeel;
-using DevExpress.XtraEditors;
+using Autosoft_Licensing.UI; // Needed for MainForm and ConnectionSettingsForm
+using Autosoft_Licensing.Data; // Needed for SqlConnectionFactory
 
 namespace Autosoft_Licensing
 {
     internal static class Program
     {
         [STAThread]
-        static void Main(string[] args)
+        static void Main()
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            // ---------------------------------------------------------
-            // 1. SELF-HEALING DATABASE LOGIC
-            // ---------------------------------------------------------
-            try
-            {
-                DbBootstrapper.EnsureDatabaseAndSchema();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(
-                    "Critical Error during Database Setup:\n" + ex.Message +
-                    "\n\nPlease ensure SQL Server Express/LocalDB is installed and the SQL files are in the application folder.",
-                    "Deployment Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return; // Stop app if DB fails
-            }
+            bool connectionValid = false;
 
             // ---------------------------------------------------------
-            // 2. NORMAL STARTUP
+            // 1. DYNAMIC CONNECTION LOGIC
             // ---------------------------------------------------------
-            ServiceRegistry.InitializeDatabase("LicensingDb");
-
-            // Verify Admin exists (Double check)
-            try
-            {
-                var admin = ServiceRegistry.Database.GetUserByUsername("admin");
-                if (admin == null)
-                {
-                    MessageBox.Show("Database tables exist but 'admin' user is missing. Please check Seed.sql.", "Warning");
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Failed to query database after setup: " + ex.Message, "Startup Error");
-                return;
-            }
-
-            // ... (Rest of your existing startup logic for styles/forms) ...
-
-            // Launch Logic
-            var launchPage = ConfigurationManager.AppSettings["LaunchPage"] ?? "Login";
-            var launchAsAdmin = string.Equals(ConfigurationManager.AppSettings["LaunchAsAdmin"], "true", StringComparison.OrdinalIgnoreCase);
-
-            var mainForm = new MainForm();
-            if (launchAsAdmin)
+            while (!connectionValid)
             {
                 try
                 {
-                    var admin = ServiceRegistry.Database.GetUserByUsername("admin");
-                    if (admin != null) mainForm.SetLoggedInUser(admin);
-                }
-                catch { }
-            }
+                    // Get connection string from Factory (checks Settings first, then App.config fallback)
+                    string connString = SqlConnectionFactory.GetConnectionString();
 
-            if (launchAsAdmin && !string.Equals(launchPage, "Login", StringComparison.OrdinalIgnoreCase))
-            {
-                mainForm.NavigateToPage(launchPage);
-            }
+                    // If no settings exist yet (and no valid fallback), force error to open settings form
+                    if (string.IsNullOrWhiteSpace(connString) || (string.IsNullOrWhiteSpace(Properties.Settings.Default.DbServer) && string.IsNullOrWhiteSpace(connString)))
+                        throw new Exception("No connection settings configured.");
 
-            Application.Run(mainForm);
-        }
-    }
-
-    /// <summary>
-    /// Handles creation of Database, Tables, and Seed Data if missing.
-    /// </summary>
-    public static class DbBootstrapper
-    {
-        public static void EnsureDatabaseAndSchema()
-        {
-            var targetConnString = ConfigurationManager.ConnectionStrings["LicensingDb"].ConnectionString;
-            var builder = new SqlConnectionStringBuilder(targetConnString);
-            string targetDbName = builder.InitialCatalog;
-            string serverConnString = targetConnString.Replace($"Initial Catalog={targetDbName}", "Initial Catalog=master");
-
-            // 1. Create Database if it doesn't exist
-            using (var conn = new SqlConnection(serverConnString))
-            {
-                conn.Open();
-                var cmd = new SqlCommand($"SELECT database_id FROM sys.databases WHERE Name = '{targetDbName}'", conn);
-                if (cmd.ExecuteScalar() == null)
-                {
-                    using (var createCmd = new SqlCommand($"CREATE DATABASE [{targetDbName}]", conn))
+                    // Try to connect (Test Connection) to ensure Server is reachable
+                    using (var conn = new System.Data.SqlClient.SqlConnection(connString))
                     {
-                        createCmd.ExecuteNonQuery();
+                        conn.Open(); // Will throw exception if fails (e.g., Firewall, Wrong Password)
                     }
+
+                    // If we get here, connection is good.
+                    // Initialize ServiceRegistry.
+                    // Note: Ensure ServiceRegistry or LicenseDatabaseService is updated to use SqlConnectionFactory.GetConnectionString()
+                    // or allows the connection string to be injected implicitly.
+                    ServiceRegistry.InitializeDatabase("LicensingDb");
+
+                    connectionValid = true;
                 }
-            }
-
-            // 2. Connect to the App Database to check Tables & Seed
-            using (var conn = new SqlConnection(targetConnString))
-            {
-                conn.Open();
-
-                // Check if 'Users' table exists
-                bool tablesExist = false;
-                using (var checkCmd = new SqlCommand("SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'Users'", conn))
+                catch (Exception)
                 {
-                    var count = (int)checkCmd.ExecuteScalar();
-                    tablesExist = (count > 0);
-                }
-
-                if (!tablesExist)
-                {
-                    RunScript(conn, "Schema.sql");
-                }
-
-                // 3. Check if Seed data exists (e.g. Admin user)
-                bool adminExists = false;
-                if (tablesExist || true) // We just ran schema, so tables should exist now
-                {
-                    try
+                    // Connection failed or not configured. Show Settings Form.
+                    // This requires you to have created ConnectionSettingsForm.cs in UI folder
+                    using (var settingsForm = new ConnectionSettingsForm())
                     {
-                        using (var userCmd = new SqlCommand("SELECT COUNT(*) FROM Users WHERE Username = 'admin'", conn))
+                        if (settingsForm.ShowDialog() == DialogResult.OK)
                         {
-                            var userCount = (int)userCmd.ExecuteScalar();
-                            adminExists = (userCount > 0);
+                            // User saved new settings, loop back and try connecting again
+                            continue;
+                        }
+                        else
+                        {
+                            // User cancelled/closed the app
+                            return;
                         }
                     }
-                    catch { /* If table creation failed, this fails safely */ }
-                }
-
-                if (!adminExists)
-                {
-                    RunScript(conn, "Seed.sql");
                 }
             }
-        }
 
-        private static void RunScript(SqlConnection conn, string fileName)
-        {
-            string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Database", fileName);
-            if (!File.Exists(path))
-            {
-                // Fallback to checking root directory
-                path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, fileName);
-            }
+            // ---------------------------------------------------------
+            // 2. LAUNCH APPLICATION
+            // ---------------------------------------------------------
+            // We removed DbBootstrapper.EnsureDatabaseAndSchema() because
+            // clients connect to an existing Central Database.
 
-            if (!File.Exists(path))
-                throw new FileNotFoundException($"Could not find database script: {path}");
+            var mainForm = new MainForm();
 
-            string script = File.ReadAllText(path);
+            // Force navigation to Login page for security in Client-Server mode
+            mainForm.NavigateToPage("Login");
 
-            // Split by "GO" statements (case insensitive, robust regex)
-            var commands = Regex.Split(script, @"^\s*GO\s*$", RegexOptions.Multiline | RegexOptions.IgnoreCase);
-
-            foreach (var commandText in commands)
-            {
-                if (!string.IsNullOrWhiteSpace(commandText))
-                {
-                    using (var cmd = new SqlCommand(commandText, conn))
-                    {
-                        cmd.ExecuteNonQuery();
-                    }
-                }
-            }
+            Application.Run(mainForm);
         }
     }
 }

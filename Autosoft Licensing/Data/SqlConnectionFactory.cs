@@ -1,18 +1,30 @@
-using System;
 using System.Configuration;
 using System.Data.SqlClient;
+using Autosoft_Licensing.Properties; // Add this
 
 namespace Autosoft_Licensing.Data
 {
-    public class SqlConnectionFactory
+    public static class SqlConnectionFactory
     {
-        private readonly string _connectionString;
-
-        public SqlConnectionFactory(string connectionStringName = "LicensingDb")
+        public static string GetConnectionString()
         {
-            _connectionString = ConfigurationManager.ConnectionStrings[connectionStringName]?.ConnectionString
-                ?? throw new System.InvalidOperationException($"Missing connection string '{connectionStringName}'.");        }
+            // 1. Check if we have dynamic settings saved
+            string server = Settings.Default.DbServer;
 
-        public SqlConnection Create() => new SqlConnection(_connectionString);
+            if (!string.IsNullOrWhiteSpace(server))
+            {
+                var builder = new SqlConnectionStringBuilder();
+                builder.DataSource = server;
+                builder.InitialCatalog = Settings.Default.DbName;
+                builder.UserID = Settings.Default.DbUser;
+                builder.Password = Settings.Default.DbPassword;
+                builder.IntegratedSecurity = false; // Always SQL Auth for remote
+                return builder.ConnectionString;
+            }
+
+            // 2. Fallback to App.config (Local Dev or first run fallback)
+            // Note: This might return null/error if App.config is empty, handled in Program.cs
+            return ConfigurationManager.ConnectionStrings["LicensingDb"]?.ConnectionString;
+        }
     }
 }

@@ -24,7 +24,9 @@ namespace Autosoft_Licensing.Services
         /// </summary>
         public static void InitializeDatabase(string connectionStringName = "LicensingDb")
         {
-            Database = new LicenseDatabaseService(new SqlConnectionFactory(connectionStringName));
+            // SqlConnectionFactory is now a static helper (SqlConnectionFactory.GetConnectionString()).
+            // LicenseDatabaseService uses that helper internally, so don't attempt to construct or inject it.
+            Database = new LicenseDatabaseService();
         }
 
         // Lightweight factories for other services
