@@ -19,6 +19,8 @@ namespace Autosoft_Licensing.Data
                 builder.UserID = Settings.Default.DbUser;
                 builder.Password = Settings.Default.DbPassword;
                 builder.IntegratedSecurity = false;
+                builder.TrustServerCertificate = true; // Add this
+                builder.Encrypt = false;               // Add this
                 return builder.ConnectionString;
             }
 

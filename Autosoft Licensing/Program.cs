@@ -50,8 +50,23 @@ namespace Autosoft_Licensing
 
                     connectionValid = true;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    // Provide SQL-specific diagnostic info when available so the user (or support) can identify the failure reason.
+                    string extraInfo = "";
+                    if (ex is System.Data.SqlClient.SqlException sqlEx)
+                    {
+                        extraInfo = $"\n\nSQL Error Number: {sqlEx.Number}\nSQL State: {sqlEx.State}";
+
+                        // Helpful states (non-exhaustive)
+                        // State 18 = Password expired
+                        // State 38 = Database not found / Valid login but wrong DB
+                        // State 5  = Invalid user id / password
+                    }
+
+                    // Show detailed error to assist troubleshooting before opening Settings
+                    MessageBox.Show($"Connection Failed:\n{ex.Message}{extraInfo}", "Diagnostic Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+
                     // Connection failed or not configured. Show Settings Form.
                     // This requires you to have created ConnectionSettingsForm.cs in UI folder
                     using (var settingsForm = new ConnectionSettingsForm())

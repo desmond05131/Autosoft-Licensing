@@ -29,8 +29,15 @@ namespace Autosoft_Licensing.UI
             builder.InitialCatalog = txtDatabase.Text.Trim();
             builder.UserID = txtUsername.Text.Trim();
             builder.Password = txtPassword.Text.Trim();
-            builder.IntegratedSecurity = false; // We are forcing SQL Auth for Client-Server
-            builder.ConnectTimeout = 5; // Fail fast during testing
+
+            // CRITICAL SETTINGS FOR REMOTE CONNECTIONS
+            builder.IntegratedSecurity = false;
+            builder.ConnectTimeout = 5;
+
+            // Bypass SSL Certificate validation (Self-signed certs)
+            builder.TrustServerCertificate = true;
+            builder.Encrypt = false; // Optional: Try false if true fails
+
             return builder.ConnectionString;
         }
 
@@ -38,15 +45,28 @@ namespace Autosoft_Licensing.UI
         {
             try
             {
-                using (var conn = new SqlConnection(BuildConnectionString()))
+                string connStr = BuildConnectionString();
+
+                // --- ADD THIS DEBUG BLOCK ---
+                var builder = new SqlConnectionStringBuilder(connStr);
+                DialogResult result = MessageBox.Show(
+                    $"Attempting to connect to:\n\nServer: {builder.DataSource}\nDatabase: {builder.InitialCatalog}\nUser: {builder.UserID}\n\nIs this the correct Remote IP?",
+                    "Verify Connection Details",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question);
+
+                if (result == DialogResult.No) return;
+                // -----------------------------
+
+                using (var conn = new SqlConnection(connStr))
                 {
                     conn.Open();
-                    MessageBox.Show("Connection Successful!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("Connection Successful!", "Success");
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Connection Failed:\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Connection Failed:\n{ex.Message}", "Error");
             }
         }
 
